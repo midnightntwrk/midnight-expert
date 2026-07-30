@@ -34,9 +34,7 @@
 			"import": "./dist/engine.js"
 		}
 	},
-	"files": [
-		"dist"
-	],
+	"files": ["dist"],
 	"scripts": {
 		"build": "tsc",
 		"check": "tsc --noEmit",
