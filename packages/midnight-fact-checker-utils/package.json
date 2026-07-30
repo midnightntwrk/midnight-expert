@@ -1,5 +1,5 @@
 {
-	"name": "@aaronbassett/midnight-fact-checker-utils",
+	"name": "@midnightntwrk/midnight-fact-checker-utils",
 	"version": "0.1.0",
 	"description": "CLI utilities for midnight fact-checking workflows: file discovery, URL extraction, and JSON claim merging",
 	"type": "module",

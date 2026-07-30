@@ -1,5 +1,5 @@
 {
-	"name": "@aaronbassett/template-engine",
+	"name": "@midnightntwrk/template-engine",
 	"version": "0.1.0",
 	"description": "Generic template directory copier with placeholder substitution. Reads JSON from stdin, copies a template directory, replaces {{KEY}} placeholders, writes result to stdout.",
 	"type": "module",
