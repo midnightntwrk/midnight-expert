@@ -13,6 +13,9 @@ on:
       - 'plugins/midnight-status-codes/**'
       - '.github/workflows/ci-status-codes.yml'
 
+permissions:
+  contents: read
+
 jobs:
   schema-and-resolver:
     name: Schema + resolver/renderer tests

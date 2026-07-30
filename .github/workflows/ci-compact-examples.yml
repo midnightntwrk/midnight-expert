@@ -15,6 +15,9 @@ on:
       - 'plugins/compact-examples/scripts/compile-examples.sh'
       - '.github/workflows/ci-compact-examples.yml'
 
+permissions:
+  contents: read
+
 jobs:
   compile-examples:
     # ubuntu-latest is a CASE-SENSITIVE filesystem, so this also catches

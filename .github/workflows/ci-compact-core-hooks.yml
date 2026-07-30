@@ -25,6 +25,9 @@ on:
       - 'plugins/midnight-expert/hooks/hooks.json'
       - '.github/workflows/ci-compact-core-hooks.yml'
 
+permissions:
+  contents: read
+
 jobs:
   hook-tests:
     name: Drift check + functional hook tests

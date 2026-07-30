@@ -15,6 +15,9 @@ defaults:
   run:
     working-directory: packages/midnight-fact-checker-utils
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: Lint
