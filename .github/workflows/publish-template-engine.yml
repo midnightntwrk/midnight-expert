@@ -86,8 +86,10 @@ jobs:
         if: steps.version-check.outputs.changed == 'true'
         run: npm pack --dry-run
 
+      - name: Upgrade npm for trusted publishing (OIDC needs npm >= 11.5.1)
+        if: steps.version-check.outputs.changed == 'true'
+        run: npm install -g npm@latest
+
       - name: Publish to npm with provenance
         if: steps.version-check.outputs.changed == 'true'
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
