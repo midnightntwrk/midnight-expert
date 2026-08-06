@@ -29,7 +29,7 @@ jobs:
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 20
+          node-version: 24
           registry-url: https://registry.npmjs.org
           cache: npm
           cache-dependency-path: packages/midnight-fact-checker-utils/package-lock.json
@@ -89,7 +89,7 @@ jobs:
 
       - name: Upgrade npm for trusted publishing (OIDC needs npm >= 11.5.1)
         if: steps.version-check.outputs.changed == 'true'
-        run: npm install -g npm@latest
+        run: npm install -g npm@12.0.2
 
       - name: Publish to npm with provenance
         if: steps.version-check.outputs.changed == 'true'
