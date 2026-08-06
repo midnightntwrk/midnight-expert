@@ -16,6 +16,18 @@ This project extends the Midnight Network with additional developer tooling.
 - **~37,700** Lines of reference documentation
 - **~21,800** Lines of example code
 
+## Prerequisites
+
+Some plugins in this marketplace (`compact-core`, `midnight-verify`) reference skills and agents from the **`devs`** plugin, which lives in a separate marketplace — [`aaronbassett/agent-foundry`](https://github.com/aaronbassett/agent-foundry). Install it before or alongside the midnight-expert plugins to avoid broken cross-references:
+
+```bash
+claude plugin marketplace add aaronbassett/agent-foundry
+claude plugin install devs@agent-foundry
+```
+
+> [!NOTE]
+> The Claude Code plugin schema does not currently have a `dependencies` field, so cross-marketplace dependencies cannot be declared in `plugin.json`. The `midnight-expert:doctor` command will flag missing `devs` references and show you the fix commands if this step is skipped.
+
 ## Install
 
 > [!IMPORTANT]

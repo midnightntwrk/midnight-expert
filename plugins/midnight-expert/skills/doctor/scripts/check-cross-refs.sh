@@ -156,7 +156,11 @@ for ref in "${REFS[@]}"; do
 
   # Check if target plugin is installed
   if [ -z "$target_path" ]; then
-    emit "$source → $target_name:$ref_name" "critical" "$target_name not installed"
+    if [ "$target_name" = "devs" ]; then
+      emit "$source → $target_name:$ref_name" "critical" "devs plugin not installed — fix: claude plugin marketplace add aaronbassett/agent-foundry && claude plugin install devs@agent-foundry"
+    else
+      emit "$source → $target_name:$ref_name" "critical" "$target_name not installed"
+    fi
     fail=1
     continue
   fi
