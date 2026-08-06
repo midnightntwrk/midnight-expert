@@ -30,7 +30,7 @@ The corollary: a value being "tagged with witness taint" does NOT mean it is pub
 | What to Protect | Approach | Key Primitives |
 |----------------|----------|----------------|
 | Hide a value on-chain | Commitment | `persistentCommit<T>` / `transientCommit<T>` |
-| Prove membership anonymously | MerkleTree + ZK path | `HistoricMerkleTree` + `merkleTreePathRoot<N, T>` |
+| Prove membership anonymously | MerkleTree + ZK path (assert on the result, see below) | `HistoricMerkleTree` + `merkleTreePathRoot<N, T>` |
 | Prevent double-actions | Nullifier | `persistentHash<T>([domain, secret])` + `Set<Bytes<32>>` |
 | Hide who is acting | Unlinkable auth | `Counter` + rotated `persistentHash` |
 | Multi-step hidden value | Commit-reveal | Commit phase + reveal phase |
@@ -79,6 +79,79 @@ const hash = persistentHash<Field>(secretValue);
 storedHash = disclose(hash);  // disclose() required — persistentHash does NOT clear taint
 ```
 
+## checkRoot Publishes Its Result
+
+`checkRoot` is a ledger operation, so it has two disclosure surfaces, not one. The
+argument is the widely-known part. The **return value** is the part that is easy to
+miss: the call compiles to a `member` check against the tree's historic roots
+followed by `popeq`, and `popeq` writes the outcome into the public transcript,
+tagged with the index of the ledger field that was checked.
+
+Omitting `disclose()` makes the compiler name all three channels at once:
+
+```text
+nature of the disclosure:
+  ledger operation might disclose a hash of the witness value
+nature of the disclosure:
+  ledger operation might disclose a hash of the boolean value of the witness value
+nature of the disclosure:
+  ledger operation might disclose a hash of a modulus of a hash of the witness value
+```
+
+The middle channel is the result of the check. A single `disclose()` clears all
+three, and the message reads as though it concerns only the root, so the second
+line is easy to skip past.
+
+**This is why every membership example in this skill asserts immediately:**
+
+```compact
+assert(members.checkRoot(disclose(digest)), "Not a member");
+```
+
+Asserting makes the published bit *constant*. A caller whose check fails never
+lands a transaction, so every transcript on-chain carries the same value and it
+reveals nothing.
+
+Capturing the result and branching on it removes that property:
+
+```compact
+// Anti-pattern: leaks which trees the caller belongs to
+const inA = treeA.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(pathA(leaf))));
+const inB = treeB.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(pathB(leaf))));
+assert(inA || inB, "not a member of either");
+```
+
+`inA || inB` is never disclosed, but each result reached the transcript
+separately. Reading `proofData.publicTranscript` for two callers, one enrolled
+only in tree A and one only in tree B:
+
+| Caller | check vs `treeA` | check vs `treeB` |
+|--------|------------------|------------------|
+| A-only | `popeq -> [1]`   | `popeq -> []`    |
+| B-only | `popeq -> []`    | `popeq -> [1]`   |
+
+No inference is required; the answers are recorded in order.
+
+### The rule
+
+> Every `checkRoot` call in a circuit must return the same value for every honest
+> caller. If a call can legitimately return `false` for some callers, that `false`
+> is public.
+
+For "N of M" designs, use **one shared tree** with the category folded into the
+leaf, `hash(domain, identity, categoryTag)`, prove N memberships against that
+single tree, and assert inside the circuit that the tags differ. Every caller then
+publishes the same constant.
+
+The corollary is worth stating plainly: supplying a deliberately invalid path so a
+check can return `false` without failing the proof is the only way to express
+*optional* membership across several trees, and it is exactly what makes the
+published bit vary. Optional membership and unlinkability are not simultaneously
+achievable this way.
+
+Verified against Compact 0.31.1 and `@midnight-ntwrk/compact-runtime` 0.16.0.
+Reproduction: https://github.com/tomiin/checkroot-transcript-probe
+
 ## Common Disclosure Mistakes
 
 | Wrong | Correct | Why |
@@ -88,6 +161,7 @@ storedHash = disclose(hash);  // disclose() required — persistentHash does NOT
 | `return computeResult()` | `return disclose(computeResult())` | Exported circuit return requires disclosure |
 | `disclose(getBalance()); ...; balance = x` | `balance = disclose(x)` | Disclose at disclosure point, not at source |
 | `Set` for private membership | `MerkleTree` + ZK path proof | Set reveals which element is tested |
+| `const ok = tree.checkRoot(...)` then branch on `ok` | `assert(tree.checkRoot(...), "...")` | The result is written to the public transcript; asserting keeps it constant |
 | Same domain for commitment and nullifier | Different domains | Same domain enables linking attack |
 | `persistentHash(secret)` to "hide" witness | `persistentCommit(secret, rand)` | Hash doesn't clear witness taint; commit does |
 

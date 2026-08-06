@@ -348,6 +348,29 @@ prior version of the tree, so a proof generated before new members were added
 remains valid. With plain `MerkleTree`, each insertion changes the root and
 invalidates all existing proofs.
 
+### Keep the checkRoot Result Constant
+
+Step 3 above asserts on `checkRoot` immediately rather than storing the result.
+That is load-bearing. `checkRoot` is a ledger operation and its Boolean result is
+written to the public transcript, tagged with the ledger field checked. Asserting
+immediately means every transaction that lands carries `true`, so the published
+bit is constant and reveals nothing.
+
+Do not capture the result and branch on it to build optional or threshold
+membership across several trees:
+
+```compact
+// Anti-pattern: leaks which trees the caller belongs to
+const inA = treeA.checkRoot(disclose(rootA));
+const inB = treeB.checkRoot(disclose(rootB));
+assert(inA || inB, "not a member of either");
+```
+
+Each result reaches the transcript separately, so the pattern is directly readable
+even though `inA || inB` is never disclosed. Use one shared tree with the category
+folded into the leaf instead, and assert inside the circuit that the categories
+differ. See "checkRoot Publishes Its Result" in `compact-privacy-disclosure`.
+
 ### Capacity Planning
 
 | Depth (N) | Max Members | Proof Size |
