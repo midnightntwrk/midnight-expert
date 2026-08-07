@@ -2175,9 +2175,11 @@
         "name": "Transaction Malformed Errors (110-139, 166-192)",
         "description": "Transactions that are structurally invalid or fail proof verification."
       },
-      "description": "The dust spend proof is invalid.",
+      "description": "The DUST fee spend proof failed node verification: it was proven against a DUST state the chain has already advanced past, so it no longer validates at the current tip. This is the fee leg, not a fault in the contract or its ZK proof.",
       "fixes": [
-        "Regenerate the dust spend proof using the proof server"
+        "Sync the wallet's DUST state to the current chain tip before submitting. A stale wallet checkpoint or a public indexer running behind the node yields a spend proof the node rejects.",
+        "On 170, rebuild and re-balance the transaction rather than resubmitting the same finalized tx: the stale dust proof is baked into that tx, so resubmitting or re-proving the identical transaction cannot clear it.",
+        "Diagnostic: an instant failure with \"could not balance dust\" (no proving delay) means the DUST state is too stale to balance at all - resync first; a failure after proving with 170 is the block-advance race, which rebuilding the tx on each retry rides through."
       ],
       "aliases": [
         "TransactionMalformed(InvalidDustSpendProof)",
