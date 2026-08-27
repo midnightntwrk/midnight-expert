@@ -20,7 +20,7 @@ Lightweight path for feature requests. Loaded from SKILL.md when `route == "enha
 
    ```bash
    gh issue create \
-     --repo devrelaicom/midnight-expert \
+     --repo midnightntwrk/midnight-expert \
      --title "<generated-title>" \
      --body "<final-prose>" \
      --label enhancement \

@@ -70,7 +70,7 @@ claude plugin install --scope user midnight-expert@midnight-expert
 > Use `--scope user` to install the plugin **globally for your user** (available in every project), `--scope project` to install only for the current project, or `--scope local` for an unmanaged local install.
 
 > [!TIP]
-> Updates are published to [`midnightntwrk.expert`](https://midnightntwrk.expert/) **3–5 days after they're merged into the GitHub repository**. The delay gives the community time for public testing and feedback. If you'd rather live on the bleeding edge, use the GitHub repo directly as your marketplace address — substitute `devrelaicom/midnight-expert` for `https://midnightntwrk.expert/` anywhere it appears in the manual install instructions above.
+> Updates are published to [`midnightntwrk.expert`](https://midnightntwrk.expert/) **3–5 days after they're merged into the GitHub repository**. The delay gives the community time for public testing and feedback. If you'd rather live on the bleeding edge, use the GitHub repo directly as your marketplace address — substitute `midnightntwrk/midnight-expert` for `https://midnightntwrk.expert/` anywhere it appears in the manual install instructions above.
 
 ## Plugins
 

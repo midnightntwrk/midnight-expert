@@ -24,7 +24,7 @@ Walks the user's current project through the four Electric Capital eligibility r
 
 ### midnight-expert:feedback
 
-Routes a user's feedback to a GitHub issue or enhancement on `devrelaicom/midnight-expert`. The user types one paragraph; the skill silently scans the session transcript and environment, applies heavy redaction, and composes a maintainer-ready issue body.
+Routes a user's feedback to a GitHub issue or enhancement on `midnightntwrk/midnight-expert`. The user types one paragraph; the skill silently scans the session transcript and environment, applies heavy redaction, and composes a maintainer-ready issue body.
 
 ## Hooks
 

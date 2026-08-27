@@ -31,7 +31,7 @@ Plugin not-installed and not-enabled rows are emitted as **info** — install on
 
 | Issue | Fix |
 |-------|-----|
-| midnight-expert marketplace not installed | `claude plugin install-marketplace devrelaicom/midnight-expert` |
+| midnight-expert marketplace not installed | `claude plugin install-marketplace midnightntwrk/midnight-expert` |
 | agent-foundry marketplace not installed | `claude plugin install-marketplace aaronbassett/agent-foundry` |
 | Plugin not installed (info) | Install with `claude plugin install <name>` if the plugin is needed for your work |
 | Plugin installed but not enabled (info) | `claude plugin enable <name>` |

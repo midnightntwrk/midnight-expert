@@ -45,7 +45,7 @@
 - `is_cli_tool`: no
 - → `add_compact_topic: false`, `category: "integrates"`
 
-### `devrelaicom/midnight-expert` (Claude plugin marketplace)
+### `midnightntwrk/midnight-expert` (Claude plugin marketplace)
 
 - `has_compact_files`: no
 - `has_runtime_npm_dep`: no

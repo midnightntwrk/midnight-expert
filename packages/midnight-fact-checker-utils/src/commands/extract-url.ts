@@ -11,7 +11,7 @@ async function fetchHtml(url: string): Promise<string> {
 	const response = await fetch(url, {
 		headers: {
 			"User-Agent":
-				"Mozilla/5.0 (compatible; midnight-fact-checker-utils/0.1.0; +https://github.com/devrelaicom/midnight-expert)",
+				"Mozilla/5.0 (compatible; midnight-fact-checker-utils/0.1.0; +https://github.com/midnightntwrk/midnight-expert)",
 			Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 		},
 	});
