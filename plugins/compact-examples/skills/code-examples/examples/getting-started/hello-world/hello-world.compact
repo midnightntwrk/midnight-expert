@@ -1,0 +1,7 @@
+pragma language_version 0.23;
+
+export ledger message: Opaque<"string">;
+
+export circuit storeMessage(newMessage: Opaque<"string">): [] {
+  message = disclose(newMessage);
+}
