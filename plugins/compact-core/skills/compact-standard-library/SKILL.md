@@ -154,7 +154,7 @@ Types provided by the standard library. All are available after `import CompactS
 | `Either<A, B>` | `A`, `B` -- any types | `is_left: Boolean`, `left: A`, `right: B` | `{ is_left: false, left: default<A>, right: default<B> }` (right variant, based on struct defaults) |
 | `JubjubPoint` | none | `x: Field`, `y: Field` | `{ x: 0, y: 0 }` |
 | `MerkleTreeDigest` | none | `field: Field` | `{ field: 0 }` |
-| `MerkleTreePathEntry` | none | `sibling: MerkleTreeDigest`, `goesLeft: Boolean` | `{ sibling: { field: 0 }, goesLeft: false }` |
+| `MerkleTreePathEntry` | none | `sibling: MerkleTreeDigest`, `goes_left: Boolean` (true when the current node is the left child) | `{ sibling: { field: 0 }, goes_left: false }` |
 | `MerkleTreePath<#N, T>` | `#N` -- depth, `T` -- leaf type | `leaf: T`, `path: Vector<#N, MerkleTreePathEntry>` | Default leaf + default path |
 | `ContractAddress` | none | `bytes: Bytes<32>` | `{ bytes: 0x00...00 }` |
 | `ZswapCoinPublicKey` | none | `bytes: Bytes<32>` | `{ bytes: 0x00...00 }` |
