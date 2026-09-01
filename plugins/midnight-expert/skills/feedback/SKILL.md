@@ -1,12 +1,12 @@
 ---
 name: midnight-expert:feedback
-description: This skill should be used when the user asks to "file feedback", "report a bug", "file an issue", "request a feature", "submit feedback", "send feedback to maintainers", or invokes /midnight-expert:feedback. Routes to a GitHub issue or enhancement on devrelaicom/midnight-expert. The user types one paragraph; the skill silently scans the session transcript and environment, applies heavy redaction, and composes a maintainer-ready issue body.
+description: This skill should be used when the user asks to "file feedback", "report a bug", "file an issue", "request a feature", "submit feedback", "send feedback to maintainers", or invokes /midnight-expert:feedback. Routes to a GitHub issue or enhancement on midnightntwrk/midnight-expert. The user types one paragraph; the skill silently scans the session transcript and environment, applies heavy redaction, and composes a maintainer-ready issue body.
 version: 0.1.0
 ---
 
 # Feedback
 
-Route a user's feedback to GitHub on `devrelaicom/midnight-expert` with minimal user effort. The user contributes intent and expectation; the skill provides everything else.
+Route a user's feedback to GitHub on `midnightntwrk/midnight-expert` with minimal user effort. The user contributes intent and expectation; the skill provides everything else.
 
 ## Allowed Tools
 
@@ -120,7 +120,7 @@ mkdir -p "$DRAFT_DIR"
 cp /tmp/feedback-prose.txt "$DRAFT_DIR/$(date -u +%Y%m%dT%H%M%SZ)-prose-only.md"
 ```
 
-Print: *"I couldn't analyze the feedback. Your prose is saved at <path>. Try again or file manually at https://github.com/devrelaicom/midnight-expert/issues/new"*
+Print: *"I couldn't analyze the feedback. Your prose is saved at <path>. Try again or file manually at https://github.com/midnightntwrk/midnight-expert/issues/new"*
 
 ## Phase 3 — Confirm only what's uncertain
 

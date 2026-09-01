@@ -160,7 +160,7 @@ Then file:
 
 ```bash
 gh issue create \
-  --repo devrelaicom/midnight-expert \
+  --repo midnightntwrk/midnight-expert \
   --title "<generated-title>" \
   --body-file "$BODY_PATH" \
   --label "<plugin_slug>"
@@ -192,7 +192,7 @@ Then run: gh auth login
 Your draft is saved at: <DRAFT_PATH>
 To file once gh is ready:
 
-  gh issue create --repo devrelaicom/midnight-expert \
+  gh issue create --repo midnightntwrk/midnight-expert \
     --title "<title>" \
     --body-file <DRAFT_PATH> \
     --label <plugin-slug>

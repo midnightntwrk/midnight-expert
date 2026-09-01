@@ -5,8 +5,8 @@
     "description": "AI agent plugins for the Midnight data-protection blockchain. Covers Compact smart contract development, privacy-preserving patterns, DApp frontend design, and Midnight toolchain management."
   },
   "owner": {
-    "name": "Aaron Bassett",
-    "email": "aaron@devrel-ai.com"
+    "name": "Midnight Foundation",
+    "email": "nick.stanford@midnight.foundation"
   },
   "plugins": [
     {
