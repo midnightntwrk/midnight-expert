@@ -220,7 +220,7 @@ One step in a Merkle proof path: the sibling hash and a direction flag.
 ```compact
 struct MerkleTreePathEntry {
   sibling: MerkleTreeDigest;
-  goesLeft: Boolean;
+  goes_left: Boolean;
 }
 ```
 
@@ -229,7 +229,7 @@ struct MerkleTreePathEntry {
 | Field | Type | Meaning |
 |-------|------|---------|
 | `.sibling` | `MerkleTreeDigest` | Hash of the sibling node at this level |
-| `.goesLeft` | `Boolean` | Direction flag: `true` if the path goes left at this level |
+| `.goes_left` | `Boolean` | `true` when the current node is the left child at this level (the sibling occupies the right slot) |
 
 Primarily used as the element type inside `MerkleTreePath`.
 

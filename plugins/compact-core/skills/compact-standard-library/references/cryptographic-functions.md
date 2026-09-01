@@ -131,7 +131,7 @@ struct MerkleTreePath<#n, T> {
 
 struct MerkleTreePathEntry {
   sibling: MerkleTreeDigest;
-  goesLeft: Boolean;
+  goes_left: Boolean; // true when the current node is the left child at this level
 }
 ```
 
