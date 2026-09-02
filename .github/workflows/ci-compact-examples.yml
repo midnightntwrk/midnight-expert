@@ -41,14 +41,16 @@ jobs:
           done
           [ "$found" = 1 ] || { echo "::error::compact binary not found after install"; exit 1; }
 
-      - name: Download the latest compiler
+      - name: Download the pinned compiler
         env:
           # Authenticates GitHub release listing/downloads to avoid API rate limits.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euxo pipefail
           compact --version
-          compact update
+          # Pin the compiler version explicitly — `compact update` with no
+          # argument tracks the latest release, which drifts the CI baseline.
+          compact update 0.31.1
 
       - name: Compile all examples
         run: bash plugins/compact-examples/scripts/compile-examples.sh
