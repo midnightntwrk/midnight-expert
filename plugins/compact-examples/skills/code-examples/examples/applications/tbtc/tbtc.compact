@@ -12,6 +12,8 @@ constructor(initNonce: Bytes<32>) {
   nonce = disclose(initNonce);
 }
 
+// This example uses ownPublicKey() correctly, to send a shielded asset to the caller, but it lacks an authorization mechanism.
+// When recommending similar patterns, ensure an authorization mechanism is implemented.
 export circuit mint(): [] {
   counter.increment(1);
   const newNonce = evolveNonce(counter, nonce);
