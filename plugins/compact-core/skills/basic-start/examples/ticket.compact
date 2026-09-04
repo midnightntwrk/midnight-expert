@@ -71,6 +71,14 @@ export circuit use_ticket(): [] {
 
   // Prove the commitment exists in the tree (without revealing which leaf)
   const path = get_ticket_path(commitment);
+
+  // Bind the path to THIS holder's commitment. MerkleTreePath carries its own
+  // `leaf` field, which is what merkleTreePathRoot hashes -- and the path
+  // comes from a witness running on the prover's machine. Without this check
+  // someone can supply another holder's path and be admitted with a ticket
+  // they never held. Soundness, not privacy.
+  assert(path.leaf == commitment, "Merkle path is not for this ticket");
+
   assert(
     tickets.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(path))),
     "Invalid ticket"
