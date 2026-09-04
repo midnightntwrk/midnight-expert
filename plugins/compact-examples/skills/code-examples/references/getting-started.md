@@ -1,20 +1,20 @@
 # Getting Started Examples
 
-Two minimal contracts designed for learning Compact. Both use `pragma language_version >= 0.22` and import `CompactStandardLibrary`.
+Minimal contracts designed for learning Compact. Both use `pragma language_version >= 0.22` and import `CompactStandardLibrary`.
 
 ## Examples
 
 | Name | Path | Description | Witnesses | Complexity |
 |---|---|---|---|---|
-| Counter | `getting-started/counter/counter.compact` | Single public ledger state (`round: Counter`) with one `increment()` circuit. The simplest possible stateful contract — no witnesses, no constructor, no private state. | None (`witnesses.ts` is empty) | Beginner |
+| Hello World | `getting-started/hello-world/hello-world.compact` | Single public ledger state (`message: Opaque<"string">`). The most simple stateful contract possible - no witnesses, no constructor, no private state. | None (`witnesses.ts` is not present) | Beginner |
 | Bulletin Board | `getting-started/bboard/bboard.compact` | One-at-a-time message board with ownership enforced via public key derivation. State machine with `VACANT`/`OCCUPIED` enum, `Opaque<"string">` message, and sequence counter. Ownership uses `persistentHash` over secret key + sequence, never exposing the secret on-chain. | `localSecretKey(): Bytes<32>` (in `witnesses.ts`) | Beginner |
 
 ## File Details
 
-### counter
+### hello-world
 
-- `getting-started/counter/counter.compact` — Exports `round: Counter` ledger and `increment()` circuit. Demonstrates the `Counter` type from `CompactStandardLibrary`.
-- `getting-started/counter/witnesses.ts` — Empty witness implementation (no witnesses required).
+- `getting-started/hello-world/hello-world.compact` -- Exports `message: Opaque<"string">` and `storeMessage` circuit. Demonstrates writing a string to the public ledger. 
+- No witnesses or private state. No witnesses means no witness.ts, it does not require an empty implmentation. 
 
 ### bboard
 
@@ -23,7 +23,6 @@ Two minimal contracts designed for learning Compact. Both use `pragma language_v
 
 ## Key Patterns Illustrated
 
-- `Counter` type for monotonically increasing state
 - `Maybe<T>` for optional values (`some`/`none`)
 - `Opaque<"string">` for off-chain string values passed through the circuit
 - `disclose()` to move witness-provided values into public ledger state

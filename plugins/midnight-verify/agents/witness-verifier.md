@@ -8,12 +8,12 @@ description: >-
   return tuple shape, WitnessContext usage, private state patterns), and
   executes the combined contract+witness pipeline. Dispatched by the /midnight-verify:verify command.
 
-  Example 1: User runs /midnight-verify:verify contracts/counter.compact src/witnesses.ts —
+  Example 1: User runs /midnight-verify:verify contract/battleship.compact contract/witnesses.ts —
   the agent compiles the contract, type-checks the witness against the generated
   Witnesses type, runs the structural checklist, and executes the circuit with
   the witness implementation.
 
-  Example 2: Claim "This witness correctly implements the counter contract" —
+  Example 2: Claim "This witness correctly implements the battleship contract" —
   the agent asks for or identifies the relevant .compact and .ts files, then
   runs the full verification pipeline.
 

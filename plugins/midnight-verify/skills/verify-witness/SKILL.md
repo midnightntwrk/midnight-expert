@@ -33,7 +33,7 @@ When you receive a witness-related claim, classify it using this table:
 | Claim Type | Example | Dispatch |
 |---|---|---|
 | Behavioral correctness | "This contract + witness combination produces valid results" | @"midnight-verify:witness-verifier (agent)" |
-| Two-file verification | `/midnight-verify:verify contracts/counter.compact src/witnesses.ts` | @"midnight-verify:witness-verifier (agent)" (both files) |
+| Two-file verification | `/midnight-verify:verify contract/battleship.compact contract/witnesses.ts` | @"midnight-verify:witness-verifier (agent)" (both files) |
 | Witness + devnet E2E | "This witness works correctly when deployed" | @"midnight-verify:witness-verifier (agent)" + @"midnight-verify:sdk-tester (agent)" (concurrent) |
 
 ### Cross-Domain Claims

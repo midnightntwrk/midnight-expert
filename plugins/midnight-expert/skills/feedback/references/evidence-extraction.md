@@ -49,8 +49,8 @@ Build `evidence-cards.json` (in-memory):
   "cards": [
     {
       "kind": "failing-tool-call",
-      "caption": "Bash: `compact compile contracts/counter.compact` exited 127",
-      "redactedContent": "$ compact compile contracts/counter.compact\nbash: compact: command not found",
+      "caption": "Bash: `compact compile contracts/hello-world.compact` exited 127",
+      "redactedContent": "$ compact compile contracts/hello-world.compact\nbash: compact: command not found",
       "messageIndex": 47
     }
   ]

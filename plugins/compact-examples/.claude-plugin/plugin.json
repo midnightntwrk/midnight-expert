@@ -16,7 +16,7 @@
     "examples",
     "witnesses",
     "testing",
-    "counter",
+    "hello-world",
     "bulletin-board",
     "ownable",
     "access-control",

@@ -62,30 +62,6 @@ export circuit storeMessage(customMessage: Opaque<"string">): [] {
 | `proof-server:stop` | `docker compose down` | Stop proof server |
 | `clean` | `rm -rf contracts/managed deployment.json` | Remove build artifacts |
 
-## Counter Project Layout
-
-After running `npx create-mn-app <name> --template counter`:
-
-```
-<project-name>/
-├── contract/                         # npm workspace: smart contract
-│   ├── src/
-│   │   ├── counter.compact           # Contract source
-│   │   ├── managed/counter/          # (after compile) compiler output
-│   │   └── test/                     # Contract unit tests
-│   ├── package.json
-│   └── tsconfig.json
-├── counter-cli/                      # npm workspace: CLI interface
-│   ├── src/
-│   │   └── ...                       # CLI implementation
-│   ├── package.json
-│   └── tsconfig.json
-├── package.json                      # Root workspace configuration
-└── README.md
-```
-
-The counter uses npm workspaces — both `contract` and `counter-cli` are workspace packages managed from the root.
-
 ## SDK Package Versions
 
 These are the versions used by `create-mn-app` v0.4.1 hello-world template (verified on 2026-06-02). Versions may have been updated since — run `npm view <package> version` to check current versions:
@@ -110,8 +86,6 @@ These are the versions used by `create-mn-app` v0.4.1 hello-world template (veri
 | `@midnight-ntwrk/wallet-sdk-dust-wallet` | 3.0.0 |
 
 Dev dependencies: `typescript ^6.0.3`, `tsx ^4.21.0`, `@types/node ^22.0.0`
-
-Counter template requires Compact compiler >= 0.28.0 (current: compactc-v0.30.x).
 
 ## Toolchain Versions
 
