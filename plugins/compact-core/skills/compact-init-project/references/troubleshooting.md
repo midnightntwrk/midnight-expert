@@ -20,34 +20,6 @@ Common failures when creating a new Midnight project and how to resolve them.
 
 **Fix:** Choose a different project name, or approve the overwrite prompt. To remove manually: `rm -rf <project-name>` then retry.
 
-### Git clone fails (counter template)
-
-**Symptom:** Error cloning `midnightntwrk/example-counter`.
-
-**Fixes:**
-1. Test connectivity: `git ls-remote https://github.com/midnightntwrk/example-counter.git`
-2. If behind a firewall, ensure GitHub access is allowed
-3. If SSH issues, ensure HTTPS is used (create-mn-app uses HTTPS by default)
-
-### Compact compiler not found (counter template)
-
-**Symptom:** `create-mn-app` reports Compact compiler not installed or version too old.
-
-**Fixes:**
-1. Install the Compact CLI: run `/midnight-tooling:install-cli`
-2. Update to latest compiler: `compact update`
-3. If a specific version is required: `compact update 0.28.0`
-4. Verify: `compact compile --version`
-
-### Compact compiler version mismatch (counter template)
-
-**Symptom:** `create-mn-app` reports compiler version below required minimum (0.28.0).
-
-**Fixes:**
-1. Update compiler: `compact update`
-2. `create-mn-app` will offer to auto-update — accept when prompted
-3. If auto-update fails: `compact self update` then `compact update`
-
 ## Compilation Failures
 
 ### `pragma language_version` error
@@ -71,12 +43,12 @@ Common failures when creating a new Midnight project and how to resolve them.
 
 ### Compilation succeeds but managed directory is empty
 
-**Symptom:** `contracts/managed/hello-world/` or `contract/src/managed/counter/` exists but is missing expected subdirectories.
+**Symptom:** `contracts/managed/hello-world/` exists but is missing expected subdirectories.
 
 **Fixes:**
 1. Check compiler output for warnings or errors
 2. Run compilation with verbose output: `compact compile --trace-passes <source> <target>`
-3. Ensure the target directory path is correct (different for hello-world vs counter)
+3. Ensure the target directory path is correct
 4. Clean and retry: `rm -rf contracts/managed && npm run compile`
 
 ## Proof Server Failures

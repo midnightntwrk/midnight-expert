@@ -20,16 +20,9 @@ Run `/midnight-tooling:doctor` to verify the development environment is ready.
 
 **If all checks PASS or WARN:** proceed to Phase 2.
 
-## Phase 2 — Template Selection
+## Phase 2 — Project Setup
 
-Ask the user which template they want. Use `AskUserQuestion` with these options:
-
-| Template | Description | Best For |
-|----------|-------------|----------|
-| **Hello World** | Simple message storage contract. Bundled template — scaffolds locally, installs deps. | First-time Midnight developers, learning the basics |
-| **Counter** | Increment/decrement counter with ZK proofs. Cloned from `midnightntwrk/example-counter`. Uses npm workspaces. | Understanding state management and ZK proof generation |
-
-If the user describes a custom project instead of choosing a template, recommend the closest template as a starting point and explain they can modify the contract after scaffolding.
+The skill scaffolds the **Hello World** template — a simple message-storage contract that scaffolds locally and installs dependencies. It's the right starting point for first-time Midnight developers, and the user can modify the contract after scaffolding.
 
 If the user has not specified a project name, ask for one. Default suggestion: `my-midnight-app`. Project names must be valid npm package names (lowercase, no spaces, hyphens allowed).
 
@@ -56,32 +49,6 @@ If the user has a preferred package manager, add the appropriate flag:
 - `--use-pnpm`
 - `--use-bun`
 
-### Counter template
-
-Run:
-
-```bash
-npx create-mn-app@latest <project-name> --template counter
-```
-
-This command will:
-1. Check prerequisites (Node 22+, Docker, Compact compiler >= 0.28.0)
-2. Clone the `midnightntwrk/example-counter` repository
-3. Initialize a fresh git repository
-4. Display setup instructions
-
-**Important:** The counter template requires the Compact compiler to be installed. If `create-mn-app` reports a version mismatch, run:
-
-```bash
-compact update
-```
-
-Or for a specific version:
-
-```bash
-compact update 0.28.0
-```
-
 ### Verify scaffolding
 
 After `create-mn-app` completes, verify the project was created:
@@ -90,8 +57,7 @@ After `create-mn-app` completes, verify the project was created:
 ls <project-name>/
 ```
 
-For hello-world, expect: `contracts/`, `src/`, `package.json`, `tsconfig.json`, `docker-compose.yml`
-For counter, expect: `contract/`, `counter-cli/`, `package.json`
+Expect: `contracts/`, `src/`, `package.json`, `tsconfig.json`, `docker-compose.yml`
 
 ## Phase 4 — Proof Server
 
@@ -125,27 +91,6 @@ ls contracts/managed/hello-world/
 
 Expected directories: `compiler/`, `contract/`, `keys/`, `zkir/`
 
-### Counter
-
-The counter template uses npm workspaces. Compile with:
-
-```bash
-cd <project-name>
-npm install
-cd contract
-npm run compact
-npm run build
-cd ..
-```
-
-Verify compilation output exists:
-
-```bash
-ls contract/src/managed/counter/
-```
-
-Expected directories: `compiler/`, `contract/`, `keys/`, `zkir/`
-
 **Note:** First compilation downloads ZK parameters (a large download). This may take several minutes depending on network speed.
 
 ## Phase 6 — Summary & Next Steps
@@ -162,15 +107,10 @@ Confirm:
 
 ### Available commands
 
-For hello-world:
 - `npm run deploy` — Deploy contract to Preprod (requires wallet funding)
 - `npm run cli` — Interactive CLI to test the deployed contract
 - `npm run check-balance` — Check wallet balance
 - `npm run compile` — Re-compile the contract after changes
-
-For counter:
-- `cd counter-cli && npm run start` — Run the counter CLI
-- `cd contract && npm run compact` — Re-compile the contract after changes
 
 ### Next steps to deploy (out of scope for this skill, but inform the user)
 

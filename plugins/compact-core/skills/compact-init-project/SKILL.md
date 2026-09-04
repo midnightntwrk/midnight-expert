@@ -1,6 +1,6 @@
 ---
 name: compact-core:compact-init-project
-description: This skill should be used when the user asks to create a new Midnight project, scaffold a Compact smart contract project, use create-mn-app, initialize a DApp, set up a new Midnight application, start a new project, use a project template, set up hello-world or counter template, or set up a Midnight development environment for the first time. Also triggered by "new project", "start a project", "init project", "create-mn-app", or "scaffold".
+description: This skill should be used when the user asks to create a new Midnight project, scaffold a Compact smart contract project, use create-mn-app, initialize a DApp, set up a new Midnight application, start a new project, use a project template, set up the hello-world template, or set up a Midnight development environment for the first time. Also triggered by "new project", "start a project", "init project", "create-mn-app", or "scaffold".
 version: 0.1.0
 ---
 
@@ -13,15 +13,14 @@ This skill guides you through creating a new Midnight project using `create-mn-a
 | Template | Type | Description |
 |----------|------|-------------|
 | **Hello World** | Bundled | Simple message storage contract. Best for first-time Midnight developers. |
-| **Counter** | Remote (clone) | Increment/decrement counter with ZK proofs. Demonstrates state management and npm workspaces. |
 
 ## Quick Start
 
 Follow `references/create-mn-app-workflow.md` phases in order:
 
 1. **Environment Check** — Run `/midnight-tooling:doctor` to verify Node 22+, Docker, and Compact CLI
-2. **Template Selection** — Ask user which template (hello-world or counter)
-3. **Scaffolding** — Run `npx create-mn-app@latest <name> --template <template>`
+2. **Project Setup** — Confirm the Hello World template and get a project name
+3. **Scaffolding** — Run `npx create-mn-app@latest <name> --template hello-world`
 4. **Proof Server** — Run `/midnight-tooling:devnet start` to start Docker proof server
 5. **Compile** — Compile the Compact contract and verify managed output
 6. **Summary** — Show what was created and next steps

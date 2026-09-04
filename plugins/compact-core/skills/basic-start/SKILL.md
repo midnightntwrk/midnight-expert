@@ -36,7 +36,7 @@ Work through each step in order. Each step's reference file contains the full pr
 | 1 | Devnet Setup | Docker, node, indexer, proof server all running | `references/step-1-devnet-setup.md` |
 | 2 | Compact CLI | Compiler and CLI installed and up to date | `references/step-2-compact-cli.md` |
 | 3 | Wallet Setup | Wallet creation, NIGHT airdrop, DUST registration | `references/step-3-wallet-setup.md` |
-| 4 | Counter Contract | Write, compile, deploy, and call a smart contract | `references/step-4-counter-contract.md` |
+| 4 | Hello World Contract | Write, compile, deploy, and call a smart contract | `references/step-4-hello-world-contract.md` |
 | 5 | Token Transfer | Programmatic NIGHT transfer between wallets | `references/step-5-token-transfer.md` |
 | 6 | Ticket Contract | Privacy-preserving contract with commitments and nullifiers | `references/step-6-ticket-contract.md` |
 

@@ -1,1 +1,1 @@
-The compact compile command in midnight-tooling fails with "command not found" even though I just installed the CLI. I expected it to compile my counter contract.
+The compact compile command in midnight-tooling fails with "command not found" even though I just installed the CLI. I expected it to compile my hello-world contract.
