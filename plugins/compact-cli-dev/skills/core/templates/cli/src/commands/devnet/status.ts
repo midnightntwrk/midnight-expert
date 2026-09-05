@@ -1,4 +1,5 @@
 import { BaseCommand } from "../../base-command.js";
+import { DEVNET_CONFIG } from "../../lib/config.js";
 
 interface ServiceStatus {
 	name: string;
@@ -26,9 +27,9 @@ export default class DevnetStatus extends BaseCommand {
 
 	async run(): Promise<void> {
 		const services = await Promise.all([
-			checkService("node", "http://127.0.0.1:9944"),
-			checkService("indexer", "http://127.0.0.1:8088/api/v4/graphql"),
-			checkService("proof-server", "http://127.0.0.1:6300"),
+			checkService("node", DEVNET_CONFIG.node),
+			checkService("indexer", DEVNET_CONFIG.indexer),
+			checkService("proof-server", DEVNET_CONFIG.proofServer),
 		]);
 
 		const result = {
