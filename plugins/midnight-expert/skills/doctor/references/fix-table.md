@@ -84,6 +84,7 @@ The cross-refs check resolves three reference types: skills (`skills/<name>/SKIL
 |-------|-----|
 | Target marketplace not installed | Install the marketplace first (see Plugin Issues) |
 | Target plugin not installed | Install from the correct marketplace |
+| `devs` plugin not installed | `claude plugin marketplace add aaronbassett/agent-foundry` then `claude plugin install devs@agent-foundry` — `devs` lives outside this marketplace; see the Prerequisites section in the README |
 | Skill / agent / command not found in installed plugin | Plugin may be outdated — run `claude plugin update <name>` |
 | Reference points to renamed or removed item | Source plugin's prose is stale; report to the plugin maintainer or open an issue against this repo |
 
