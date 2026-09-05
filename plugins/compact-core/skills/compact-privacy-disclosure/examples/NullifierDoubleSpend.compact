@@ -181,10 +181,22 @@ export circuit spend(): [] {
   // remembers all past roots, so proofs remain valid even after new
   // tokens are issued).
   //
+  // Bind the path to THIS caller's commitment before checking the root.
+  //
+  // MerkleTreePath carries its own `leaf` field, and merkleTreePathRoot
+  // hashes that leaf -- not the commitment derived above. `path` comes from
+  // a witness, and witnesses run on the prover's own machine. Without this
+  // check a prover can return any genuinely-issued token's path and spend a
+  // token they never held.
+  //
+  // This is soundness, not privacy: the contract would admit people it
+  // should reject. The check costs 8 rows and does not change k.
+  assert(path.leaf == commitment, "Merkle path is not for this commitment");
+
   // disclose() is required on the merkleTreePathRoot result because
   // checkRoot is a ledger operation whose argument (the digest) becomes
-  // visible on-chain. However, the digest alone does not reveal which
-  // leaf was used -- it only proves that SOME valid leaf was verified.
+  // visible on-chain. The digest does not reveal which leaf was used, and
+  // the assert above is what ties it to the caller's own commitment.
   assert(
     commitments.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(path))),
     "Commitment not found in tree"
