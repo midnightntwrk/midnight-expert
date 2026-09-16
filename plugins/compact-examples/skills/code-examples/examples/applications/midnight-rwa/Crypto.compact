@@ -1,5 +1,5 @@
 // Copyright 2025 Brick Towers
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 
 module Crypto {
   import CompactStandardLibrary;

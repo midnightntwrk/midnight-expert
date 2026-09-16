@@ -7,7 +7,7 @@ After running `npx create-mn-app <name> --template hello-world`:
 ```
 <project-name>/
 ├── contracts/
-│   └── hello-world.compact           # Contract source (pragma language_version >= 0.22)
+│   └── hello-world.compact           # Contract source (pragma language_version 0.23)
 ├── src/
 │   ├── deploy.ts                     # Deploy contract to Preprod network
 │   ├── cli.ts                        # Interactive CLI for testing deployed contract
@@ -35,7 +35,7 @@ contracts/managed/hello-world/
 The scaffolded contract:
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 
 import CompactStandardLibrary;
 

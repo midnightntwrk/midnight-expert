@@ -78,7 +78,7 @@ witness (private): a = 6, b = 7
 ### Compact to Circuit
 
 ```compact
-pragma language_version 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export ledger target: Field;
@@ -116,7 +116,7 @@ export circuit guess(): [] {
 Prove you know the preimage of a public hash without revealing it:
 
 ```compact
-pragma language_version 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export ledger target_hash: Bytes<32>;

@@ -68,7 +68,7 @@ if echo "$check_output" | grep -qi "Up to date"; then
   # Compiler is current — get the language version
   lang_version="$(compact compile --language-version 2>/dev/null || echo "unknown")"
 
-  msg="You are using the most recent version of the compact compiler v${current_version}, \`pragma language_version >= ${lang_version%.*};\`. Remember to always use the most recent language version when writing new compact code as the ecosystem moves very quickly.
+  msg="You are using the most recent version of the compact compiler v${current_version}, \`pragma language_version ${lang_version%.*};\`. Pin your pragma to this exact language version so contracts declare the version they were verified against, rather than an open-ended \`>=\` that silently accepts untested future versions.
 
 ${COMMON_CONTEXT}"
 else

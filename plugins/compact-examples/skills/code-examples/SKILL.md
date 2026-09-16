@@ -1,12 +1,12 @@
 ---
 version: 0.2.0
 name: compact-examples:code-examples
-description: Use this skill when an agent needs real, compilable examples of Compact smart contracts, TypeScript witnesses, or tests. Covers beginner contracts (hello-world, bulletin board), reusable modules (access control, security, tokens, math, crypto, data structures, identity, utils), composed token contracts (fungible, NFT, multi-token, shielded), and full applications (CryptoKitties, ZK lending, real-world assets). All examples compile with pragma language_version >= 0.22 and full proof generation.
+description: Use this skill when an agent needs real, compilable examples of Compact smart contracts, TypeScript witnesses, or tests. Covers beginner contracts (hello-world, bulletin board), reusable modules (access control, security, tokens, math, crypto, data structures, identity, utils), composed token contracts (fungible, NFT, multi-token, shielded), and full applications (CryptoKitties, ZK lending, real-world assets). All examples compile with pragma language_version 0.23 and full proof generation.
 ---
 
 # Compact Code Examples
 
-Compilable Compact smart contracts, TypeScript witnesses, and tests sourced from 8 repositories. All code uses `pragma language_version >= 0.22` and passes `compact compile` with full proof generation.
+Compilable Compact smart contracts, TypeScript witnesses, and tests sourced from 8 repositories. All code uses `pragma language_version 0.23` and passes `compact compile` with full proof generation.
 
 ## How to use this skill
 

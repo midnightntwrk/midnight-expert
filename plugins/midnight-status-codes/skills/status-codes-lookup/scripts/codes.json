@@ -5377,7 +5377,7 @@
       "fixes": [
         "Check the supported pragma directives for this compiler version",
         "Confirm the pragma name and value are spelled correctly",
-        "Example of a valid pragma: `pragma language_version >= 0.22;`"
+        "Example of a valid pragma: `pragma language_version 0.23;`"
       ],
       "aliases": [
         "unrecognized pragma setting ~s",

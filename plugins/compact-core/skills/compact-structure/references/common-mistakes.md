@@ -35,11 +35,11 @@ export circuit doSomething(): [] {
 ### Pragma Format
 
 ```compact
-// Wrong - missing && between conditions
-pragma language_version >= 0.22 < 0.23;
+// Wrong - open-ended lower bound accepts untested future versions
+pragma language_version >= 0.22;
 
-// Correct - use && to combine conditions
-pragma language_version >= 0.22 && <= 0.23;
+// Correct - pin the specific verified language version
+pragma language_version 0.23;
 ```
 
 > **Tip:** Run `compact compile --language-version` to check your compiler's supported version.

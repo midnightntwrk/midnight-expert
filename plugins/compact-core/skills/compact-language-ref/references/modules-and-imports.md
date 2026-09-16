@@ -7,18 +7,18 @@ Compact organizes code through pragmas, include files, modules, imports, and top
 Every Compact source file should begin with a pragma declaring the language version it targets. The pragma must be the first statement in the file (after any comments).
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 ```
 
 > **Tip:** Run `compact compile --language-version` to find the language version supported by your installed compiler. Use that version in your pragma declaration.
 
-The version constraint uses comparison operators. An open-ended lower bound (e.g. `>= 0.22`) ensures the contract compiles with the current and future compatible compiler versions.
+Pin the specific language version you verified against (e.g. `0.23`). An open-ended lower bound like `>= 0.22` silently accepts future compiler versions the contract was never tested against.
 
 Common mistakes:
 
 | Wrong | Correct |
 |-------|---------|
-| `pragma language_version 0.22;` | `pragma language_version >= 0.22;` |
+| `pragma language_version >= 0.22;` | `pragma language_version 0.23;` |
 
 ## Include Files
 
@@ -260,7 +260,7 @@ export { Maybe, Either, ShieldedCoinInfo };
 For small contracts, keep everything in one file. This is the simplest approach:
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export ledger counter: Counter;
@@ -281,7 +281,7 @@ project/
 
 ```compact
 // main.compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 include "types";
@@ -308,7 +308,7 @@ module Auth {
 
 ```compact
 // main.compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 import "Auth" prefix Auth_;
 

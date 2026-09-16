@@ -2,7 +2,7 @@
 
 Complete, deployable token contracts that compose the reusable modules from `modules/`. Each file is a top-level contract (not a module) — it has a `constructor`, exports circuits directly, and can be deployed as-is.
 
-All use `pragma language_version >= 0.22` or `>= 0.22.0`.
+All use `pragma language_version 0.23`.
 
 ---
 

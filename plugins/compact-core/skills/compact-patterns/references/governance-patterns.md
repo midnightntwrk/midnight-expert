@@ -17,7 +17,7 @@ Patterns for multi-party decision-making and authorization.
 ### Implementation
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export ledger signers: Set<Bytes<32>>;
@@ -133,7 +133,7 @@ This pattern combines state machine, commit-reveal, and nullifiers for a complet
 anonymous voting system:
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export enum VotePhase { setup, commit, reveal, finalized }

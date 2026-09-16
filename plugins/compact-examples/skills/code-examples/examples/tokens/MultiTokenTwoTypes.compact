@@ -6,7 +6,7 @@
 // inside it, so that the `node_modules/@openzeppelin-compact/` path resolves.
 // See: https://github.com/OpenZeppelin/compact-contracts
 
-pragma language_version >= 0.23;
+pragma language_version 0.23;
 
 // =============================================================================
 //  SECURE PATTERN — witness-derived identity

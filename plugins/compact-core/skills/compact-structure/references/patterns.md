@@ -7,7 +7,7 @@ Proven patterns for building Midnight Compact smart contracts.
 Hash-based identity verification using `persistentHash`. This is not public-key cryptography — it relies on hash preimage resistance within the ZK circuit.
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export sealed ledger owner: Bytes<32>;
@@ -68,7 +68,7 @@ Each transaction rotates the on-chain authority hash, breaking the link between 
 Two-phase scheme: commit a hidden value, then reveal it later with proof.
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export ledger commitment: Bytes<32>;
@@ -111,7 +111,7 @@ export circuit reveal(): Field {
 Map-based role management for multi-user access control:
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export enum Role { admin, operator, viewer }
@@ -148,7 +148,7 @@ export circuit grantRole(target: Bytes<32>, role: Role): [] {
 Privacy-preserving set membership using Merkle trees. Unlike `Set<T>`, Merkle trees hide which element's membership is being proven.
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export ledger eligibleVoters: HistoricMerkleTree<10, Bytes<32>>;
@@ -197,7 +197,7 @@ export circuit vote(): [] {
 Using enums to enforce valid state transitions:
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export enum Phase { registration, active, completed }
@@ -231,7 +231,7 @@ export circuit complete(): [] {
 Private balance tracking using Maps:
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export ledger balances: Map<Bytes<32>, Uint<64>>;

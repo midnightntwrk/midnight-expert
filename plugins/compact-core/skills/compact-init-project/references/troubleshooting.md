@@ -29,7 +29,7 @@ Common failures when creating a new Midnight project and how to resolve them.
 **Fixes:**
 1. Update compiler: `compact update`
 2. Verify the pragma in the `.compact` file matches a supported version
-3. The hello-world template uses `pragma language_version >= 0.22;` which is compatible with all recent compilers
+3. Pin the pragma to a supported language version, e.g. `pragma language_version 0.23;`
 
 ### ZK parameter download stalls or fails
 

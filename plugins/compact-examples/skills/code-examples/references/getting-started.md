@@ -1,6 +1,6 @@
 # Getting Started Examples
 
-Minimal contracts designed for learning Compact. Both use `pragma language_version >= 0.22` and import `CompactStandardLibrary`.
+Minimal contracts designed for learning Compact. Both use `pragma language_version 0.23` and import `CompactStandardLibrary`.
 
 ## Examples
 

@@ -5,7 +5,7 @@
 // DERIVED UserPublicKey; identity-sensitive circuits take the caller's derived
 // key (computed here from `getUserSecret()`), never `ownPublicKey()`.
 
-pragma language_version >= 0.23;
+pragma language_version 0.23;
 
 import CompactStandardLibrary;
 

@@ -91,7 +91,7 @@ You can install any plugin from inside Claude Code with `/plugin`, or from the t
   <tr>
     <td><img src="plugins/compact-examples/assets/mascot.png" /></td>
     <td><strong><a href="plugins/compact-examples/">compact-examples</a></strong></td>
-    <td>Compilable Compact examples — beginner contracts, reusable modules, token implementations, and full applications with witnesses and tests, all at <code>pragma language_version >= 0.22</code>.<pre lang="bash">claude plugin install --scope user compact-examples@midnight-expert</pre></td>
+    <td>Compilable Compact examples — beginner contracts, reusable modules, token implementations, and full applications with witnesses and tests, all at <code>pragma language_version 0.23</code>.<pre lang="bash">claude plugin install --scope user compact-examples@midnight-expert</pre></td>
   </tr>
   <tr>
     <td><img src="plugins/compact-cli-dev/assets/mascot.png" /></td>
