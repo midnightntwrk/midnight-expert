@@ -67,7 +67,7 @@ When you receive a ZKIR-related claim, classify it using this table to determine
 
 ## Hints from the ZKIR Reference
 
-The ZKIR reference document below catalogs the opcodes across 8 categories. The exact opcode set is tied to the installed Compact compiler — confirm the current version with `compact compile --version` (current toolchain: compactc 0.31.0) since ZKIR output may change between compiler versions. When a claim is about a specific opcode, mention the category to help the @"midnight-verify:zkir-checker (agent)" write an appropriate test contract:
+The ZKIR reference document below catalogs the opcodes across 8 categories. The exact opcode set is tied to the installed Compact compiler — confirm the current version with `compact compile --version` (current toolchain: compactc 0.31.1) since ZKIR output may change between compiler versions. When a claim is about a specific opcode, mention the category to help the @"midnight-verify:zkir-checker (agent)" write an appropriate test contract:
 
 - **Arithmetic:** add, mul, neg
 - **Constraints:** assert, constrain_bits, constrain_eq, constrain_to_boolean

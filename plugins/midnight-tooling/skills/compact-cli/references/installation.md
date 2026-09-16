@@ -78,7 +78,7 @@ The installer places the `compact` binary in `~/.local/bin/` or `~/.compact/bin/
 │   ├── format-compact      # Formatter binary
 │   └── fixup-compact       # Fixup binary
 └── versions/
-    └── 0.31.0/
+    └── 0.31.1/
         └── aarch64-darwin/
             ├── compactc        # Shell wrapper
             ├── compactc.bin    # Actual compiler binary
@@ -87,7 +87,7 @@ The installer places the `compact` binary in `~/.local/bin/` or `~/.compact/bin/
             ├── zkir
             ├── zkir-v3
             ├── artifact.zip
-            └── toolchain-0.31.0.md  # Release notes
+            └── toolchain-0.31.1.md  # Release notes
 ```
 
 The `bin/` directory symlinks point to the current default version. Changing the default with `compact update <VERSION>` updates these symlinks.
@@ -103,7 +103,7 @@ compact --version
 
 # Check compiler version
 compact compile --version
-# Example output: 0.31.0
+# Example output: 0.31.1
 
 # Check installation path
 which compact
@@ -113,7 +113,7 @@ which compact
 compact list --installed
 # Example output:
 # compact: installed versions
-# → 0.31.0
+# → 0.31.1
 ```
 
 The arrow (`→`) next to a version indicates it is the current default.
