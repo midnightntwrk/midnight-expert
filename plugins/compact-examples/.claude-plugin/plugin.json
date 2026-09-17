@@ -1,7 +1,7 @@
 {
   "name": "compact-examples",
   "version": "0.5.0",
-  "description": "Compilable Compact smart contract examples — beginner contracts, reusable modules, token implementations, and full applications with witnesses and tests. All code at pragma language_version >= 0.22.",
+  "description": "Compilable Compact smart contract examples — beginner contracts, reusable modules, token implementations, and full applications with witnesses and tests. All code at pragma language_version 0.23.",
   "author": {
     "name": "Aaron Bassett",
     "email": "aaron@devrel-ai.com"

@@ -17,7 +17,7 @@ Patterns for managing identities, membership lists, and credentials.
 ### Implementation
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export ledger allowlist: Set<Bytes<32>>;
@@ -108,7 +108,7 @@ export circuit restrictedAction(): [] {
 ### Implementation
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export ledger credentialCommitment: Bytes<32>;
@@ -199,7 +199,7 @@ export circuit verifyRange(minimum: Uint<64>, maximum: Uint<64>): Boolean {
 ### Implementation
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 witness local_secret_key(): Bytes<32>;
@@ -288,7 +288,7 @@ circuit contractSpecificKey(contractName: Bytes<32>, sk: Bytes<32>): Bytes<32> {
 ### Implementation
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export ledger members: HistoricMerkleTree<16, Bytes<32>>;

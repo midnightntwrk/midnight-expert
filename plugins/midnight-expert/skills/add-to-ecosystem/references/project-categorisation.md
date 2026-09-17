@@ -29,9 +29,9 @@
 
 ## Worked examples
 
-### `midnightntwrk/example-counter` (Compact dApp)
+### `midnightntwrk/example-hello-world` (Compact dApp)
 
-- `has_compact_files`: yes (`contracts/counter.compact`)
+- `has_compact_files`: yes (`contracts/hello-world.compact`)
 - `has_pragma_language_version`: yes
 - `has_runtime_npm_dep`: yes (`@midnight-ntwrk/midnight-js-contracts`)
 - `is_claude_plugin`: no

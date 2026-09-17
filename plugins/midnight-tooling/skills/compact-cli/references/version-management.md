@@ -14,8 +14,10 @@ Downloads the latest compiler version and sets it as default. If already install
 
 Example output:
 ```
-compact: aarch64-darwin -- 0.31.0 -- already installed
+compact: aarch64-darwin -- 0.31.1 -- already installed
 ```
+
+> ⚠️ **The newest *published* compiler can outpace live-network support.** `compact update` / `compact check` report the absolute latest (currently `0.34.0`), but **`0.34.0` is not yet supported on any live network**. Pin to the latest **network-supported** version (currently `0.31.1`) for anything you intend to deploy — "latest available" is not the same as "latest supported".
 
 ### Install a Specific Version
 
@@ -49,7 +51,7 @@ Example output:
 ```
 compact: available versions
 
-→ 0.31.0 - x86_macos, aarch64_macos, x86_linux, aarch64_linux
+→ 0.31.1 - x86_macos, aarch64_macos, x86_linux, aarch64_linux
   0.30.0 - x86_macos, aarch64_macos, x86_linux, aarch64_linux
   0.29.0 - x86_macos, aarch64_macos, x86_linux, aarch64_linux
 ```
@@ -66,7 +68,7 @@ Example output:
 ```
 compact: installed versions
 
-→ 0.31.0
+→ 0.31.1
   0.30.0
   0.29.0
 ```
@@ -81,7 +83,7 @@ Queries the remote server and reports whether a newer compiler version is availa
 
 Example output:
 ```
-compact: aarch64-darwin -- Up to date -- 0.31.0
+compact: aarch64-darwin -- Up to date -- 0.31.1
 ```
 
 ## Cleaning Up
@@ -116,7 +118,7 @@ Removes the GitHub API response cache (`github_cache.json`). The cache has a 15-
 
 ```bash
 # Install both versions
-compact update 0.31.0
+compact update 0.31.1
 compact update 0.30.0
 
 # Now 0.30.0 is default (most recently updated)
@@ -124,10 +126,10 @@ compact update 0.30.0
 compact compile src/contract.compact build/
 
 # Compile with a specific version without changing default
-compact compile +0.31.0 src/contract.compact build/
+compact compile +0.31.1 src/contract.compact build/
 
 # Switch default back
-compact update 0.31.0
+compact update 0.31.1
 ```
 
 ### Pin a Project to a Specific Version

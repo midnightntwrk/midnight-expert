@@ -4,7 +4,7 @@
   <img src="assets/mascot.png" alt="compact-examples mascot" width="200" />
 </p>
 
-Compilable Compact smart contract examples from 8 repositories — beginner contracts, reusable modules, token implementations, and full applications with witnesses and tests. All examples compile with `pragma language_version >= 0.22` and support full proof generation.
+Compilable Compact smart contract examples from 8 repositories — beginner contracts, reusable modules, token implementations, and full applications with witnesses and tests. All examples compile with `pragma language_version 0.23` and support full proof generation.
 
 ## Skills
 

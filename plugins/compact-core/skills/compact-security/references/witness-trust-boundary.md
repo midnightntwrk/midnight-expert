@@ -35,7 +35,7 @@ assert(_ownerCommitment == _computeOwnerCommitment(id, _counter),
 
 ## The secure witness-secret pattern
 
-Identity is derived **inside the circuit** from a single witness-held secret via domain-separated `persistentHash`, and the authority is **pinned at deploy**. Verbatim from the proven reference `applications/zkloan/zkloan-credit-scorer.compact` (compiles with compiler `0.31.0`; pragma `language_version >= 0.22 && <= 0.23`):
+Identity is derived **inside the circuit** from a single witness-held secret via domain-separated `persistentHash`, and the authority is **pinned at deploy**. Verbatim from the proven reference `applications/zkloan/zkloan-credit-scorer.compact` (compiles with compiler `0.31.1`; pragma `language_version 0.23`):
 
 ```compact
 export struct UserSecretKey { bytes: Bytes<32>; }

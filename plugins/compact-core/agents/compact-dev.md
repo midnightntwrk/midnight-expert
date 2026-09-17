@@ -126,7 +126,7 @@ compact compile +0.29 src/contract.compact build/
 # Error: Invalid version format
 ```
 
-Don't forget to use the correct language version in your pragma: `pragma language_version >= <VERSION>;`. Load `midnight-tooling:compact-cli` for more detail on compiler management.
+Don't forget to pin the exact language version in your pragma: `pragma language_version <VERSION>;` (a pinned version, not an open-ended `>=` that silently accepts untested future versions). Load `midnight-tooling:compact-cli` for more detail on compiler management.
 
 ## Task Workflows
 

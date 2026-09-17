@@ -1,7 +1,7 @@
 // SimpleNonFungibleToken.compact
 // A basic NFT contract with URI storage, approvals, and transfers.
 
-pragma language_version >= 0.22.0;
+pragma language_version 0.23;
 
 // =============================================================================
 //  SECURE PATTERN — witness-derived identity

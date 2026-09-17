@@ -2,7 +2,7 @@
 
 Standalone Compact modules from the OpenZeppelin Compact Contracts library and community contributors. These are building blocks — import them into your own contracts rather than deploying them directly.
 
-All modules use `pragma language_version >= 0.22`. Most include TypeScript witnesses and test suites. Exception: `modules/crypto/schnorr.compact` carries an additional `<= 0.23` upper-bound cap — it is a Schnorr polyfill pinned to the current language version, pending `jubjubSchnorrVerify` in CompactStandardLibrary.
+All modules use `pragma language_version 0.23`. Most include TypeScript witnesses and test suites. Note: `modules/crypto/schnorr.compact` is a Schnorr polyfill pending `jubjubSchnorrVerify` in CompactStandardLibrary.
 
 ---
 

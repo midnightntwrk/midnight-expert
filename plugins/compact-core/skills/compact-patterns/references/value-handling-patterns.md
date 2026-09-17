@@ -17,7 +17,7 @@ Patterns for managing shielded tokens, escrow, and pooled funds.
 ### Implementation
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export enum EscrowState { awaiting_deposit, funded, released, refunded }
@@ -128,7 +128,7 @@ export circuit refund(): ShieldedCoinInfo {
 ### Implementation
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export ledger pot: QualifiedShieldedCoinInfo;

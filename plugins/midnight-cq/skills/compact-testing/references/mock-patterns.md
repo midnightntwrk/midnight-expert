@@ -11,7 +11,7 @@ A standard mock imports one module with a prefix, defines a constructor that cal
 ```compact
 // SPDX-License-Identifier: MIT
 
-pragma language_version >= 0.22.0;
+pragma language_version 0.23;
 
 import CompactStandardLibrary;
 
