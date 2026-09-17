@@ -1,5 +1,7 @@
 # Cross-Reference Index
 
+> **Last verified:** 2026-09-17 — every symbol compile-probed against Compact compiler `0.31.1` / language `0.23`; all resolve via `import CompactStandardLibrary;` (no symbol is available without the import).
+
 Alphabetical index of every Compact standard library export. Use this as a quick lookup to find the name, kind, and authoritative documentation location for any stdlib symbol. For detailed usage, examples, and semantics, follow the authoritative location path to the relevant skill reference file.
 
 | Name | Kind | Description | Authoritative Location |

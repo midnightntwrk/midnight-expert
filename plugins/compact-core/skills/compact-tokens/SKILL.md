@@ -6,6 +6,8 @@ version: 0.1.0
 
 # Compact Tokens
 
+> **Last verified:** 2026-09-17 — token API (types & functions) compile-probed against Compact compiler `0.31.1` / language `0.23` / `@midnight-ntwrk/compact-runtime` `0.16.0`; all listed symbols resolve via `import CompactStandardLibrary;`.
+
 This skill covers tokens on Midnight: choosing between shielded and unshielded approaches, using the standard library mint/send/receive functions, understanding token colors and domain separators, and the NIGHT/DUST token model. It does not cover ledger ADT types or state design -- those belong in `compact-ledger`. It does not cover overall contract anatomy or circuit/witness design -- those belong in `compact-structure`.
 
 ## Token Decision Tree

@@ -1,5 +1,7 @@
 # Stdlib Types and Constructor Functions
 
+> **Last verified:** 2026-09-17 — types (`Maybe`, `Either`, `JubjubPoint`, `MerkleTreeDigest`, `MerkleTreePath(Entry)`, `ContractAddress`, `ZswapCoinPublicKey`, `UserAddress`) and constructors (`some`, `none`, `left`, `right`) compile-probed against Compact compiler `0.31.1` / language `0.23`.
+
 Complete reference for all types and their constructor functions provided by `import CompactStandardLibrary;`. Every definition below is verified against the official Compact API documentation and MCP codebase.
 
 > **Note on naming convention:** The official docs show camelCase names (e.g., `isSome`, `isLeft`); the current compiler uses snake_case (`is_some`, `is_left`). A migration to camelCase is planned but not yet deployed. This reference uses the snake_case names that the compiler currently expects.
