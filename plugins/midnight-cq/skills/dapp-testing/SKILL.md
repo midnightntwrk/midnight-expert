@@ -14,6 +14,8 @@ version: 0.1.0
 
 # Midnight DApp Testing
 
+> **Last verified:** 2026-09-17 — simulator import corrected to `@openzeppelin/compact-simulator@0.3.1` (verified on npm to export `createSimulator`).
+
 > "If you're testing contract logic, use `midnight-cq:compact-testing`. If
 > you're testing that the UI correctly calls contracts and displays results,
 > you're here."
@@ -63,7 +65,7 @@ simulator instead of hitting a live network.
 
 ```typescript
 // tests/integration/setup.ts
-import { createSimulator } from '@openzeppelin-compact/contracts-simulator';
+import { createSimulator } from '@openzeppelin/compact-simulator';
 import { MyContractSimulator } from '../simulators/MyContractSimulator';
 
 export function createMockContractProvider() {

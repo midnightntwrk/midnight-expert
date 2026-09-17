@@ -39,7 +39,7 @@ Use Glob and Bash to detect:
 |--------|-------------|
 | `biome.json` exists | Biome is configured — run `biome ci` |
 | `tsconfig.json` exists | TypeScript project — run `tsc --noEmit` |
-| Any `*.compact` file exists | Compact contracts present — run `compact-compiler --skip-zk` |
+| Any `*.compact` file exists | Compact contracts present — run `compact compile --skip-zk` |
 | `vitest.config.*` or `vitest` in `package.json` devDeps | Vitest configured — run `vitest run` |
 | `playwright.config.*` exists | Playwright configured — run `npx playwright test` |
 | `biome.json` absent AND no `biome` in `package.json` | Biome not installed — report as finding |
@@ -58,7 +58,7 @@ Run each applicable check in this exact sequence. Capture full stdout and stderr
 
 1. `npx biome ci` (if `biome.json` present; prefix with `npx` if `biome` not on PATH)
 2. `npx tsc --noEmit` (if `tsconfig.json` present)
-3. `npx compact-compiler --skip-zk` (only if `.compact` files detected in Step 1)
+3. `compact compile --skip-zk` (only if `.compact` files detected in Step 1)
 4. `npx vitest run` (if vitest configured)
 5. `npx playwright test` (only if `playwright.config.*` detected in Step 1)
 
@@ -104,7 +104,7 @@ path/to/file.ts(line,col): error TS#### description
 
 Classify each error into one of two categories:
 
-- **Stale artifact error**: Error originates from `managed/` directory. Root cause is stale Compact compiler output — the `.compact` source changed but `managed/` was not recompiled. Fix: run `compact-compiler --skip-zk` then re-run `tsc --noEmit`.
+- **Stale artifact error**: Error originates from `managed/` directory. Root cause is stale Compact compiler output — the `.compact` source changed but `managed/` was not recompiled. Fix: run `compact compile --skip-zk` then re-run `tsc --noEmit`.
 - **Handwritten code error**: Error originates from project source files (not `managed/`). Requires code change. Describe the exact fix needed.
 
 Common tsc patterns in Midnight projects:
@@ -112,7 +112,7 @@ Common tsc patterns in Midnight projects:
 | Error pattern | Likely cause | Fix guidance |
 |---------------|-------------|-------------|
 | Error in `managed/*.d.ts` | Stale Compact output | Recompile contracts first |
-| `Cannot find module '.../managed/...'` | `managed/` not generated | Run `compact-compiler --skip-zk` |
+| `Cannot find module '.../managed/...'` | `managed/` not generated | Run `compact compile --skip-zk` |
 | `Property does not exist on type` in `managed/` import | Export name changed in contract | Check generated `.d.ts` for correct export name |
 | Strict null / undefined in user code | Unguarded ledger state access | Add explicit null guard |
 
@@ -126,7 +126,7 @@ A failing test shows a stack trace. When parsing vitest output:
 - Ignore frames inside `node_modules` that contain `ProxyHandler` — these are internal simulator machinery and carry no debugging signal.
 - `Received function did not throw` means a test expected rejection but the circuit path that should reject was not reached — either the guard condition is wrong or the test input is not triggering the intended branch.
 
-#### compact-compiler interpretation
+#### compact compile interpretation
 
 Compiler errors include:
 - **Parse errors**: syntax violations in the `.compact` source — show file and line

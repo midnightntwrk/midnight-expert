@@ -12,6 +12,8 @@ version: 0.1.0
 
 # Compact Contract Testing
 
+> **Last verified:** 2026-09-17 — simulator package corrected to `@openzeppelin/compact-simulator@0.3.1` (verified on npm to export `createSimulator`, depends on `compact-runtime` 0.16.0).
+
 > "For mission critical Compact code, the quality of the tests is just as
 > important (if not more so) than the code itself."
 > — Moloch Testing Guide
@@ -22,7 +24,7 @@ builds false confidence. If a test is not always green on a clean run, fix it
 before merging.
 
 This skill covers unit testing Compact contracts using the OpenZeppelin
-simulator framework (`@openzeppelin-compact/contracts-simulator`). That
+simulator framework (`@openzeppelin/compact-simulator`). That
 framework eliminates manual context threading by wrapping `createSimulator()`
 around the contract, exposing a clean class-based API for callers, witnesses,
 and private state.

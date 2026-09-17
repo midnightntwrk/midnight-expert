@@ -11,6 +11,8 @@ version: 0.1.0
 
 # Initialize Code Quality Tooling
 
+> **Last verified:** 2026-09-17 — scaffolded dependency names/versions checked against npm (`@openzeppelin/compact-simulator@0.3.1`); compiler installed via the `compact` toolchain, not npm.
+
 > **Hard rule: Biome exclusively. Never install ESLint or Prettier alongside Biome.**
 > If either already exists in the project, migrate and remove them before scaffolding anything else.
 
@@ -82,7 +84,7 @@ Scaffold conditionally based on detection:
 
 | Condition | Additional Scaffolding |
 |-----------|----------------------|
-| `.compact` file detected | Vitest + `@openzeppelin-compact/contracts-simulator` for contract unit tests |
+| `.compact` file detected | Vitest + `@openzeppelin/compact-simulator` for contract unit tests |
 | Frontend / DApp detected | Playwright (headless only — never interactive) for E2E tests |
 
 ## Biome Configuration

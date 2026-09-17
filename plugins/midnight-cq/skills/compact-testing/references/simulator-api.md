@@ -1,8 +1,10 @@
 # Simulator API Reference
 
+> **Last verified:** 2026-09-17 — package/import corrected to `@openzeppelin/compact-simulator@0.3.1` (verified on npm to export `createSimulator`). The individual API method signatures documented below were not exhaustively re-tested this pass.
+
 ## Overview
 
-The `@openzeppelin-compact/contracts-simulator` framework eliminates manual `CircuitContext` threading when testing Compact contracts. Instead of constructing `CircuitContext` objects, passing them into every circuit call, and updating state after each impure call, the simulator handles all of this automatically. You write tests that look like method calls on a contract object.
+The `@openzeppelin/compact-simulator` framework eliminates manual `CircuitContext` threading when testing Compact contracts. Instead of constructing `CircuitContext` objects, passing them into every circuit call, and updating state after each impure call, the simulator handles all of this automatically. You write tests that look like method calls on a contract object.
 
 The framework centers on `createSimulator()`, a factory that produces a base class you extend with your own domain-specific methods.
 
@@ -11,7 +13,7 @@ The framework centers on `createSimulator()`, a factory that produces a base cla
 `createSimulator()` accepts a `SimulatorConfig` object with five fields:
 
 ```typescript
-import { createSimulator } from '@openzeppelin-compact/contracts-simulator';
+import { createSimulator } from '@openzeppelin/compact-simulator';
 
 const MySimulatorBase = createSimulator<
   PrivateState,                    // P  - private state type
@@ -294,7 +296,7 @@ Complete example extending `createSimulator()` output for an `Ownable` contract:
 import {
   type BaseSimulatorOptions,
   createSimulator,
-} from '@openzeppelin-compact/contracts-simulator';
+} from '@openzeppelin/compact-simulator';
 import {
   type ContractAddress,
   type Either,

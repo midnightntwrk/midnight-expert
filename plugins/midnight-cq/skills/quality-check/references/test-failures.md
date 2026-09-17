@@ -1,5 +1,7 @@
 # Test Failure Reference
 
+> **Last verified:** 2026-09-17 — package names, versions, and `compact` CLI commands checked against npm + compiler 0.31.1: `@openzeppelin/compact-simulator@0.3.1` (exports `createSimulator`, depends on `compact-runtime` 0.16.0); the compiler is the `compact` CLI (`compact compile`), not an npm package.
+
 ## "contract not initialized"
 
 **Error message:**
@@ -67,21 +69,16 @@ Cannot find module '../artifacts/witnesses' or its corresponding type declaratio
 **Fix:** Run the Compact compiler with `--skip-zk` to generate the artifacts without performing zero-knowledge proof generation (which is slow and not required for unit tests):
 
 ```bash
-npx compact-compiler --skip-zk
+compact compile --skip-zk
 ```
 
 Run this from the project root. The compiler writes artifacts to the directory configured in your `compactOptions` (typically `artifacts/` or `managed/`). After compilation succeeds, re-run the tests.
 
-If the `compact-compiler` binary is not installed, install it via the setup action locally:
+If the `compact` CLI is not installed, install the Compact toolchain via the official installer — it is distributed as a binary, **not** an npm package (see the `midnight-tooling:install-cli` skill; in CI use `midnightntwrk/setup-compact-action`):
 
 ```bash
-npm install -D @midnight-ntwrk/compact-compiler
-```
-
-Or install the CLI globally:
-
-```bash
-npm install -g @midnight-ntwrk/compact-compiler
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
+compact update 0.31.1
 ```
 
 ---
@@ -98,12 +95,12 @@ Artifacts are generated output — they should not be committed or assumed to be
 
 ```bash
 git pull
-npx compact-compiler --skip-zk
+compact compile --skip-zk
 npx tsc --noEmit  # confirm types are consistent
 npx vitest run
 ```
 
-If your CI pipeline fails even though it runs the compiler, check that the version of `compact-compiler` used in CI matches the version used locally (see `ci-troubleshooting.md` for details).
+If your CI pipeline fails even though it runs the compiler, check that the version of the `compact` compiler used in CI matches the version used locally (see `ci-troubleshooting.md` for details).
 
 ---
 
@@ -177,8 +174,8 @@ Vitest stack traces from simulator tests contain many internal frames from the p
 **What to ignore:**
 
 ```
-at ProxyHandler.<anonymous> (node_modules/@openzeppelin-compact/contracts-simulator/dist/index.js:...)
-at Proxy.transferOwnership (node_modules/@openzeppelin-compact/contracts-simulator/dist/index.js:...)
+at ProxyHandler.<anonymous> (node_modules/@openzeppelin/compact-simulator/dist/index.js:...)
+at Proxy.transferOwnership (node_modules/@openzeppelin/compact-simulator/dist/index.js:...)
 at Object.execute (node_modules/@midnight-ntwrk/compact-runtime/dist/...)
 ```
 
@@ -206,22 +203,21 @@ These errors appear inside `node_modules/@midnight-ntwrk/compact-runtime` frames
 
 **Cause:** The version of `compact-runtime` used by the simulator does not match the version of the Compact compiler that generated the artifacts. The compiler emits a bytecode format that the runtime must understand — a version drift between the two breaks the contract.
 
-**Fix:** Align all Compact-related package versions across the project:
+**Fix:** Make the `compact-runtime` version match the compiler that generated the artifacts. Compiler `0.31.1` emits runtime `0.16.0` (check your own with `compact compile --runtime-version`). Note the compiler itself is **not** an npm package — it is the `compact` CLI, pinned via `compact update <version>` (or the CI `setup-compact-action` → `compact-version`).
 
 1. Check the versions currently installed:
 
 ```bash
-npm ls @midnight-ntwrk/compact-runtime @midnight-ntwrk/compact-compiler @openzeppelin-compact/contracts-simulator
+npm ls @midnight-ntwrk/compact-runtime @openzeppelin/compact-simulator
 ```
 
-2. Update `package.json` so all Midnight packages use the same version range:
+2. Pin `package.json` so the runtime matches your compiler's runtime, and the OpenZeppelin simulator resolves to a build with that same runtime (simulator `0.3.x` depends on runtime `0.16.0`; `0.4.x` moved to `0.19.0`):
 
 ```jsonc
 {
   "devDependencies": {
-    "@midnight-ntwrk/compact-compiler": "0.29.0",
-    "@midnight-ntwrk/compact-runtime": "0.29.0",
-    "@openzeppelin-compact/contracts-simulator": "0.29.0"
+    "@midnight-ntwrk/compact-runtime": "0.16.0",
+    "@openzeppelin/compact-simulator": "0.3.1"
   }
 }
 ```
@@ -230,8 +226,8 @@ npm ls @midnight-ntwrk/compact-runtime @midnight-ntwrk/compact-compiler @openzep
 
 ```bash
 npm install
-npx compact-compiler --skip-zk
+compact compile --skip-zk
 npx vitest run
 ```
 
-If you are not sure which version to target, check the Compact compiler changelog or the version pinned in the project's CI workflow (`test.yml` → `setup-compact-action` → `compact-version`).
+If you are not sure which runtime your compiler emits, run `compact compile --runtime-version`, then pin the runtime dependency to match.

@@ -17,7 +17,7 @@ Unit testing for Compact contracts using the OpenZeppelin simulator framework. C
 | Name | Description | When it is used |
 |------|-------------|-----------------|
 | [`mock-patterns.md`](skills/compact-testing/references/mock-patterns.md) | Writing minimal mock contracts to test imported Compact modules that cannot be deployed standalone | When testing reusable Compact modules like Ownable or AccessControl |
-| [`simulator-api.md`](skills/compact-testing/references/simulator-api.md) | The @openzeppelin-compact/contracts-simulator API that eliminates manual CircuitContext threading | When setting up createSimulator or calling circuits in tests |
+| [`simulator-api.md`](skills/compact-testing/references/simulator-api.md) | The @openzeppelin/compact-simulator API that eliminates manual CircuitContext threading | When setting up createSimulator or calling circuits in tests |
 | [`test-examples.md`](skills/compact-testing/references/test-examples.md) | Good and bad example pairs following OpenZeppelin patterns from the actual test suite | When writing new tests and needing canonical patterns to follow |
 | [`witness-testing.md`](skills/compact-testing/references/witness-testing.md) | Testing witness files including PrivateState types, factory generation, and return tuples | When writing tests for TypeScript witness implementations |
 

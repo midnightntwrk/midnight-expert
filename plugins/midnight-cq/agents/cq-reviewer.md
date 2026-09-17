@@ -100,7 +100,7 @@ Read each config file that exists and check it against the standard. Do not assu
 | Check | What to Look For |
 |-------|-----------------|
 | `globalSetup` present | `globalSetup` entry that compiles `.compact` sources before tests run |
-| Simulator dependency | `@openzeppelin-compact/contracts-simulator` in `package.json` |
+| Simulator dependency | `@openzeppelin/compact-simulator` in `package.json` |
 
 **`.husky/pre-commit` checks:**
 
