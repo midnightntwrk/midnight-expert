@@ -1,0 +1,55 @@
+name: CI - compact-core examples
+
+on:
+  pull_request:
+    branches: ['**']
+    paths:
+      - 'plugins/compact-core/skills/**/*.compact'
+      - 'plugins/compact-core/scripts/compile-compact-core-examples.sh'
+      - '.github/workflows/ci-compact-core-examples.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'plugins/compact-core/skills/**/*.compact'
+      - 'plugins/compact-core/scripts/compile-compact-core-examples.sh'
+      - '.github/workflows/ci-compact-core-examples.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  compile-examples:
+    # ubuntu-latest is a CASE-SENSITIVE filesystem, so this also catches
+    # import-path case mismatches that case-insensitive macOS would miss.
+    name: Compile compact-core examples (case-sensitive FS)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install the Compact toolchain
+        run: |
+          set -euxo pipefail
+          curl --proto '=https' --tlsv1.2 -LsSf \
+            https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
+          # The installer updates the shell profile, but this job's later steps
+          # don't reload it — expose the bin dir(s) where `compact` actually landed.
+          found=0
+          for d in "$HOME/.local/bin" "$HOME/.compact/bin"; do
+            if [ -x "$d/compact" ]; then echo "$d" >> "$GITHUB_PATH"; found=1; fi
+          done
+          [ "$found" = 1 ] || { echo "::error::compact binary not found after install"; exit 1; }
+
+      - name: Download the pinned compiler
+        env:
+          # Authenticates GitHub release listing/downloads to avoid API rate limits.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euxo pipefail
+          compact --version
+          # Pin to the network-supported compiler (see compact-cli SKILL.md);
+          # a bare `compact update` tracks the latest release and drifts the baseline.
+          compact update 0.31.1
+
+      - name: Compile all compact-core examples
+        run: bash plugins/compact-core/scripts/compile-compact-core-examples.sh
