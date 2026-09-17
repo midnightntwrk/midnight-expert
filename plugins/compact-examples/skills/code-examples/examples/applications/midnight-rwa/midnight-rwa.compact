@@ -118,6 +118,13 @@ export circuit add(issuer: Bytes<32>): [] {
 circuit checkIfAuthorizedIssuer(): [] {
   const key = publicKey(localSecretKey());
   const authPath = findIssuerPath(key);
+  // Bind the proof to THIS issuer: the path the prover supplied must be the
+  // path for the caller's own derived key. merkleTreePathRoot hashes the
+  // path's own `leaf`, not `key`, and every authorized issuer's path is public
+  // ledger state — so without this assert a prover could present any authorized
+  // issuer's path and pass the check for an identity they do not control.
+  // (See isAuthorizedSend() below, which applies the same binding.)
+  assert(authPath.leaf == key, "issuer path does not match caller");
   const root = merkleTreePathRoot<32, Bytes<32>>(disclose(authPath));
   assert(issuerAuthorizations.checkRoot(root), "not authorized");
 }

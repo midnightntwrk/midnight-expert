@@ -227,6 +227,13 @@ export circuit commitVote(ballot: Bytes<32>): [] {
   // the leaf and path siblings. checkRoot verifies it matches a valid
   // (current or historic) root of the voters tree.
   const path = getVoterPath(pk);
+  // CRITICAL: bind the path to THIS voter's key. merkleTreePathRoot hashes
+  // the path's own `leaf` field, and the path comes from a witness running on
+  // the prover's machine. Every voter's path is public ledger state, so
+  // without this assert any eligible voter's path would satisfy the check and
+  // an ineligible caller could vote. This one line ties the membership proof
+  // to the caller's own derived public key.
+  assert(path.leaf == pk, "Merkle path is not for this voter");
   const root = merkleTreePathRoot<10, Bytes<32>>(path);
   // checkRoot is a ledger operation. The digest is derived from
   // witness data (the path), so it carries witness taint.
@@ -276,6 +283,11 @@ export circuit revealVote(): [] {
   // --- Step 2: Recompute commitment and verify it exists ---
   const commitment = computeVoteCommitment(ballot, rand);
   const votePath = getVotePath(commitment);
+  // CRITICAL: bind the path to THIS commitment. merkleTreePathRoot hashes the
+  // path's own `leaf` field, and the path comes from a witness. Without this
+  // assert any committed vote's (public) path would pass, letting a caller
+  // reveal against a commitment they did not create.
+  assert(votePath.leaf == commitment, "Merkle path is not for this commitment");
   const voteRoot = merkleTreePathRoot<10, Bytes<32>>(votePath);
   // disclose() required: voteRoot is derived from witness data (the path).
   // checkRoot is a ledger operation whose argument is visible on-chain.
