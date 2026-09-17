@@ -68,7 +68,7 @@ ledger count: Counter;
 EOF
 cat > "$F2/package.json" <<'EOF'
 {
-  "name": "example-counter",
+  "name": "example-hello-world",
   "dependencies": {
     "@midnight-ntwrk/midnight-js-contracts": "^1.0.0"
   }
