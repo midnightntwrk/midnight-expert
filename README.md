@@ -10,8 +10,8 @@ This project extends the Midnight Network with additional developer tooling.
 
 ## At a glance
 
-- **13** Plugins
-- **87** Skills / Slash commands
+- **16** Plugins
+- **102** Skills / Slash commands
 - **17** Agents
 - **~37,700** Lines of reference documentation
 - **~21,800** Lines of example code
@@ -173,6 +173,30 @@ You can install any plugin from inside Claude Code with `/plugin`, or from the t
     <td><img src="plugins/core-concepts/assets/mascot.png" /></td>
     <td><strong><a href="plugins/core-concepts/">core-concepts</a></strong></td>
     <td>Conceptual foundations for the Midnight Network — architecture, data models, privacy patterns, protocols (Kachina, Zswap), tokenomics, and zero-knowledge proofs.<pre lang="bash">claude plugin install --scope user core-concepts@midnight-expert</pre></td>
+  </tr>
+  </tbody>
+</table>
+### Network & Component References
+
+<table>
+  <thead>
+    <tr><th width="60"></th><th>Plugin</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><img src="plugins/proof-server/assets/mascot.png" /></td>
+    <td><strong><a href="plugins/proof-server/">proof-server</a></strong></td>
+    <td>Deep reference for the Midnight proof server — internals, HTTP API, configuration, and operations.<pre lang="bash">claude plugin install --scope user proof-server@midnight-expert</pre></td>
+  </tr>
+  <tr>
+    <td><img src="plugins/midnight-indexer/assets/mascot.png" /></td>
+    <td><strong><a href="plugins/midnight-indexer/">midnight-indexer</a></strong></td>
+    <td>Reference for the Midnight indexer — architecture, GraphQL API, and data model.<pre lang="bash">claude plugin install --scope user midnight-indexer@midnight-expert</pre></td>
+  </tr>
+  <tr>
+    <td><img src="plugins/midnight-node/assets/mascot.png" /></td>
+    <td><strong><a href="plugins/midnight-node/">midnight-node</a></strong></td>
+    <td>Reference for the Midnight Substrate node — pallets, RPC, and governance.<pre lang="bash">claude plugin install --scope user midnight-node@midnight-expert</pre></td>
   </tr>
   </tbody>
 </table>
