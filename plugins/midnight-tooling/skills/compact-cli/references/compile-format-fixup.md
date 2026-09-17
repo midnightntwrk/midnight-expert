@@ -1,5 +1,7 @@
 # Compiling, Formatting, and Fixup
 
+> **Last verified:** 2026-09-17 against `compact` CLI 0.5.1 / compiler 0.31.1 — flags and output tree (`--skip-zk` emits `compiler/`, `contract/`, `zkir/`; `keys/` only on full build) verified against the installed toolchain.
+
 ## Compiling
 
 ### Basic Compilation
@@ -19,13 +21,14 @@ With `--skip-zk`:
 <target-directory>/
 ├── compiler/
 │   └── contract-info.json       # Compiler metadata
-└── contract/
-    ├── index.d.ts               # TypeScript type definitions
-    ├── index.js                 # Generated JavaScript contract code
-    └── index.js.map             # Source map
+├── contract/
+│   ├── index.d.ts               # TypeScript type definitions
+│   ├── index.js                 # Generated JavaScript contract code
+│   └── index.js.map             # Source map
+└── zkir/                        # ZKIR circuit files (emitted even with --skip-zk)
 ```
 
-Without `--skip-zk`, the output also includes ZKIR circuit files and proving keys. Proving key generation can be very slow — use `--skip-zk` during development and only generate keys for final builds or testing.
+`--skip-zk` skips only proving/verifier **key** generation. ZKIR circuit files (`zkir/`) are emitted either way. Without `--skip-zk`, the output additionally includes a `keys/` directory with the proving and verifier keys. Key generation can be very slow — use `--skip-zk` during development and only generate keys for final builds or testing.
 
 ### Version-Specific Compilation
 

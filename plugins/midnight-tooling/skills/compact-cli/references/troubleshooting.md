@@ -1,5 +1,7 @@
 # Troubleshooting
 
+> **Last verified:** 2026-09-17 against `compact` CLI 0.5.1 / compiler 0.31.1 — exit codes and error messages reproduced against the installed toolchain.
+
 ## Exit Codes
 
 | Code | Meaning | Source |

@@ -1,5 +1,7 @@
 # Installing the Compact CLI
 
+> **Last verified:** 2026-09-17 against `compact` CLI 0.5.1 — version-output examples confirmed against the installed toolchain (PATH/install-location claims not re-tested).
+
 ## Prerequisites
 
 - A Unix-like environment (macOS, Linux, WSL)

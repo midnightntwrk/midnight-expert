@@ -1,5 +1,7 @@
 # Compiler Version Management
 
+> **Last verified:** 2026-09-17 against `compact` CLI 0.5.1 / compiler 0.31.1 (latest available 0.34.0) — `update`/`list`/`check`/`clean` behaviour verified against the installed toolchain.
+
 The Compact CLI supports multiple compiler versions installed side-by-side. One version is the "default" used when `compact compile` is invoked without a `+VERSION` specifier.
 
 ## Installing Compiler Versions
@@ -106,11 +108,13 @@ Removes all versions except the current default.
 
 ### Clear the API Cache
 
+> ⚠️ `compact clean` **removes all installed compiler versions**; `--cache` only *adds* the cache directory to what is deleted. To clear the cache without wiping your compilers, keep the current one:
+
 ```bash
-compact clean --cache
+compact clean --keep-current --cache
 ```
 
-Removes the GitHub API response cache (`github_cache.json`). The cache has a 15-minute TTL and is used by `list`, `check`, and `update` to avoid redundant API calls. Clear it if you suspect stale results after a new release.
+`--cache` removes the cached API responses (the cache directory under `$HOME/.compact`). The cache has a 15-minute TTL and is used by `list`, `check`, and `update` to avoid redundant API calls. Clear it if you suspect stale results after a new release. Plain `compact clean --cache` (without `--keep-current`) deletes every installed version as well, so you would then need to `compact update` to reinstall.
 
 ## Common Workflows
 

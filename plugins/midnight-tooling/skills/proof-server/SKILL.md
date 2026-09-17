@@ -5,6 +5,8 @@ description: This skill should be used when the user asks about the Midnight pro
 
 # Midnight Proof Server
 
+> **Last verified:** 2026-09-17 — image tag `8.1.0`, port 6300, and the documented endpoint set checked for internal consistency and tag currency (live response bodies not tested — Docker not started).
+
 The Midnight proof server generates zero-knowledge proofs for Midnight transactions. It can run locally as a Docker container or be accessed as a remote service on testnet/mainnet. The server exposes an HTTP API (default port 6300) that DApps use to request proof generation at runtime.
 
 ## Local Development
