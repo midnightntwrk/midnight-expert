@@ -1,0 +1,9 @@
+pragma language_version 0.23;
+
+// TODO: write your contract. A minimal example:
+//
+//   export ledger value: Uint<64>;
+//
+//   export circuit set(x: Uint<64>): [] {
+//     value = disclose(x);
+//   }

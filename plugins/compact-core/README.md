@@ -169,14 +169,14 @@ Covers the three-dimensional cost model for Compact contracts: circuit/proving c
 
 ### compact-core:compact-init-project
 
-Guides creation of new Midnight projects using create-mn-app, covering template selection (hello-world, counter), environment checks, scaffolding, proof server setup, and compilation.
+Guides creation of new Midnight projects using a vendored, deterministic scaffolder bundled with the skill (replacing the sunset `create-mn-app` tool), covering environment checks, scaffolding, local network setup, and compilation. Scaffolds a single self-contained project template (contract + vitest harness + local Docker network); pass `--witnesses` for contracts with off-chain private logic.
 
 #### References
 
 | Name | Description | When it is used |
 |------|-------------|-----------------|
-| [create-mn-app-workflow](skills/compact-init-project/references/create-mn-app-workflow.md) | Step-by-step workflow for scaffolding a new project | When creating a new Midnight project from scratch |
-| [project-structure](skills/compact-init-project/references/project-structure.md) | Project layouts, SDK versions, and network URLs | When understanding the generated project structure |
+| [new-example-workflow](skills/compact-init-project/references/new-example-workflow.md) | Step-by-step workflow for scaffolding a new project | When creating a new Midnight project from scratch |
+| [project-structure](skills/compact-init-project/references/project-structure.md) | Project layout, SDK/toolchain versions, and network URLs | When understanding the generated project structure |
 | [troubleshooting](skills/compact-init-project/references/troubleshooting.md) | Common init failures and fixes | When scaffolding fails or produces errors |
 
 ### compact-core:basic-start

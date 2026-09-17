@@ -24,16 +24,16 @@ compact self check
 
 Should report the CLI version and "Up to date".
 
-3. Set the default compiler to the latest version:
+3. Set the default compiler to the latest supported version:
 
 ```bash
-compact update
+compact update 0.31.1
 ```
 
 Confirms the default compiler version is set.
 
 ### Expected output
 
-Both commands report up-to-date versions. `compact update` confirms the default is set to the latest compiler.
+Both commands report up-to-date versions. `compact update` confirms the default is set to the supported compiler.
 
 > **EPHEMERAL** — All code and files produced by this walkthrough are disposable. Do not commit, push, or retain any of it. Delete everything when done.

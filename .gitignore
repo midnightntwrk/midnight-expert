@@ -217,7 +217,9 @@ Desktop.ini
 # =========================
 # LLMs
 # =========================
-.claude/
+.claude/*
+# Share the compact compile-check exclusions with the team (project-level config).
+!.claude/compact-check.json
 .claire/
 .codex-workspace/
 .gemini-workspace/

@@ -1,112 +1,141 @@
 # Project Structure & Version Reference
 
-## Hello World Project Layout
+## Project Layout
 
-After running `npx create-mn-app <name> --template hello-world`:
+After running the scaffolder (`node <plugin>/skills/compact-init-project/scripts/new-example.mjs <name>`):
 
 ```
-<project-name>/
-├── contracts/
-│   └── hello-world.compact           # Contract source (pragma language_version 0.23)
+<name>/
+├── contract/
+│   ├── <name>.compact                # Contract source stub (pragma language_version 0.23) — you write this
+│   └── index.ts                      # Exports the compiled contract + zkConfigPath
+│   └── witnesses.ts                  # ONLY when scaffolded with --witnesses (private-state + witness stubs)
 ├── src/
-│   ├── deploy.ts                     # Deploy contract to Preprod network
-│   ├── cli.ts                        # Interactive CLI for testing deployed contract
-│   └── check-balance.ts              # Check wallet tNight/DUST balance
-├── docker-compose.yml                # Proof server Docker config (port 6300)
-├── package.json                      # Node 22+, type: module, SDK 4.x dependencies
-├── tsconfig.json                     # ES2022 target, NodeNext modules
+│   ├── config.ts                     # Network configs (local / preview / preprod)
+│   ├── providers.ts                  # Builds the Midnight provider set from the compiled contract
+│   ├── wallet.ts                     # MidnightWalletProvider (testkit-js wallet wiring, sync helpers)
+│   └── test/
+│       └── <name>.test.ts            # Vitest skeleton: deploy + a TODO for circuit-interaction tests
+├── scripts/
+│   └── wait-for-dust.ts              # Blocks until the dev wallet has spendable DUST for fees
+├── compose.yml                       # Local Midnight network: node + indexer + proof server (port 6300)
+├── vitest.config.ts                  # Vitest config (long timeouts, serial, node env)
+├── package.json                      # Node 22+, type: module, midnight-js 4.1.1 deps
+├── tsconfig.json                     # Self-contained (ES2022, moduleResolution bundler, strict)
+├── .gitignore
 └── README.md
 ```
 
-After compilation, the managed output directory is created:
+After `yarn compile`, the managed output directory is created:
 
 ```
-contracts/managed/hello-world/
+contract/managed/<name>/
 ├── compiler/                         # Contract structure metadata (JSON)
 ├── contract/                         # Generated JavaScript + TypeScript type definitions
 │   ├── index.js                      # Runtime implementation
 │   └── index.d.ts                    # Type declarations (Ledger, Witnesses, Contract, etc.)
-├── keys/                             # Cryptographic ZK proving and verifying keys
+├── keys/                             # Cryptographic ZK proving and verifying keys (absent with --skip-zk)
 └── zkir/                             # Zero-Knowledge Intermediate Representation
 ```
 
-### Hello World Contract Source
+`contract/managed/` is gitignored — it is a build artifact. The TypeScript harness imports from it, so
+nothing type-checks until you have run `yarn compile` at least once.
 
-The scaffolded contract:
+### Contract Source Stub
+
+The scaffolded `contract/<name>.compact` is a TODO placeholder with a commented minimal example. You
+replace it with your contract, for example:
 
 ```compact
 pragma language_version 0.23;
 
 import CompactStandardLibrary;
 
-// Public ledger state - visible on blockchain
-export ledger message: Opaque<"string">;
+export ledger value: Uint<64>;
 
-// Circuit to store a message on the blockchain
-// The message will be publicly visible
-export circuit storeMessage(customMessage: Opaque<"string">): [] {
-  message = disclose(customMessage);
+export circuit set(x: Uint<64>): [] {
+  value = disclose(x);
 }
 ```
 
-### Hello World package.json Scripts
+### package.json Scripts
 
 | Script | Command | Purpose |
 |--------|---------|---------|
-| `compile` | `compact compile contracts/hello-world.compact contracts/managed/hello-world` | Compile the Compact contract |
-| `setup` | `docker compose up -d && npm run compile && npm run deploy` | Full setup: proof server + compile + deploy |
-| `deploy` | `npx tsx src/deploy.ts` | Deploy to Preprod |
-| `cli` | `npx tsx src/cli.ts` | Interactive contract CLI |
-| `check-balance` | `npx tsx src/check-balance.ts` | Check wallet balance |
-| `proof-server:start` | `docker compose up -d` | Start proof server |
-| `proof-server:stop` | `docker compose down` | Stop proof server |
-| `clean` | `rm -rf contracts/managed deployment.json` | Remove build artifacts |
+| `compile` | `compact compile contract/<name>.compact contract/managed/<name>` | Compile the Compact contract |
+| `test` | `vitest run` (with `--experimental-vm-modules`) | Run the vitest suite (network from `MIDNIGHT_NETWORK`) |
+| `test:local` | `MIDNIGHT_NETWORK=local yarn test` | Run against the local Docker network |
+| `test:preview` | `MIDNIGHT_NETWORK=preview yarn test` | Run against Preview (needs a funded seed) |
+| `test:preprod` | `MIDNIGHT_NETWORK=preprod yarn test` | Run against Preprod (needs a funded seed) |
+| `env:up` | `docker compose up -d --wait` | Start node + indexer + proof server |
+| `env:down` | `docker compose down` | Stop and remove the local network |
+| `proof:up` | `docker compose up -d --wait proof-server` | Start only the proof server |
+| `proof:down` | `docker compose stop proof-server` | Stop only the proof server |
+| `wait:dust` | `vite-node scripts/wait-for-dust.ts` | Block until the dev wallet has spendable DUST |
+| `validate` | `env:up && wait:dust && test:local; env:down` | Full local run in one command |
 
 ## SDK Package Versions
 
-These are the versions used by `create-mn-app` v0.4.1 hello-world template (verified on 2026-06-02). Versions may have been updated since — run `npm view <package> version` to check current versions:
+These are the versions pinned by the scaffold template (captured 2026-09-16). Versions may have been
+updated since — run `npm view <package> version` to check current versions:
 
 | Package | Version |
 |---------|---------|
-| `@midnight-ntwrk/compact-runtime` | 0.16.0 |
-| `@midnight-ntwrk/compact-js` | 2.5.0 |
-| `@midnight-ntwrk/ledger-v8` | 8.0.3 |
-| `@midnight-ntwrk/midnight-js-contracts` | 4.0.4 |
-| `@midnight-ntwrk/midnight-js-http-client-proof-provider` | 4.0.4 |
-| `@midnight-ntwrk/midnight-js-indexer-public-data-provider` | 4.0.4 |
-| `@midnight-ntwrk/midnight-js-level-private-state-provider` | 4.0.4 |
-| `@midnight-ntwrk/midnight-js-node-zk-config-provider` | 4.0.4 |
-| `@midnight-ntwrk/midnight-js-network-id` | 4.0.4 |
-| `@midnight-ntwrk/midnight-js-types` | 4.0.4 |
-| `@midnight-ntwrk/midnight-js-utils` | 4.0.4 |
-| `@midnight-ntwrk/wallet-sdk-facade` | 3.0.0 |
-| `@midnight-ntwrk/wallet-sdk-hd` | 3.0.1 |
-| `@midnight-ntwrk/wallet-sdk-shielded` | 2.1.0 |
-| `@midnight-ntwrk/wallet-sdk-unshielded-wallet` | 2.1.0 |
-| `@midnight-ntwrk/wallet-sdk-dust-wallet` | 3.0.0 |
+| `@midnight-ntwrk/midnight-js-contracts` | 4.1.1 |
+| `@midnight-ntwrk/midnight-js-http-client-proof-provider` | 4.1.1 |
+| `@midnight-ntwrk/midnight-js-indexer-public-data-provider` | 4.1.1 |
+| `@midnight-ntwrk/midnight-js-level-private-state-provider` | 4.1.1 |
+| `@midnight-ntwrk/midnight-js-network-id` | 4.1.1 |
+| `@midnight-ntwrk/midnight-js-node-zk-config-provider` | 4.1.1 |
+| `@midnight-ntwrk/midnight-js-protocol` | 4.1.1 |
+| `@midnight-ntwrk/midnight-js-types` | 4.1.1 |
+| `@midnight-ntwrk/midnight-js-utils` | 4.1.1 |
+| `@midnight-ntwrk/testkit-js` | 4.1.1 |
+| `@midnight-ntwrk/wallet-sdk` | 1.2.0 |
 
-Dev dependencies: `typescript ^6.0.3`, `tsx ^4.21.0`, `@types/node ^22.0.0`
+Other runtime deps: `pino ^9`, `pino-pretty ^13`, `rxjs ^7.8.2`, `ws ^8.14.2`.
+Dev dependencies: `typescript ^5.7.0`, `vitest ^4.1.0`, `vite-node ^6.0.0`, `@types/node ^22.0.0`,
+`@types/ws ^8.5.9`.
 
 ## Toolchain Versions
 
-Verified on 2026-06-02. Use `compact --version` and `npm view create-mn-app version` to check for newer releases.
+Captured 2026-09-16. Use `compact --version`, `compact check`, and `compact self check` to check for
+newer releases.
 
-| Component | Version | Install/Update |
-|-----------|---------|----------------|
-| Compact compiler | compactc-v0.30.x | `compact update` |
-| create-mn-app | 0.4.1 | `npx create-mn-app@latest` |
-| Proof server Docker image | midnightntwrk/proof-server:8.0.3 | Via Docker |
+| Component | Version | Notes |
+|-----------|---------|-------|
+| Compact language | 0.23 | `pragma language_version 0.23` in the contract stub |
+| Compact compiler | 0.31.1 | `compact update` to change |
 | Node.js | 22+ required | https://nodejs.org/ |
+| Yarn | 4 (via Corepack) | `npm install` also works |
 
-## Network Endpoints (Preprod)
+### Local Network Docker Images (`compose.yml`)
+
+| Service | Image tag | Port |
+|---------|-----------|------|
+| Proof server | `midnightntwrk/proof-server:8.1.0` | 6300 |
+| Indexer | `midnightntwrk/indexer-standalone:4.3.3` | 8088 |
+| Node | `midnightntwrk/midnight-node:1.0.0` (`CFG_PRESET=dev`) | 9944 |
+
+> Note: this local network runs `midnight-node:1.0.0` and `indexer-standalone:4.3.3` (the indexer is
+> supplied a dummy `BLOCKFROST_ID` so it runs key-less). These are **newer** than the caps the
+> `midnight-tooling:devnet` version resolver applies for its shared devnet — see that skill's
+> `version-resolution.md`.
+
+## Network Endpoints
+
+Local (from `compose.yml`, network id `undeployed`):
 
 | Service | URL |
 |---------|-----|
-| Indexer (GraphQL) | `https://indexer.preprod.midnight.network/api/v3/graphql` |
-| Indexer (WebSocket) | `wss://indexer.preprod.midnight.network/api/v3/graphql/ws` |
-| RPC | `https://rpc.preprod.midnight.network` |
-| Faucet | `https://faucet.preprod.midnight.network/` |
-| Docs | `https://docs.midnight.network` |
+| Indexer (GraphQL) | `http://127.0.0.1:8088/api/v4/graphql` |
+| Indexer (WebSocket) | `ws://127.0.0.1:8088/api/v4/graphql/ws` |
+| Node (RPC) | `http://127.0.0.1:9944` |
+| Proof server | `http://127.0.0.1:6300` |
+
+Remote networks (Preview / Preprod) are configured in `src/config.ts`. Endpoints there follow the
+`indexer.<network>.midnight.network` / `rpc.<network>.midnight.network` pattern; running against them
+requires a funded wallet seed supplied via `.env.<network>`.
 
 ## Verifying Versions
 
