@@ -114,10 +114,10 @@ Start the proof server in detached mode so it runs in the background (replace `<
 docker run -d --name midnight-proof-server -p 6300:6300 midnightntwrk/proof-server:<tag> -- midnight-proof-server -v
 ```
 
-For example, with version 8.0.3:
+For example, with version 8.1.0:
 
 ```bash
-docker run -d --name midnight-proof-server -p 6300:6300 midnightntwrk/proof-server:8.0.3 -- midnight-proof-server -v
+docker run -d --name midnight-proof-server -p 6300:6300 midnightntwrk/proof-server:8.1.0 -- midnight-proof-server -v
 ```
 
 | Flag / Argument | Purpose |
