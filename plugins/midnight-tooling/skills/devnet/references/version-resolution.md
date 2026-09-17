@@ -37,8 +37,14 @@ Some published image tags are not usable for a self-contained local devnet, so t
 
 | Image | Cap | Why |
 |-------|-----|-----|
-| `midnight-node` | `< 1.0.0` (stays on the `0.22.x` line) | `1.0.0` is the mainnet GA node, not a local-devnet image. The local standalone devnet is built around `0.22.x` (`CFG_PRESET=dev`); the official `create-mn-app` scaffold pins `0.22.5`. |
-| `indexer-standalone` | `< 4.3.0` | From `4.3.0` the standalone indexer requires a Blockfrost API key and exits with code 1 without one, so it cannot run key-less in a local devnet. The official `create-mn-app` scaffold pins `4.2.1`. |
+| `midnight-node` | `< 1.0.0` (stays on the `0.22.x` line) | `1.0.0` is the mainnet GA node; this resolver keeps the shared devnet on the `0.22.x` line (`CFG_PRESET=dev`) for stability, with `0.22.5` as a known-good pin. |
+| `indexer-standalone` | `< 4.3.0` | From `4.3.0` the standalone indexer requires a Blockfrost API key and exits with code 1 without one; capping below it keeps the devnet runnable key-less, with `4.2.1` as a known-good pin. |
+
+> Follow-up (not yet reconciled): the `compact-core:compact-init-project` scaffold's bundled
+> `compose.yml` runs `midnight-node:1.0.0` (`CFG_PRESET=dev`) and `indexer-standalone:4.3.3` locally —
+> the latter supplied a dummy `BLOCKFROST_ID` so it runs key-less. Those newer pins work for a
+> self-contained project network but sit above these resolver caps. Revisit whether this resolver
+> should raise its caps once `1.0.0` / `4.3.x` are validated for the shared devnet.
 | `proof-server` | none | The latest stable proof-server tag is usable for the local devnet. |
 
 These caps live in `resolve-versions.sh` (the `max_exclusive` column of its `IMAGES` table). To run a capped image deliberately, pass it explicitly via `--node-version` / `--indexer-version` (which skips resolution for that image).

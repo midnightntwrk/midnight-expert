@@ -4,21 +4,42 @@ Common failures when creating a new Midnight project and how to resolve them.
 
 ## Scaffolding Failures
 
-### `npx create-mn-app` fails or hangs
+The scaffolder is a zero-dependency Node script (`scripts/new-example.mjs`) — it needs only Node on
+PATH, nothing to install.
 
-**Symptoms:** Command not found, network errors, npm cache issues.
+### `invalid name '<x>'` — kebab-case required
+
+**Symptom:** The generator exits with `invalid name ... Use kebab-case`.
+
+**Fix:** Project names must be lowercase letters/digits, hyphen-separated (e.g. `my-midnight-app`,
+`voting`). No spaces, uppercase, underscores, or leading digits.
+
+### `<name> already exists in this directory`
+
+**Symptom:** The generator refuses to overwrite an existing directory.
+
+**Fix:** Choose a different name, or remove the existing directory (`rm -rf <name>`) and retry. The
+generator never overwrites — this is deliberate.
+
+### `template directory not found` / generator not found
+
+**Symptom:** The script cannot locate its `templates/example/` directory, or the `find ~/.claude ...`
+resolution prints nothing.
 
 **Fixes:**
-1. Verify Node.js version: `node --version` (must be 22+)
-2. Clear npm cache: `npm cache clean --force`
-3. Try with explicit registry: `npx --registry https://registry.npmjs.org create-mn-app@latest <name>`
-4. If behind a proxy, configure npm: `npm config set proxy <url>`
+1. Confirm the compact-core plugin is installed: `find ~/.claude -path "*/compact-core/.claude-plugin/plugin.json"` should print a path.
+2. Verify the vendored assets exist next to the script: `ls "$PLUGIN_ROOT/skills/compact-init-project/scripts" "$PLUGIN_ROOT/skills/compact-init-project/templates/example"`.
+3. Re-run `/midnight-tooling:doctor` if the plugin layout looks broken.
 
-### Directory already exists
+### `yarn install` or `yarn env:up` fails
 
-**Symptom:** `create-mn-app` prompts about existing directory.
+**Symptoms:** Yarn not found, or `docker compose` errors on `env:up`.
 
-**Fix:** Choose a different project name, or approve the overwrite prompt. To remove manually: `rm -rf <project-name>` then retry.
+**Fixes:**
+1. Verify Node 22+: `node --version`. The generated project targets Node 22+.
+2. Yarn 4 is the expected package manager (`corepack enable`), but `npm install` also works.
+3. `yarn env:up` needs Docker running — see the Proof Server Failures section below.
+4. `@midnight-ntwrk/*` packages are on the **public npm registry** — no custom registry config is needed.
 
 ## Compilation Failures
 
@@ -29,7 +50,7 @@ Common failures when creating a new Midnight project and how to resolve them.
 **Fixes:**
 1. Update compiler: `compact update`
 2. Verify the pragma in the `.compact` file matches a supported version
-3. The hello-world template uses `pragma language_version >= 0.22;` which is compatible with all recent compilers
+3. The scaffolded contract stub uses `pragma language_version 0.23;` — align it with your installed compiler (`compact --version`) if needed
 
 ### ZK parameter download stalls or fails
 
@@ -43,13 +64,13 @@ Common failures when creating a new Midnight project and how to resolve them.
 
 ### Compilation succeeds but managed directory is empty
 
-**Symptom:** `contracts/managed/hello-world/` exists but is missing expected subdirectories.
+**Symptom:** `contract/managed/<name>/` exists but is missing expected subdirectories.
 
 **Fixes:**
 1. Check compiler output for warnings or errors
 2. Run compilation with verbose output: `compact compile --trace-passes <source> <target>`
 3. Ensure the target directory path is correct
-4. Clean and retry: `rm -rf contracts/managed && npm run compile`
+4. Clean and retry: `rm -rf contract/managed && yarn compile`
 
 ## Proof Server Failures
 
