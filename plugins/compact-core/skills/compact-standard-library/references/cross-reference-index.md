@@ -9,24 +9,24 @@ Alphabetical index of every Compact standard library export. Use this as a quick
 | `blockTimeGte` | circuit | Block time greater-or-equal comparison | `compact-language-ref/references/stdlib-functions.md` |
 | `blockTimeLt` | circuit | Block time less than comparison | `compact-language-ref/references/stdlib-functions.md` |
 | `blockTimeLte` | circuit | Block time less-or-equal comparison | `compact-language-ref/references/stdlib-functions.md` |
-| `constructJubjubPoint` | compiler native | Construct JubjubPoint from X, Y coordinates (available without import) | `compact-standard-library/references/cryptographic-functions.md` |
+| `constructJubjubPoint` | circuit | Construct JubjubPoint from X, Y coordinates | `compact-standard-library/references/cryptographic-functions.md` |
 | `ContractAddress` | type | Contract address wrapper | `compact-standard-library/references/types-and-constructors.md` |
 | `Counter` | ledger ADT | Numeric counter with increment/decrement | `compact-ledger/references/types-and-operations.md` |
-| `createZswapInput` | compiler native | Low-level zswap input creation (internal, not directly exported by stdlib) | `compact-tokens/references/token-operations.md` |
-| `createZswapOutput` | compiler native | Low-level zswap output creation (internal, not directly exported by stdlib) | `compact-tokens/references/token-operations.md` |
+| `createZswapInput` | circuit | Low-level zswap input creation | `compact-tokens/references/token-operations.md` |
+| `createZswapOutput` | circuit | Low-level zswap output creation | `compact-tokens/references/token-operations.md` |
 | `default<T>` | builtin | Default value for any type | `compact-language-ref/references/stdlib-functions.md` |
 | `degradeToTransient` | circuit | Convert Bytes<32> to Field | `compact-language-ref/references/stdlib-functions.md` |
 | `disclose` | builtin | Mark value as publicly visible | `compact-language-ref/references/stdlib-functions.md` |
-| `ecAdd` | compiler native | Add two JubjubPoints (available without import) | `compact-standard-library/references/cryptographic-functions.md` |
-| `ecMul` | compiler native | Scalar multiply JubjubPoint (available without import) | `compact-standard-library/references/cryptographic-functions.md` |
-| `ecMulGenerator` | compiler native | Scalar multiply generator point (available without import) | `compact-standard-library/references/cryptographic-functions.md` |
+| `ecAdd` | circuit | Add two JubjubPoints | `compact-standard-library/references/cryptographic-functions.md` |
+| `ecMul` | circuit | Scalar multiply JubjubPoint | `compact-standard-library/references/cryptographic-functions.md` |
+| `ecMulGenerator` | circuit | Scalar multiply generator point | `compact-standard-library/references/cryptographic-functions.md` |
 | `Either<L, R>` | type | Disjoint union (sum type) | `compact-standard-library/references/types-and-constructors.md` |
 | `evolveNonce` | circuit | Derive next nonce for coin operations | `compact-tokens/references/token-operations.md` |
-| `hashToCurve<T>` | compiler native | Map arbitrary value to JubjubPoint (available without import) | `compact-standard-library/references/cryptographic-functions.md` |
+| `hashToCurve<T>` | circuit | Map arbitrary value to JubjubPoint | `compact-standard-library/references/cryptographic-functions.md` |
 | `HistoricMerkleTree<N, T>` | ledger ADT | MerkleTree with root history | `compact-ledger/references/types-and-operations.md` |
 | `JubjubPoint` | type | Elliptic curve point | `compact-standard-library/references/types-and-constructors.md` |
-| `jubjubPointX` | compiler native | Get X coordinate of JubjubPoint (available without import) | `compact-standard-library/references/cryptographic-functions.md` |
-| `jubjubPointY` | compiler native | Get Y coordinate of JubjubPoint (available without import) | `compact-standard-library/references/cryptographic-functions.md` |
+| `jubjubPointX` | circuit | Get X coordinate of JubjubPoint | `compact-standard-library/references/cryptographic-functions.md` |
+| `jubjubPointY` | circuit | Get Y coordinate of JubjubPoint | `compact-standard-library/references/cryptographic-functions.md` |
 | `left<A, B>` | circuit | Construct left Either variant | `compact-standard-library/references/types-and-constructors.md` |
 | `List<T>` | ledger ADT | Ordered sequence | `compact-ledger/references/types-and-operations.md` |
 | `Map<K, V>` | ledger ADT | Key-value store | `compact-ledger/references/types-and-operations.md` |
@@ -43,7 +43,7 @@ Alphabetical index of every Compact standard library export. Use this as a quick
 | `mintUnshieldedToken` | circuit | Mint unshielded token | `compact-tokens/references/token-operations.md` |
 | `nativeToken` | circuit | Native token color (zero) | `compact-tokens/references/token-operations.md` |
 | `none<T>` | circuit | Construct empty Maybe | `compact-standard-library/references/types-and-constructors.md` |
-| `ownPublicKey` | compiler witness native | Current user's coin public key (available without import) | `compact-tokens/references/token-operations.md` |
+| `ownPublicKey` | circuit | Current user's coin public key | `compact-tokens/references/token-operations.md` |
 | `pad` | builtin | Create Bytes<N> from string literal | `compact-language-ref/references/stdlib-functions.md` |
 | `persistentCommit<T>` | circuit | SHA-256 commitment with randomness | `compact-language-ref/references/stdlib-functions.md` |
 | `persistentHash<T>` | circuit | SHA-256 hash; stable across upgrades | `compact-language-ref/references/stdlib-functions.md` |
