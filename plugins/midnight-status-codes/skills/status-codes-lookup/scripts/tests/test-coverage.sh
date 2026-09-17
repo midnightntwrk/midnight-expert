@@ -18,7 +18,7 @@ if grep -q 'Uncovered templates:' <<<"$OUT"; then
 else
   echo "FAIL: missing uncovered line"; FAIL=$((FAIL+1))
 fi
-if grep -q 'ref: compactc-v0.31.0' <<<"$OUT"; then
+if grep -q 'ref: compactc-v0.31.1' <<<"$OUT"; then
   echo "PASS: pins ref from JSON"; PASS=$((PASS+1))
 else
   echo "FAIL: ref pin missing or wrong"; FAIL=$((FAIL+1))

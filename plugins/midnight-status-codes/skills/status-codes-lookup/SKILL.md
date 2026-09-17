@@ -151,7 +151,7 @@ Diagnostics from other components do not use `phase`.
 
 ## Coverage audit
 
-`audit-compiler-coverage.sh` is the regression guard for compiler bumps. It walks the upstream compiler tree pinned to `verified_against.ref` (currently `compactc-v0.31.0`), extracts every diagnostic template the compiler can emit, and reports any template that is not covered by some entry's `code`/`aliases` and not explicitly waived in `coverage-allowlist.txt`.
+`audit-compiler-coverage.sh` is the regression guard for compiler bumps. It walks the upstream compiler tree pinned to `verified_against.ref` (currently `compactc-v0.31.1`), extracts every diagnostic template the compiler can emit, and reports any template that is not covered by some entry's `code`/`aliases` and not explicitly waived in `coverage-allowlist.txt`.
 
 Run it with:
 
