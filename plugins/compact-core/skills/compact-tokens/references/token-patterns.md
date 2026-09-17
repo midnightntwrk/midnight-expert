@@ -419,7 +419,7 @@ For complete implementations showing these patterns in full context, review the 
 
 ## Known Limitations
 
-These constraints apply as of Compact compiler 0.29.0 and the current Midnight protocol.
+These constraints apply as of Compact compiler 0.31.1 and the current Midnight protocol.
 
 | Limitation | Detail |
 |------------|--------|
