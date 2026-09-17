@@ -51,7 +51,7 @@ cat > "$TMPDIR/codes.json" <<JSON
       "reference_anchor": "refs.md#synthetic-anchor-target",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/test.ss:1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"

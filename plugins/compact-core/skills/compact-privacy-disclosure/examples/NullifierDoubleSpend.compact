@@ -23,7 +23,7 @@
 //   - Observer CANNOT see: which commitment was spent, the secret
 //     behind any token, the link between a nullifier and its commitment
 
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 
 import CompactStandardLibrary;
 

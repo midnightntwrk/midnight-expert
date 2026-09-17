@@ -17,7 +17,7 @@ Patterns for controlling the lifecycle and timing of contract operations.
 ### Implementation
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export enum Phase { registration, active, completed }
@@ -107,7 +107,7 @@ export circuit complete(): [] {
 ### Implementation
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 // Deadlines set at deployment (Unix epoch seconds as Uint<64>)

@@ -22,7 +22,7 @@ Create `src/ticket.compact`:
 //   - Once used, a nullifier prevents reuse
 //   - An observer cannot link a used ticket to the original issuance
 
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 
 import CompactStandardLibrary;
 

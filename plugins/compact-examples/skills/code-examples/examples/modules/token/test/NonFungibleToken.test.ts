@@ -28,7 +28,7 @@
 //          modules/token/test/artifacts/MockNonFungibleToken
 //   2. Install the EXACT runtime the compiled contract pins (see
 //      `checkRuntimeVersion(...)` in the generated index.js; 0.16.0 for
-//      compactc 0.31.0 / language 0.23.0):
+//      compactc 0.31.1 / language 0.23.0):
 //        npm i -D @midnight-ntwrk/compact-runtime@<pinned>
 //   3. npx vitest run modules/token/test/NonFungibleToken.test.ts
 // ============================================================================

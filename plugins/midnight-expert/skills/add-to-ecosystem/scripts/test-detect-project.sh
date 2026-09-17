@@ -63,12 +63,12 @@ assert_eq "add_compact_topic" "false" "$(field '.recommendation.add_compact_topi
 F2="$TMP/compact-dapp"
 mkdir -p "$F2/contracts"
 cat > "$F2/contracts/counter.compact" <<'EOF'
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 ledger count: Counter;
 EOF
 cat > "$F2/package.json" <<'EOF'
 {
-  "name": "example-counter",
+  "name": "example-hello-world",
   "dependencies": {
     "@midnight-ntwrk/midnight-js-contracts": "^1.0.0"
   }
@@ -119,7 +119,7 @@ assert_eq "add_compact_topic" "false" "$(field '.recommendation.add_compact_topi
 F6="$TMP/compact-cli"
 mkdir -p "$F6/contracts"
 cat > "$F6/contracts/c.compact" <<'EOF'
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 EOF
 cat > "$F6/package.json" <<'EOF'
 {

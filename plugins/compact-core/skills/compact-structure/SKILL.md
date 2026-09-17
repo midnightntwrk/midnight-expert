@@ -13,7 +13,7 @@ Every Compact program follows a consistent anatomy that maps directly to on-chai
 A Compact contract is organized in this order:
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 
 import CompactStandardLibrary;
 
@@ -56,7 +56,7 @@ export circuit do_something(): [] {
 Every contract starts with a version pragma and standard library import:
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 ```
 

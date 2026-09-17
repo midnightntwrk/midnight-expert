@@ -64,7 +64,7 @@ These errors occur during tokenization, before any parsing takes place.
 unsupported numeric syntax syntax: leading 0 must be followed by b, B, o, O, x, X
 ```
 
-> Note: the duplicated word "syntax" matches upstream as of `compactc-v0.31.0`. The lookup catalogue stores both the duplicated and de-duplicated forms in `aliases`.
+> Note: the duplicated word "syntax" matches upstream as of `compactc-v0.31.1`. The lookup catalogue stores both the duplicated and de-duplicated forms in `aliases`.
 
 **Triggers:** Writing a number like `0123` where a digit follows the leading zero.
 
@@ -134,7 +134,7 @@ These errors occur after tokenization, while the compiler builds the AST.
 **Fix:** Check supported pragma directives. Example of a valid pragma:
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 ```
 
 ---
@@ -443,7 +443,7 @@ expected select test to have type Boolean, received <type>
 Uint width <N> is not between 1 and the maximum Uint width <M> (inclusive)
 ```
 
-> `<M>` is computed as `field-bytes * 8` and is currently 248 in `compactc-v0.31.0`. It will change if `field-bytes` changes upstream.
+> `<M>` is computed as `field-bytes * 8` and is currently 248 in `compactc-v0.31.1`. It will change if `field-bytes` changes upstream.
 
 **Triggers:** A `Uint<N>` type is declared with `N` outside the valid range.
 
@@ -461,7 +461,7 @@ Uint width <N> is not between 1 and the maximum Uint width <M> (inclusive)
   exceeds the maximum supported length <M>
 ```
 
-> `<kind>` is `vector type` or `bytes type` (not `Vector`/`Bytes`); `<M>` is currently `16777216` in `compactc-v0.31.0`.
+> `<kind>` is `vector type` or `bytes type` (not `Vector`/`Bytes`); `<M>` is currently `16777216` in `compactc-v0.31.1`.
 
 **Triggers:** A `Vector` or `Bytes` type is declared with a length greater than 2^24 (16,777,216).
 

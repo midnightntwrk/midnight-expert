@@ -45,7 +45,7 @@ The toolchain reports three independent version numbers. Confusing them is a com
 | What | Commands | Example Output |
 |------|----------|----------------|
 | **CLI tool version** | `compact --version`, `compact self --version` | `compact 0.5.1` |
-| **Compiler version** | `compact compile --version`, `compact format --version`, `compact fixup --version` | `0.31.0` |
+| **Compiler version** | `compact compile --version`, `compact format --version`, `compact fixup --version` | `0.31.1` |
 | **Language version** | `compact compile --language-version`, `compact format --language-version`, `compact fixup --language-version` | `0.23.0` |
 
 The compiler also reports two additional versions relevant to DApp developers:
@@ -61,6 +61,8 @@ The CLI and compiler update independently:
 |---------------|---------|-------------|
 | The compiler | `compact update` | `compact check` |
 | The CLI tool | `compact self update` | `compact self check` |
+
+> ⚠️ **"Latest available" is not "latest supported".** `compact check` may report a newer compiler (currently `0.34.0`) that **is not yet supported on any live network**. Pin to the latest **network-supported** compiler (currently `0.31.1`) for anything you intend to deploy. See [references/version-management.md](references/version-management.md) for details.
 
 ## Quick Command Reference
 

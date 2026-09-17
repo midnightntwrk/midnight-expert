@@ -11,6 +11,8 @@
 
 COMMON_CONTEXT='The Midnight Network is under active development with frequent breaking changes. Do not assume stability across versions.
 
+The newest published compiler may outpace live-network support — prefer the latest **network-supported** compiler over the absolute latest for anything you intend to deploy. "Latest available" is not the same as "latest supported".
+
 All `@midnight-ntwrk/*` packages are published on public npm. Do not add custom registry configuration — no `.npmrc` or `.yarnrc.yml` registry overrides. Verify package versions with `npm view`, never from memory.
 
 You should check for new compact developer tools, compact compiler, and Midnight SDK versions regularly.
@@ -24,7 +26,7 @@ npm view <package-name> version # check for latest version of <package-name>
 # Pre-built fallback JSON containing only the static context.
 # Used whenever jq is missing or anything else goes wrong — no escaping needed
 # because this is a known-safe literal string.
-FALLBACK_JSON='{"continue":true,"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"The Midnight Network is under active development with frequent breaking changes. Do not assume stability across versions.\n\nAll `@midnight-ntwrk/*` packages are published on public npm. Do not add custom registry configuration — no `.npmrc` or `.yarnrc.yml` registry overrides. Verify package versions with `npm view`, never from memory.\n\nYou should check for new compact developer tools, compact compiler, and Midnight SDK versions regularly.\n\n```\ncompact check # check for new compact compiler versions (cached with 15m TTL)\ncompact self check # check for new compact developer tools versions (cached with 15m TTL)\nnpm view <package-name> version # check for latest version of <package-name>\n```"}}'
+FALLBACK_JSON='{"continue":true,"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"The Midnight Network is under active development with frequent breaking changes. Do not assume stability across versions.\n\nThe newest published compiler may outpace live-network support — prefer the latest **network-supported** compiler over the absolute latest for anything you intend to deploy. \"Latest available\" is not the same as \"latest supported\".\n\nAll `@midnight-ntwrk/*` packages are published on public npm. Do not add custom registry configuration — no `.npmrc` or `.yarnrc.yml` registry overrides. Verify package versions with `npm view`, never from memory.\n\nYou should check for new compact developer tools, compact compiler, and Midnight SDK versions regularly.\n\n```\ncompact check # check for new compact compiler versions (cached with 15m TTL)\ncompact self check # check for new compact developer tools versions (cached with 15m TTL)\nnpm view <package-name> version # check for latest version of <package-name>\n```"}}'
 
 # --- Catch-all: if anything unexpected happens, emit fallback and exit clean ---
 trap 'printf "%s\n" "$FALLBACK_JSON"; exit 0' ERR
@@ -66,7 +68,7 @@ if echo "$check_output" | grep -qi "Up to date"; then
   # Compiler is current — get the language version
   lang_version="$(compact compile --language-version 2>/dev/null || echo "unknown")"
 
-  msg="You are using the most recent version of the compact compiler v${current_version}, \`pragma language_version >= ${lang_version%.*};\`. Remember to always use the most recent language version when writing new compact code as the ecosystem moves very quickly.
+  msg="You are using the most recent version of the compact compiler v${current_version}, \`pragma language_version ${lang_version%.*};\`. Pin your pragma to this exact language version so contracts declare the version they were verified against, rather than an open-ended \`>=\` that silently accepts untested future versions.
 
 ${COMMON_CONTEXT}"
 else

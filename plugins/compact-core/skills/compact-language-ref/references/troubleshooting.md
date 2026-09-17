@@ -69,7 +69,7 @@ Table mapping error messages to their cause and fix. Errors are grouped by categ
 | `parse error: found "{" looking for ";"` | Using `Void` as a return type | Use empty tuple `[]` for circuits that return nothing |
 | `parse error: found ":" looking for ")"` | Using Rust-style `Enum::variant` double-colon syntax | Use dot notation: `Enum.variant` |
 | `parse error: found "{" after witness declaration` | Adding an implementation body to a witness | Witnesses are declarations only -- end with `;` and implement in TypeScript |
-| `version mismatch or parse error` | Pragma uses patch version (`0.22.0`) or wrong operator format | Use `pragma language_version >= 0.22;` |
+| `version mismatch or parse error` | Pragma uses patch version (`0.22.0`) or wrong operator format | Use `pragma language_version 0.23;` |
 
 ### Unbound Identifier Errors
 
@@ -192,7 +192,7 @@ Complete table of common syntax mistakes with the error each one produces.
 |---|---|---|
 | `ledger { field: Type; }` | `export ledger field: Type;` | `parse error: found "{" looking for an identifier` |
 | `circuit fn(): Void` | `circuit fn(): []` | `parse error: found "{" looking for ";"` |
-| `pragma language_version >= 0.22.0;` | `pragma language_version >= 0.22;` | version mismatch or parse error |
+| `pragma language_version >= 0.22.0;` | `pragma language_version 0.23;` | version mismatch or parse error |
 | `enum State { a, b }` | `export enum State { a, b }` | enum not accessible from TypeScript |
 | `if (witness_val == x)` | `if (disclose(witness_val == x))` | `implicit disclosure of witness value` |
 | `Cell<Field>` | `Field` | `unbound identifier "Cell"` |

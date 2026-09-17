@@ -4324,7 +4324,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#exit-codes",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/program-common.ss",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -4358,7 +4358,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#exit-codes",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/program-common.ss",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -4392,7 +4392,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#exit-codes",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/program-common.ss:117",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -4427,7 +4427,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#exit-codes",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/program-common.ss:113",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -4467,7 +4467,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#unbound-identifier-very-common",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:404",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -4504,7 +4504,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#parse-error-most-common-compiler-error",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/parser.ss:986",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -4540,7 +4540,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#no-compatible-function-in-scope-very-common",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:1742",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -4576,7 +4576,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#undeclared-witness-disclosure-critical",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:5218",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -4611,7 +4611,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#mismatched-branch-types",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:2471",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -4645,7 +4645,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#no-such-field",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:2494",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -4680,7 +4680,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#condition-is-not-boolean",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:2322",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -4713,7 +4713,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#invalid-cast",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:3107",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -4730,7 +4730,7 @@
       "category": "diagnostic",
       "phase": "type-check",
       "id": "compiler.type-check.uint-width-out-of-range",
-      "description": "A `Uint<N>` type is declared with `N` outside the valid range. The maximum is computed as `field-bytes * 8` and is currently 248 in `compactc-v0.31.0`.",
+      "description": "A `Uint<N>` type is declared with `N` outside the valid range. The maximum is computed as `field-bytes * 8` and is currently 248 in `compactc-v0.31.1`.",
       "fixes": [
         "Choose a width `N` satisfying `1 <= N <= 248`"
       ],
@@ -4745,7 +4745,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#uint-width-out-of-range",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:1193",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -4776,7 +4776,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#return-inside-for-loop",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/frontend-passes.ss:149",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -4814,7 +4814,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#failed-to-locate-included-file",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/frontend-passes.ss:38",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -4849,7 +4849,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#failed-to-locate-included-file",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/frontend-passes.ss:37",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -4884,7 +4884,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#include-cycle",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/frontend-passes.ss:40",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -4917,7 +4917,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#unreachable-statement",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/frontend-passes.ss:158",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -4950,7 +4950,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#const-binding-in-single-statement-context",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/frontend-passes.ss:228",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -4984,7 +4984,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#duplicate-binding-in-the-same-block",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/frontend-passes.ss:235",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -5020,7 +5020,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#duplicate-declaration",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/frontend-passes.ss:264",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -5047,7 +5047,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#cross-contract-calls-not-yet-supported",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/zkir-passes.ss:384",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -5120,7 +5120,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#pure-circuit-is-actually-impure",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:4463",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -5154,7 +5154,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#exported-circuit-modifies-sealed-field",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:4273",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -5195,7 +5195,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#unexpected-end-of-file-newline-character",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/lexer.ss:93",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -5232,7 +5232,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#nested-block-comment",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/lexer.ss:99",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -5253,7 +5253,7 @@
         "name": "Lexer Errors",
         "description": "Errors raised by the tokenizer when the input does not form a valid token stream."
       },
-      "description": "A numeric literal began with a leading `0` followed by a decimal digit. Compact requires a base prefix (`b`/`B`, `o`/`O`, or `x`/`X`) after a leading zero. Note: the duplicated word `syntax` matches upstream as of compactc-v0.31.0.",
+      "description": "A numeric literal began with a leading `0` followed by a decimal digit. Compact requires a base prefix (`b`/`B`, `o`/`O`, or `x`/`X`) after a leading zero. Note: the duplicated word `syntax` matches upstream as of compactc-v0.31.1.",
       "fixes": [
         "Use `0b…` for binary literals (e.g. `0b1010`)",
         "Use `0o…` for octal literals (e.g. `0o755`)",
@@ -5273,7 +5273,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#invalid-leading-zero-in-numeric-literal",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/lexer.ss:161",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -5312,7 +5312,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#numeric-literal-out-of-field-range",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/lexer.ss:170",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -5352,7 +5352,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#invalid-digit-in-binary-literal",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/lexer.ss:175",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -5377,7 +5377,7 @@
       "fixes": [
         "Check the supported pragma directives for this compiler version",
         "Confirm the pragma name and value are spelled correctly",
-        "Example of a valid pragma: `pragma language_version >= 0.22;`"
+        "Example of a valid pragma: `pragma language_version 0.23;`"
       ],
       "aliases": [
         "unrecognized pragma setting ~s",
@@ -5391,7 +5391,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#unrecognized-pragma-setting",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/parser.ss:427",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -5432,7 +5432,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#file-io-errors",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/parser.ss:999",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -5471,7 +5471,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#file-io-errors",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/parser.ss:1005",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -5511,7 +5511,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#shadowing-conflict",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:215",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -5547,7 +5547,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#circular-type-alias",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:366",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -5584,7 +5584,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#invalid-context-for-name",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:604",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -5620,7 +5620,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#no-such-export",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:711",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -5658,7 +5658,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#wrong-number-of-generic-parameters",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:846",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -5694,7 +5694,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#possibly-uninitialized-variable",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:1118",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -10156,7 +10156,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#ambiguous-overload",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:1824",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -10197,7 +10197,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#return-type-mismatch",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:1691",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -10236,7 +10236,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#assignment-type-mismatch",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:2121",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -10276,7 +10276,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#uint-range-bounds",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:2424",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -10317,7 +10317,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#uint-range-bounds",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:1199",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -10358,7 +10358,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#for-loop-range-bound-errors",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:1134",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -10379,7 +10379,7 @@
         "name": "Type Checking Errors",
         "description": "Errors raised when expressions, declarations, or calls violate Compact's type system."
       },
-      "description": "A `Vector` or `Bytes` type — or the UTF-8 representation of a string constant, or a pad length — was declared with a length exceeding the maximum supported size (currently 16,777,216 = 2^24 in `compactc-v0.31.0`).",
+      "description": "A `Vector` or `Bytes` type — or the UTF-8 representation of a string constant, or a pad length — was declared with a length exceeding the maximum supported size (currently 16,777,216 = 2^24 in `compactc-v0.31.1`).",
       "fixes": [
         "Use a smaller length",
         "Redesign the data layout so it does not need to exceed 2^24 elements",
@@ -10401,7 +10401,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#vector-or-bytes-length-too-large",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:923",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -10447,7 +10447,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#vector-or-bytes-length-too-large",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:2622",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -10489,7 +10489,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#vector-or-bytes-length-too-large",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:2562",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -10534,7 +10534,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#no-such-field",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:2872",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -10572,7 +10572,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#merkle-tree-depth-out-of-bounds-added-in-compiler-026105",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:2311",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -10612,7 +10612,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#opaque-js-persistenthash-persistentcommit-added-in-compiler-029113",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:1813",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -10651,7 +10651,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#witness-returns-contract-typed-value",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:2204",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -10686,7 +10686,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#duplicate-witness-declaration",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/frontend-passes.ss:264",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -10721,7 +10721,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#constructor-calls-external-contract",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:4361",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -10754,7 +10754,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#runtime-only-method-invoked-in-circuit",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:2143",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -10787,7 +10787,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#impure-export-name-collision-case-insensitive-filesystems",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/passes.ss:195",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -10820,7 +10820,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#unrecognized-native-circuit",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/zkir-passes.ss:367",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -10854,7 +10854,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#zkir-non-zero-exit-status",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/passes.ss:165",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -10888,7 +10888,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#contract-info-file-mismatch-family",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:1256",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -10922,7 +10922,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#contract-info-file-mismatch-family",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:1276",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -10961,7 +10961,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#contract-info-file-mismatch-family",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:1647",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -10994,7 +10994,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#module-name-mismatch-in-imported-file",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:670",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -11029,7 +11029,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#event-and-log-reserved-keywords-added-in-compiler-031101",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/parser.ss:128",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
@@ -11066,7 +11066,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#warning-uint-range-end-may-be-left-unchanged-after-generic-size-update",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/fixup.ss:83",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -11101,7 +11101,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#warning-renaming-reference-not-applied-binding-aware-rewrite-skipped",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor": "compiler/analysis-passes.ss:509",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04"
@@ -11151,7 +11151,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#builtin-call-type-mismatch",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
@@ -11204,7 +11204,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#aggregate-tuplevectorbytes-expected",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
@@ -11241,7 +11241,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#generic-expected-type-x-received-y-non-builtin",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
@@ -11278,7 +11278,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#declaredactual-type-or-count-mismatch",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
@@ -11317,7 +11317,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#incompatible-types-for-binary-relational-or-equality-operator",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
@@ -11359,7 +11359,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#adt-misuse-assignment-default-ledger-access",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
@@ -11395,7 +11395,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#contract-typed-values-in-disallowed-positions",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
@@ -11430,7 +11430,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#compile-time-constant-index-required",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
@@ -11462,7 +11462,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#function-body-can-return-without-supplying-a-value",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
@@ -11493,7 +11493,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#fold-first-argument-return-type-mismatch",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
@@ -11523,7 +11523,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#spread-construction-structure-mismatch",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
@@ -11556,7 +11556,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#wrong-number-of-arguments",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
@@ -11588,7 +11588,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#pad-string-target-shorter-than-utf-8-length",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
@@ -11625,7 +11625,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#disallowed-top-level-export",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
@@ -11656,7 +11656,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#misplaced-or-duplicate-top-level-constructor",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
@@ -11688,7 +11688,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#file-missing-a-single-module-definition",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
@@ -11721,7 +11721,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#recursion-involving-identifiers",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
@@ -11753,7 +11753,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#warning-old-standard-library-ledger-operator-name",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {
@@ -11794,7 +11794,7 @@
       "reference_anchor": "skills/status-codes/references/compiler-errors.md#file-io-errors",
       "verified_against": {
         "source_repo": "LFDT-Minokawa/compact",
-        "ref": "compactc-v0.31.0",
+        "ref": "compactc-v0.31.1",
         "anchor_modified": "2026-04-29",
         "verified_at": "2026-05-04",
         "toolchain": {

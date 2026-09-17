@@ -18,7 +18,7 @@ building blocks — most contracts need at least one access control pattern.
 ### Implementation
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 // Owner set at deployment, immutable
@@ -95,7 +95,7 @@ export circuit adminAction(value: Field): [] {
 ### Implementation
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export enum Role { admin, operator, viewer }
@@ -188,7 +188,7 @@ export circuit adminAction(): [] {
 ### Implementation
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export sealed ledger owner: Bytes<32>;
@@ -285,7 +285,7 @@ export circuit normalOperation(): [] {
 ### Implementation
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version 0.23;
 import CompactStandardLibrary;
 
 export ledger isInitialized: Boolean;

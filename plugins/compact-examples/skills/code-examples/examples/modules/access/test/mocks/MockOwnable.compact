@@ -6,7 +6,7 @@
 // identity-sensitive circuits take the caller's DERIVED admin key (computed here
 // from `getUserSecret()`), never `ownPublicKey()`.
 
-pragma language_version >= 0.23;
+pragma language_version 0.23;
 
 import CompactStandardLibrary;
 

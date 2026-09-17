@@ -38,7 +38,7 @@ Review trust-boundaries first, in this order:
 
 1. **Witness inputs are attacker-controlled.** Every `witness foo(): T` returns a value the prover chose. The circuit must constrain it (hash it, compare it against pinned state, verify a signature) before any decision depends on it. A witness value used directly in an `assert` for authorization is bypassable. See `references/witness-trust-boundary.md`.
 2. **Exported-circuit parameters are attacker-controlled.** Anyone can call any `export circuit` with any arguments. Validate every parameter.
-3. **`ownPublicKey()` is a witness, not the signer.** It returns the prover-supplied Zswap coin public key — not cryptographically bound to the transaction signer. **Never** use it for authorization/identity gating. Its only safe use is routing shielded coins to the caller. See `references/witness-trust-boundary.md`.
+3. **`ownPublicKey()` is a witness, not the signer.** It returns the prover-supplied Zswap coin public key — not cryptographically bound to the transaction signer. **Never** use it for authorization/identity gating. Its only safe use is routing shielded coins to the caller after they have passed some appropriately implemented access control gate. See `references/witness-trust-boundary.md`.
 4. **Disclosure is a one-way leak.** Anything `disclose()`d becomes public forever. Disclose as late and as narrowly as possible.
 5. **Assert messages are public.** A failed transaction's message is observable. Never embed private state in it.
 
