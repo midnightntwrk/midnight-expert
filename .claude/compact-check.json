@@ -1,0 +1,5 @@
+{
+  "exclude": [
+    "plugins/compact-core/skills/compact-init-project/templates/example/"
+  ]
+}
