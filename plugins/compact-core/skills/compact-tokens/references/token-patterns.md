@@ -429,6 +429,6 @@ These constraints apply as of Compact compiler 0.31.1 and the current Midnight p
 | No batch operations | Compact has no dynamic arrays. Operations like batch minting or batch transfers require fixed-size `Vector` types or repeated calls. |
 | Maximum integer width is `Uint<128>` | Compact does not support `Uint<256>`. Token amounts, balances, and supply are capped at 128-bit unsigned integers. |
 | Shielded mint capped at `Uint<64>` | `mintShieldedToken` accepts `Uint<64>` for the amount parameter. This is a compiler-level constraint that cannot be overridden. |
-| ShieldedERC20 is ARCHIVED | The `ShieldedERC20` module in `OpenZeppelin/midnight-apps` is explicitly marked "DO NOT USE IN PRODUCTION." It exists for research purposes only. |
+| ShieldedERC20 is ARCHIVED | The `ShieldedERC20` module in `OpenZeppelin/midnight-apps` is explicitly marked "DO NOT USE IN PRODUCTION." It exists for research purposes only. Its upstream successor is the ElGamal-based `ConfidentialFungibleToken` (see `examples/ConfidentialFungibleToken.compact`). |
 | `sendShielded` does not create coin ciphertexts | The `sendShielded` function does not produce ciphertexts for the recipient, making it unsuitable for direct user-facing transfers where the recipient needs to discover coins. Use `sendImmediateShielded` for transactional sends. |
 | No ERC-165-like introspection | There is no standard interface detection mechanism. Contracts cannot query whether another contract implements a specific interface. |

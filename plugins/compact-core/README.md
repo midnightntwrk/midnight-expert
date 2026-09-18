@@ -77,10 +77,10 @@ Covers tokens on Midnight: shielded vs unshielded approaches, mint/send/receive 
 
 | Name | Description | When it is used |
 |------|-------------|-----------------|
-| [FungibleToken.compact](skills/compact-tokens/examples/FungibleToken.compact) | ERC-20 style fungible token (requires OpenZeppelin compact-contracts) | When building a basic fungible token contract |
-| [NonFungibleToken.compact](skills/compact-tokens/examples/NonFungibleToken.compact) | Non-fungible token with ownership tracking (requires OpenZeppelin compact-contracts) | When building an NFT contract |
-| [MultiToken.compact](skills/compact-tokens/examples/MultiToken.compact) | Multi-token collection with mint/burn per ID (requires OpenZeppelin compact-contracts) | When building a multi-token contract |
-| [ShieldedFungibleToken.compact](skills/compact-tokens/examples/ShieldedFungibleToken.compact) | Shielded fungible token using zswap coin infrastructure (requires OpenZeppelin midnight-apps) | When building a privacy-preserving fungible token |
+| [FungibleToken.compact](skills/compact-tokens/examples/FungibleToken.compact) | ERC-20 style fungible token (OpenZeppelin deps vendored alongside) | When building a basic fungible token contract |
+| [NonFungibleToken.compact](skills/compact-tokens/examples/NonFungibleToken.compact) | Non-fungible token with ownership tracking (OpenZeppelin deps vendored alongside) | When building an NFT contract |
+| [MultiToken.compact](skills/compact-tokens/examples/MultiToken.compact) | Multi-token collection with mint/burn per ID (OpenZeppelin deps vendored alongside) | When building a multi-token contract |
+| [ConfidentialFungibleToken.compact](skills/compact-tokens/examples/ConfidentialFungibleToken.compact) | Confidential (encrypted-balance) fungible token via ElGamal; upstream OpenZeppelin replacement for the archived ShieldedERC20 | When building a privacy-preserving fungible token |
 
 ### compact-core:compact-privacy-disclosure
 

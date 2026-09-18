@@ -1,17 +1,8 @@
-// *** NON-COMPILABLE EXAMPLE — ILLUSTRATIVE REFERENCE ONLY ***
-//
-// This file CANNOT be compiled standalone. It requires an external dependency
-// from the OpenZeppelin compact-contracts project that is not vendored here.
-//
-// Missing dependency:
-//   ../security/Initializable  — one-time initialization guard module
-//
-// To compile this contract, clone the full OpenZeppelin project:
-//   Repository: https://github.com/OpenZeppelin/compact-contracts
-//   Version:    v0.0.1-alpha.1
-//   Status:     ALPHA — NOT AUDITED, NOT PRODUCTION-READY
-//
-// Or see the compact-examples openzeppelin skill for installation instructions.
+// Illustrative teaching example. Its OpenZeppelin dependency
+// (../security/Initializable) is vendored alongside this file from
+// OpenZeppelin/compact-contracts v0.3.0-alpha.2, so it compiles standalone with
+// `compact compile --skip-zk` under the network-supported compiler (0.31.1).
+// The vendored module is ALPHA — NOT AUDITED, NOT PRODUCTION-READY.
 //
 // OpenZeppelin FungibleToken for Midnight Compact
 //

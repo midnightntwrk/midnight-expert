@@ -24,7 +24,7 @@ This skill covers tokens on Midnight: choosing between shielded and unshielded a
 |------|----------|---------|-------|------------|
 | Shielded ledger | Blockchain ledger | Private | UTXO | Native privacy, maximum efficiency, hidden sender/recipient/value |
 | Unshielded ledger | Blockchain ledger | Transparent | UTXO | Full transparency, high performance, visible balances |
-| Shielded contract | Contract state | Private | Account (via `Map`) | Private balances via ZK proofs, but no post-issuance spend enforcement — contract cannot freeze, pause, or claw back coins once received (see Known Limitations in `references/token-patterns.md`). OpenZeppelin ShieldedERC20 is archived; use unshielded contract tokens for custom logic. |
+| Shielded contract | Contract state | Private | Account (via `Map`) | Private balances via ZK proofs, but no post-issuance spend enforcement — contract cannot freeze, pause, or claw back coins once received (see Known Limitations in `references/token-patterns.md`). OpenZeppelin's ShieldedERC20 is archived; its upstream successor is the ElGamal-based `ConfidentialFungibleToken` (see `examples/ConfidentialFungibleToken.compact`), which hides balances via encryption rather than the Zswap shielded-coin model. For custom spend logic, unshielded contract tokens remain the pragmatic choice. |
 | Unshielded contract | Contract state | Transparent | Account (via `Map`) | Full programmability, visible operations |
 
 ## Shielded Token Operations
@@ -137,7 +137,7 @@ On testnet, these are called **tNIGHT** and **tDUST**. Contracts cannot mint, se
 
 | Example | File |
 |---------|------|
-| ERC-20 style fungible token (non-compilable — requires OpenZeppelin compact-contracts) | `examples/FungibleToken.compact` |
-| Non-fungible token with ownership tracking (non-compilable — requires OpenZeppelin compact-contracts) | `examples/NonFungibleToken.compact` |
-| Multi-token collection with mint/burn per ID (non-compilable — requires OpenZeppelin compact-contracts) | `examples/MultiToken.compact` |
-| Shielded fungible token using zswap coin infrastructure (non-compilable — requires OpenZeppelin midnight-apps) | `examples/ShieldedFungibleToken.compact` |
+| ERC-20 style fungible token (OpenZeppelin `Initializable` dep vendored alongside) | `examples/FungibleToken.compact` |
+| Non-fungible token with ownership tracking (OpenZeppelin `Initializable` + `Utils` deps vendored alongside) | `examples/NonFungibleToken.compact` |
+| Multi-token collection with mint/burn per ID (OpenZeppelin `Initializable` dep vendored alongside) | `examples/MultiToken.compact` |
+| Confidential (encrypted-balance) fungible token via ElGamal — upstream OpenZeppelin replacement for the archived ShieldedERC20 (`crypto/ElGamal` + `crypto/EcdhMask` deps vendored alongside) | `examples/ConfidentialFungibleToken.compact` |

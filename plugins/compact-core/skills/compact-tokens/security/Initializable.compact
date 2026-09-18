@@ -1,0 +1,88 @@
+// =============================================================================
+// VENDORED DEPENDENCY — DO NOT EDIT BY HAND
+//
+// Copied verbatim from OpenZeppelin/compact-contracts at tag v0.3.0-alpha.2:
+//   https://github.com/OpenZeppelin/compact-contracts/blob/v0.3.0-alpha.2/contracts/src/security/Initializable.compact
+//
+// Vendored into the compact-tokens skill so the neighbouring example contracts
+// resolve their imports and compile standalone under the network-supported
+// compiler (0.31.1). Status: ALPHA — NOT AUDITED, NOT PRODUCTION-READY.
+// Refresh from upstream when the pinned compiler moves.
+// =============================================================================
+
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Compact Contracts v0.3.0-alpha.2 (security/Initializable.compact)
+
+pragma language_version >= 0.23.0;
+
+/**
+ * @module Initializable
+ * @description Initializable provides a simple mechanism that mimics the functionality of a constructor.
+ *
+ * @notice ⚠️ TECHNICAL WARNING: only use this module at the top contract layer, and
+ * import it into at most one module per contract.
+ *
+ * The Compact compiler deduplicates a shared transitive dependency's ledger state
+ * inconsistently depending on directory layout
+ * (https://github.com/LFDT-Minokawa/compact/issues/270, reproduced on compiler
+ * 0.29.0–0.31.0). When two modules in the SAME directory both import this module,
+ * their `_isInitialized` flags collapse into a SINGLE shared ledger slot: calling
+ * `initialize()` on one marks the other as initialized, and the other can never be
+ * initialized independently. Modules in different directories get separate slots.
+ * The result is unpredictable and a security hazard for composed contracts.
+ *
+ * For this reason the OpenZeppelin modules no longer use this module: each tracks
+ * its own `_isInitialized` ledger flag inline. This module is kept for direct,
+ * single-import use and can be reintroduced across modules once #270 is resolved.
+ */
+module Initializable {
+  import CompactStandardLibrary;
+
+  export ledger _isInitialized: Boolean;
+
+  /**
+   * @description Initializes the state thus ensuring the calling circuit can only be called once.
+   *
+   * @circuitInfo k=10, rows=38
+   *
+   * Requirements:
+   *
+   * - Contract must not be initialized.
+   *
+   * @return {[]} - Empty tuple.
+   */
+  export circuit initialize(): [] {
+    assertNotInitialized();
+    _isInitialized = true;
+  }
+
+  /**
+   * @description Asserts that the contract has been initialized, throwing an error if not.
+   *
+   * @circuitInfo k=10, rows=31
+   *
+   * Requirements:
+   *
+   * - Contract must be initialized.
+   *
+   * @return {[]} - Empty tuple.
+   */
+  export circuit assertInitialized(): [] {
+    assert(_isInitialized, "Initializable: contract not initialized");
+  }
+
+  /**
+   * @description Asserts that the contract has not been initialized, throwing an error if it has.
+   *
+   * @circuitInfo k=10, rows=35
+   *
+   * Requirements:
+   *
+   * - Contract must not be initialized.
+   *
+   * @return {[]} - Empty tuple.
+   */
+  export circuit assertNotInitialized(): [] {
+    assert(!_isInitialized, "Initializable: contract already initialized");
+  }
+}

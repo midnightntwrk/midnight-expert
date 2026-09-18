@@ -14,18 +14,12 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Files intentionally NOT compiled standalone here:
 #   - the project template carries {{ }} placeholders (e.g. __name__), so it is
 #     not valid source until create-mn-app substitutes them.
-#   - the compact-tokens examples `import` OpenZeppelin / security building-block
-#     modules (e.g. ../security/Initializable.compact, ./openzeppelin/
-#     ShieldedERC20.compact) that live in the compact-examples module tree, not
-#     alongside them — they only resolve when bundled into a project. FOLLOW-UP:
-#     vendor those modules into compact-core, or relocate these examples, so
-#     they can be compiled here instead of skipped.
+# The compact-tokens examples used to be skipped because their OpenZeppelin /
+# security building-block imports were not present alongside them; those modules
+# are now vendored into skills/compact-tokens/{security,utils,crypto}/ (from
+# OpenZeppelin/compact-contracts v0.3.0-alpha.2), so the examples compile here.
 SKIP=(
   "skills/compact-init-project/templates/example/contract/__name__.compact"
-  "skills/compact-tokens/examples/FungibleToken.compact"
-  "skills/compact-tokens/examples/MultiToken.compact"
-  "skills/compact-tokens/examples/NonFungibleToken.compact"
-  "skills/compact-tokens/examples/ShieldedFungibleToken.compact"
 )
 
 is_skipped() {
