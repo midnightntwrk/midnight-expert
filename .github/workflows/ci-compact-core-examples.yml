@@ -49,7 +49,8 @@ jobs:
           compact --version
           # Pin to the network-supported compiler (see compact-cli SKILL.md);
           # a bare `compact update` tracks the latest release and drifts the baseline.
-          compact update 0.31.1
+          # The pin lives in one place so install-cli and CI agree.
+          compact update "$(tr -d '[:space:]' < plugins/midnight-tooling/network-supported-compiler.txt)"
 
       - name: Compile all compact-core examples
         run: bash plugins/compact-core/scripts/compile-compact-core-examples.sh
