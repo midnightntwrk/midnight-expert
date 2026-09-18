@@ -1,5 +1,7 @@
 # CLI Self-Management
 
+> **Last verified:** 2026-09-17 against `compact` CLI 0.5.1 — `self check` / `self update` subcommands verified against the installed toolchain.
+
 The `compact self` subcommand manages the CLI binary itself — independent of the compiler versions it manages.
 
 ## Check for CLI Updates

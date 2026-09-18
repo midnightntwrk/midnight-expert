@@ -1,6 +1,6 @@
 // Verified against the package versions pinned in
 // midnight-wallet:sdk-regression-check/versions.lock.json on 2026-06-02.
-// If your installed @midnight-ntwrk/wallet-sdk-* versions differ,
+// If your installed @midnightntwrk/wallet-sdk-* versions differ,
 // run scripts/drift-check.sh in that skill before trusting this template.
 
 import WebSocket from "ws";
@@ -12,22 +12,22 @@ import {
   Roles,
   generateRandomSeed,
   validateMnemonic,
-} from "@midnight-ntwrk/wallet-sdk-hd";
+} from "@midnightntwrk/wallet-sdk-hd";
 import {
   WalletFacade,
   WalletEntrySchema,
   type DefaultConfiguration,
-} from "@midnight-ntwrk/wallet-sdk-facade";
-import { ShieldedWallet } from "@midnight-ntwrk/wallet-sdk-shielded";
+} from "@midnightntwrk/wallet-sdk-facade";
+import { ShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
 import {
   UnshieldedWallet,
   createKeystore,
   PublicKey,
-} from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
-import { DustWallet } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
-import { InMemoryTransactionHistoryStorage } from "@midnight-ntwrk/wallet-sdk-abstractions";
+} from "@midnightntwrk/wallet-sdk-unshielded-wallet";
+import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
+import { InMemoryTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
 import * as ledger from "@midnight-ntwrk/ledger-v8";
-import { MidnightBech32m } from "@midnight-ntwrk/wallet-sdk-address-format";
+import { MidnightBech32m } from "@midnightntwrk/wallet-sdk-address-format";
 import { mnemonicToSeedSync } from "@scure/bip39";
 
 // ─── Arg parsing ─────────────────────────────────────────────────────────────

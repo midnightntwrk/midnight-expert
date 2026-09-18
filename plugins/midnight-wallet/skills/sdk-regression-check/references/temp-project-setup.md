@@ -17,20 +17,20 @@ cd "$(mktemp -d)"
 npm init -y
 npm pkg set type=module
 npm install \
-  @midnight-ntwrk/wallet-sdk \
-  @midnight-ntwrk/wallet-sdk-facade \
-  @midnight-ntwrk/wallet-sdk-hd \
-  @midnight-ntwrk/wallet-sdk-shielded \
-  @midnight-ntwrk/wallet-sdk-unshielded-wallet \
-  @midnight-ntwrk/wallet-sdk-dust-wallet \
-  @midnight-ntwrk/wallet-sdk-capabilities \
-  @midnight-ntwrk/wallet-sdk-abstractions \
-  @midnight-ntwrk/wallet-sdk-address-format \
-  @midnight-ntwrk/wallet-sdk-runtime \
-  @midnight-ntwrk/wallet-sdk-utilities \
-  @midnight-ntwrk/wallet-sdk-indexer-client \
-  @midnight-ntwrk/wallet-sdk-node-client \
-  @midnight-ntwrk/wallet-sdk-prover-client \
+  @midnightntwrk/wallet-sdk \
+  @midnightntwrk/wallet-sdk-facade \
+  @midnightntwrk/wallet-sdk-hd \
+  @midnightntwrk/wallet-sdk-shielded \
+  @midnightntwrk/wallet-sdk-unshielded-wallet \
+  @midnightntwrk/wallet-sdk-dust-wallet \
+  @midnightntwrk/wallet-sdk-capabilities \
+  @midnightntwrk/wallet-sdk-abstractions \
+  @midnightntwrk/wallet-sdk-address-format \
+  @midnightntwrk/wallet-sdk-runtime \
+  @midnightntwrk/wallet-sdk-utilities \
+  @midnightntwrk/wallet-sdk-indexer-client \
+  @midnightntwrk/wallet-sdk-node-client \
+  @midnightntwrk/wallet-sdk-prover-client \
   @midnight-ntwrk/ledger-v8 \
   ws \
   rxjs

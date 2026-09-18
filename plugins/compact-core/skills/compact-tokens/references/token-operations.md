@@ -1,5 +1,7 @@
 # Token Operations
 
+> **Last verified:** 2026-09-17 — every type and function below compile-probed against Compact compiler `0.31.1` / language `0.23` / `@midnight-ntwrk/compact-runtime` `0.16.0` with the claimed signatures (value widths, `Either` orderings, struct field layouts confirmed).
+
 Exhaustive API reference for all token-related types and functions in Compact. All types and functions are provided by the standard library (`import CompactStandardLibrary;`).
 
 ## Types

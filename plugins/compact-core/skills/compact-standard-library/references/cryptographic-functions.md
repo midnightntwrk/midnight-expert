@@ -1,5 +1,7 @@
 # Cryptographic Functions
 
+> **Last verified:** 2026-09-17 — EC and Merkle function signatures (`ecAdd`, `ecMul`, `ecMulGenerator`, `hashToCurve`, `jubjubPointX/Y`, `constructJubjubPoint`, `merkleTreePathRoot`, `merkleTreePathRootNoLeafHash`) compile-probed against Compact compiler `0.31.1` / language `0.23`.
+
 ## Elliptic Curve Functions
 
 These functions operate on the proof system's embedded elliptic curve (Jubjub). All inputs and outputs use the `JubjubPoint` type, which represents a point on the curve. Elliptic curve operations are the foundation for Pedersen commitments, public key derivation, and value blinding in the Zswap protocol.

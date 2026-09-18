@@ -1,5 +1,7 @@
 # Ledger Types and Operations
 
+> **Last verified:** 2026-09-18 — all ADT method names/signatures (Counter, Map, Set, List, MerkleTree, HistoricMerkleTree) and Kernel operations compile-verified in circuit context against Compact compiler `0.31.1` / language `0.23` / runtime `0.16.0`; nested-ADT `default<V>` init confirmed.
+
 Exhaustive API reference for all ledger state types in Compact. Every ADT is provided by the standard library (`import CompactStandardLibrary;`).
 
 ## Declaration Syntax

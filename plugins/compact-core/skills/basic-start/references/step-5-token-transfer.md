@@ -6,7 +6,7 @@
 
 Programmatic NIGHT token transfers between wallets using the `WalletFacade` SDK.
 
-This step reuses the project and dependencies from Steps 3-4 (`@midnight-ntwrk/wallet-sdk-*` and `@midnight-ntwrk/wallet-sdk-address-format` are already installed) and the deployer seed saved in Step 3.
+This step reuses the project and dependencies from Steps 3-4 (`@midnightntwrk/wallet-sdk-*` and `@midnightntwrk/wallet-sdk-address-format` are already installed) and the deployer seed saved in Step 3.
 
 ### Procedure
 
@@ -17,22 +17,22 @@ This step reuses the project and dependencies from Steps 3-4 (`@midnight-ntwrk/w
    (globalThis as any).WebSocket = WebSocket;
 
    import { Buffer } from "buffer";
-   import { HDWallet, Roles, generateRandomSeed } from "@midnight-ntwrk/wallet-sdk-hd";
+   import { HDWallet, Roles, generateRandomSeed } from "@midnightntwrk/wallet-sdk-hd";
    import {
      WalletFacade,
      WalletEntrySchema,
      type DefaultConfiguration,
-   } from "@midnight-ntwrk/wallet-sdk-facade";
-   import { ShieldedWallet } from "@midnight-ntwrk/wallet-sdk-shielded";
+   } from "@midnightntwrk/wallet-sdk-facade";
+   import { ShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
    import {
      UnshieldedWallet,
      createKeystore,
      PublicKey,
-   } from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
-   import { DustWallet } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
-   import { InMemoryTransactionHistoryStorage } from "@midnight-ntwrk/wallet-sdk-abstractions";
+   } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
+   import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
+   import { InMemoryTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
    import * as ledger from "@midnight-ntwrk/ledger-v8";
-   import { MidnightBech32m } from "@midnight-ntwrk/wallet-sdk-address-format";
+   import { MidnightBech32m } from "@midnightntwrk/wallet-sdk-address-format";
 
    // Optional seed arg. With no arg, generates a fresh wallet and prints the seed.
    let seedHex = process.argv[2];
@@ -116,23 +116,23 @@ This step reuses the project and dependencies from Steps 3-4 (`@midnight-ntwrk/w
    (globalThis as any).WebSocket = WebSocket;
 
    import { Buffer } from "buffer";
-   import { HDWallet, Roles } from "@midnight-ntwrk/wallet-sdk-hd";
+   import { HDWallet, Roles } from "@midnightntwrk/wallet-sdk-hd";
    import {
      WalletFacade,
      WalletEntrySchema,
      type DefaultConfiguration,
      type CombinedTokenTransfer,
-   } from "@midnight-ntwrk/wallet-sdk-facade";
-   import { ShieldedWallet } from "@midnight-ntwrk/wallet-sdk-shielded";
+   } from "@midnightntwrk/wallet-sdk-facade";
+   import { ShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
    import {
      UnshieldedWallet,
      createKeystore,
      PublicKey,
-   } from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
-   import { DustWallet } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
-   import { InMemoryTransactionHistoryStorage } from "@midnight-ntwrk/wallet-sdk-abstractions";
+   } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
+   import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
+   import { InMemoryTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
    import * as ledger from "@midnight-ntwrk/ledger-v8";
-   import { MidnightBech32m, UnshieldedAddress } from "@midnight-ntwrk/wallet-sdk-address-format";
+   import { MidnightBech32m, UnshieldedAddress } from "@midnightntwrk/wallet-sdk-address-format";
 
    const SENDER_SEED = process.argv[2];
    const RECIPIENT_ADDRESS = process.argv[3];
@@ -224,7 +224,7 @@ This step reuses the project and dependencies from Steps 3-4 (`@midnight-ntwrk/w
    node --import tsx src/transfer.ts <deployer-seed> <alice-address> 25
    ```
 
-   Use `node --import tsx` not `npx tsx` — some `@midnight-ntwrk/wallet-sdk-*` packages have ESM export issues with tsx's CJS loader.
+   Use `node --import tsx` not `npx tsx` — some `@midnightntwrk/wallet-sdk-*` packages have ESM export issues with tsx's CJS loader.
 
 6. **Verify both balances** with the wallet-info script — once with the deployer seed (down by ~25 plus fees) and once with alice's seed (now holds 25 NIGHT):
 

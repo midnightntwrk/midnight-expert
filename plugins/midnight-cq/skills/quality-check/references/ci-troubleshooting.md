@@ -1,5 +1,7 @@
 # CI Troubleshooting Reference
 
+> **Last verified:** 2026-09-17 — `setup-compact-action` installs the `compact` binary (compile via `compact compile`), CI pin `compact-version: '0.31.1'`; package/version claims checked against npm (runtime 0.16.0, `@openzeppelin/compact-simulator@0.3.1`).
+
 ## checks.yml Passes But test.yml Fails
 
 **Symptom:** The "Format and Lint" workflow is green, but the "Test Suite" workflow is red.
@@ -14,7 +16,7 @@
 4. Reproduce locally in the same order CI runs:
 
 ```bash
-npx compact-compiler --skip-zk
+compact compile --skip-zk
 npx tsc --noEmit
 npx vitest run
 ```
@@ -71,29 +73,35 @@ Do not add `package.json`, `tsconfig.json`, or `.compact` source files to `paths
 
 **Fix:** Pin the version explicitly in both places and keep them in sync.
 
-In `test.yml`:
+In `test.yml` (the compiler is installed by the action, not via npm):
 
 ```yaml
 - name: Setup Compact Compiler
   uses: midnightntwrk/setup-compact-action@v1
   with:
-    compact-version: '0.29.0'
+    compact-version: '0.31.1'
 ```
 
-In `package.json`:
+Locally, select the same compiler:
+
+```bash
+compact update 0.31.1
+```
+
+Then make sure `@midnight-ntwrk/compact-runtime` in `package.json` matches that compiler's runtime (0.31.1 → 0.16.0):
 
 ```jsonc
 {
   "devDependencies": {
-    "@midnight-ntwrk/compact-compiler": "0.29.0"
+    "@midnight-ntwrk/compact-runtime": "0.16.0"
   }
 }
 ```
 
-Check your local version:
+Check your local compiler version:
 
 ```bash
-npx compact-compiler --version
+compact compile --version
 ```
 
 Update whichever side is out of date so both use the same version string.
@@ -117,7 +125,7 @@ jobs:
     ...
     steps:
       - name: Compile contracts
-        run: npx compact-compiler --skip-zk
+        run: compact compile --skip-zk
 ```
 
 Note: the `--skip-zk` flag on the CLI and the `SKIP_ZK` environment variable are redundant but complementary — set both for clarity. The environment variable also affects any scripts or sub-processes that invoke the compiler indirectly.

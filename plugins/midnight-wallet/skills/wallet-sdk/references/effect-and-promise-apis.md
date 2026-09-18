@@ -2,7 +2,7 @@
 
 ## Overview
 
-Three infrastructure-client packages in the Wallet SDK expose a dual-API pattern: a Promise-based class for straightforward async/await usage, and an Effect-based layer at a `./effect` sub-export for advanced typed-error handling. The prover-client also follows this pattern. In addition, the `submission` and `proving` capability services in `@midnight-ntwrk/wallet-sdk-capabilities` expose `*Effect` variants of their factory functions.
+Three infrastructure-client packages in the Wallet SDK expose a dual-API pattern: a Promise-based class for straightforward async/await usage, and an Effect-based layer at a `./effect` sub-export for advanced typed-error handling. The prover-client also follows this pattern. In addition, the `submission` and `proving` capability services in `@midnightntwrk/wallet-sdk-capabilities` expose `*Effect` variants of their factory functions.
 
 All three `./effect` sub-exports have been import-verified in the test harness (`npx tsx check-effect-imports.ts` — all three resolve without error).
 
@@ -23,12 +23,12 @@ The pattern is consistent across the three infrastructure clients:
 
 ---
 
-## `@midnight-ntwrk/wallet-sdk-node-client`
+## `@midnightntwrk/wallet-sdk-node-client`
 
 ### Promise API (main export)
 
 ```typescript
-import { PolkadotNodeClient } from "@midnight-ntwrk/wallet-sdk-node-client";
+import { PolkadotNodeClient } from "@midnightntwrk/wallet-sdk-node-client";
 
 const client = await PolkadotNodeClient.init({ nodeURL: new URL("ws://localhost:9944") });
 
@@ -52,7 +52,7 @@ import {
   type Config,
   makeConfig,
   DEFAULT_CONFIG,
-} from "@midnight-ntwrk/wallet-sdk-node-client/effect";
+} from "@midnightntwrk/wallet-sdk-node-client/effect";
 ```
 
 The `NodeClient` is an Effect `Context.Tag` — provide it via `EffectNodeClient.layer(config)`.
@@ -84,14 +84,14 @@ interface Service {
 
 ---
 
-## `@midnight-ntwrk/wallet-sdk-indexer-client`
+## `@midnightntwrk/wallet-sdk-indexer-client`
 
 ### Main export
 
 The main entry exports GraphQL query documents, subscription documents, and generated types — it does not expose a Promise-based client class directly. Applications consuming the indexer typically either use the `./effect` sub-export or rely on the indexer integration inside the pending-transactions service.
 
 ```typescript
-import { TransactionStatus, type TransactionStatusQuery } from "@midnight-ntwrk/wallet-sdk-indexer-client";
+import { TransactionStatus, type TransactionStatusQuery } from "@midnightntwrk/wallet-sdk-indexer-client";
 ```
 
 ### Effect API (`./effect` sub-export)
@@ -106,7 +106,7 @@ import {
   WsSubscriptionClient,
   ConnectionHelper,
   QueryRunner,
-} from "@midnight-ntwrk/wallet-sdk-indexer-client/effect";
+} from "@midnightntwrk/wallet-sdk-indexer-client/effect";
 ```
 
 `QueryClient` is a `Context.Tag`. Its `Service` runs typed GraphQL queries:
@@ -120,16 +120,16 @@ interface Service {
 }
 ```
 
-Errors are `ClientError` and `ServerError` from `@midnight-ntwrk/wallet-sdk-utilities/networking` — see the error model section below.
+Errors are `ClientError` and `ServerError` from `@midnightntwrk/wallet-sdk-utilities/networking` — see the error model section below.
 
 ---
 
-## `@midnight-ntwrk/wallet-sdk-prover-client`
+## `@midnightntwrk/wallet-sdk-prover-client`
 
 ### Promise API (main export)
 
 ```typescript
-import { HttpProverClient } from "@midnight-ntwrk/wallet-sdk-prover-client";
+import { HttpProverClient } from "@midnightntwrk/wallet-sdk-prover-client";
 
 const prover = new HttpProverClient({ url: "http://localhost:6300" });
 const provenTx = await prover.proveTransaction(unprovenTx);
@@ -142,7 +142,7 @@ import {
   ProverClient,
   HttpProverClient,
   WasmProver,
-} from "@midnight-ntwrk/wallet-sdk-prover-client/effect";
+} from "@midnightntwrk/wallet-sdk-prover-client/effect";
 ```
 
 `ProverClient` is a `Context.Tag`. Its `Service` proves transactions and can expose a `ledger.ProvingProvider`:
@@ -164,7 +164,7 @@ interface Service {
 
 ## Capability Services with Effect Variants
 
-The `@midnight-ntwrk/wallet-sdk-capabilities` package exposes `*Effect` factory functions alongside their Promise equivalents. Both are in the same import path — there is no separate `./effect` sub-export at the capabilities level.
+The `@midnightntwrk/wallet-sdk-capabilities` package exposes `*Effect` factory functions alongside their Promise equivalents. Both are in the same import path — there is no separate `./effect` sub-export at the capabilities level.
 
 ### Submission service
 
@@ -175,7 +175,7 @@ import {
   makeSimulatorSubmissionService,     // In-memory, for testing
   SubmissionError,
   SubmissionEvent,
-} from "@midnight-ntwrk/wallet-sdk-capabilities/submission";
+} from "@midnightntwrk/wallet-sdk-capabilities/submission";
 ```
 
 `SubmissionError` (`_tag: 'SubmissionError'`) is the typed failure for the Effect variants.
@@ -198,7 +198,7 @@ import {
   type ProvingService,
   type ProvingServiceEffect,
   type UnboundTransaction,
-} from "@midnight-ntwrk/wallet-sdk-capabilities/proving";
+} from "@midnightntwrk/wallet-sdk-capabilities/proving";
 ```
 
 `ProvingError` (`_tag: 'Wallet.Proving'`) is the typed failure for the Effect variants.
@@ -213,7 +213,7 @@ All errors in the Effect API extend `Data.TaggedError` from the `effect` library
 - Value-object equality semantics.
 - A standard `message: string` field.
 
-**Cross-cutting networking errors** (from `@midnight-ntwrk/wallet-sdk-utilities/networking`):
+**Cross-cutting networking errors** (from `@midnightntwrk/wallet-sdk-utilities/networking`):
 
 | Class | `_tag` | When raised |
 |-------|--------|-------------|

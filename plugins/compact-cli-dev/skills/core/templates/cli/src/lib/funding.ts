@@ -1,8 +1,8 @@
 import { unshieldedToken } from "@midnight-ntwrk/ledger-v8";
 import { getNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
-import { MidnightBech32m, UnshieldedAddress } from "@midnight-ntwrk/wallet-sdk-address-format";
-import type { WalletFacade } from "@midnight-ntwrk/wallet-sdk-facade";
-import type { UnshieldedKeystore } from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
+import { MidnightBech32m, UnshieldedAddress } from "@midnightntwrk/wallet-sdk-address-format";
+import type { WalletFacade } from "@midnightntwrk/wallet-sdk-facade";
+import type { UnshieldedKeystore } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
 import * as Rx from "rxjs";
 import {
 	DUST_GENERATION_TIMEOUT,

@@ -9,7 +9,7 @@ The wallet SDK uses branded types for compile-time safety. Always use the
 SDK's constructors — never cast raw values.
 
 ```typescript
-import { ProtocolVersion, NetworkId } from '@midnight-ntwrk/wallet-sdk-abstractions';
+import { ProtocolVersion, NetworkId } from '@midnightntwrk/wallet-sdk-abstractions';
 
 // Protocol version (branded bigint)
 const v8 = ProtocolVersion(8n);
@@ -21,7 +21,7 @@ const networkId: NetworkId = 'undeployed'; // string literal for test networks
 For `WalletSeed`, use the HD wallet utilities:
 
 ```typescript
-import { generateMnemonicWords, mnemonicToSeed } from '@midnight-ntwrk/wallet-sdk-hd';
+import { generateMnemonicWords, mnemonicToSeed } from '@midnightntwrk/wallet-sdk-hd';
 
 const mnemonic = generateMnemonicWords();
 const seed = mnemonicToSeed(mnemonic);
@@ -32,8 +32,8 @@ const seed = mnemonicToSeed(mnemonic);
 Set up a wallet with a test variant:
 
 ```typescript
-import { WalletBuilder } from '@midnight-ntwrk/wallet-sdk-runtime';
-import { ProtocolVersion } from '@midnight-ntwrk/wallet-sdk-abstractions';
+import { WalletBuilder } from '@midnightntwrk/wallet-sdk-runtime';
+import { ProtocolVersion } from '@midnightntwrk/wallet-sdk-abstractions';
 
 const TestWallet = WalletBuilder
   .init()

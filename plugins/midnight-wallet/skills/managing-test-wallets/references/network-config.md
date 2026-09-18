@@ -9,8 +9,8 @@ URLs and the `networkId` change.
 ### `undeployed` (local devnet)
 
 ```typescript
-import { InMemoryTransactionHistoryStorage } from '@midnight-ntwrk/wallet-sdk-abstractions';
-import { WalletEntrySchema, type DefaultConfiguration } from '@midnight-ntwrk/wallet-sdk-facade';
+import { InMemoryTransactionHistoryStorage } from '@midnightntwrk/wallet-sdk-abstractions';
+import { WalletEntrySchema, type DefaultConfiguration } from '@midnightntwrk/wallet-sdk-facade';
 
 const configuration: DefaultConfiguration = {
   networkId: 'undeployed',
@@ -86,7 +86,7 @@ This is unnecessary in browsers.
 
 ## ESM project requirement
 
-The `@midnight-ntwrk/wallet-sdk-*` packages are published as ESM. Your
+The `@midnightntwrk/wallet-sdk-*` packages are published as ESM. Your
 `package.json` must include `"type": "module"`. CommonJS consumers fail
 with `ERR_PACKAGE_PATH_NOT_EXPORTED`.
 

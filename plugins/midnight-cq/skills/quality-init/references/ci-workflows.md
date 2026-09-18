@@ -1,5 +1,7 @@
 # CI Workflows Reference
 
+> **Last verified:** 2026-09-17 — `midnightntwrk/setup-compact-action` with `compact-version: '0.31.1'`; compile step uses the `compact compile` CLI (verified against setup-compact-action source + installed CLI 0.5.1).
+
 ## Two-Workflow Architecture
 
 Midnight projects split CI into two workflows that serve different purposes:
@@ -108,10 +110,10 @@ jobs:
       - name: Setup Compact Compiler
         uses: midnightntwrk/setup-compact-action@v1
         with:
-          compact-version: '0.29.0'
+          compact-version: '0.31.1'
 
       - name: Compile contracts
-        run: npx compact compile --skip-zk
+        run: compact compile --skip-zk
 
       - name: Run type checks
         run: npx tsc --noEmit

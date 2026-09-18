@@ -23,7 +23,7 @@ Three recipe types flow through the pipeline:
 `transferTransaction()` creates and balances a transfer in a single call. It accepts both shielded and unshielded outputs, merges the resulting transactions, and adds fee balancing automatically.
 
 ```typescript
-import { WalletFacade, type CombinedTokenTransfer } from '@midnight-ntwrk/wallet-sdk-facade';
+import { WalletFacade, type CombinedTokenTransfer } from '@midnightntwrk/wallet-sdk-facade';
 
 const outputs: CombinedTokenTransfer[] = [
   {
@@ -222,7 +222,7 @@ for (const entry of entries) {
 
 Transaction history depends on the `TransactionHistoryStorage` implementation provided during wallet construction.
 
-> **Note:** `queryTxHistoryByHash` and `getAllFromTxHistory` exist in the wallet SDK source but may not be available in all published versions of `@midnight-ntwrk/wallet-sdk-facade`. Check your installed version's type exports before using these methods.
+> **Note:** `queryTxHistoryByHash` and `getAllFromTxHistory` exist in the wallet SDK source but may not be available in all published versions of `@midnightntwrk/wallet-sdk-facade`. Check your installed version's type exports before using these methods.
 
 ---
 

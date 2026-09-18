@@ -20,7 +20,7 @@ description: >-
   works — writes a file with that import, runs tsc, confirms it resolves.
 
   Example 5: Wallet SDK claim "WalletFacade exports balanceFinalizedTransaction"
-  — writes a .ts file importing from @midnight-ntwrk/wallet-sdk-facade, runs tsc,
+  — writes a .ts file importing from @midnightntwrk/wallet-sdk-facade, runs tsc,
   confirms the export exists. Uses the wallet-sdk-workspace (separate from the
   DApp SDK workspace).
 skills: midnight-verify:verify-by-type-check

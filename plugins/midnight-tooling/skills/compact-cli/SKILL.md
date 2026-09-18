@@ -18,6 +18,8 @@ description: >-
 
 # Compact CLI Management
 
+> **Last verified:** 2026-09-17 against `compact` CLI 0.5.1 / compiler 0.31.1 — documented commands, flags, version outputs, and exit codes run against the installed toolchain.
+
 The Compact CLI (`compact`) is the command-line tool for managing the Midnight Network's smart contract development toolchain. It handles compiler version management, code formatting, fixup transformations, and compiler invocation.
 
 ## **Terminology — Read This First**
@@ -44,7 +46,7 @@ The toolchain reports three independent version numbers. Confusing them is a com
 
 | What | Commands | Example Output |
 |------|----------|----------------|
-| **CLI tool version** | `compact --version`, `compact self --version` | `compact 0.5.1` |
+| **CLI tool version** | `compact --version` (or `compact self`) | `compact 0.5.1` |
 | **Compiler version** | `compact compile --version`, `compact format --version`, `compact fixup --version` | `0.31.1` |
 | **Language version** | `compact compile --language-version`, `compact format --language-version`, `compact fixup --language-version` | `0.23.0` |
 
@@ -80,7 +82,7 @@ The CLI and compiler update independently:
 | `compact check` | `ch` | Check for compiler updates without downloading |
 | `compact clean` | `cl` | Remove all installed compiler versions |
 | `compact clean --keep-current` | | Remove all except current default version |
-| `compact clean --cache` | | Remove only cached download artifacts |
+| `compact clean --cache` | | Remove **all installed versions** *and* the download cache (add `--keep-current` to preserve the current compiler) |
 | `compact update --no-set-default [VERSION]` | | Download compiler version without setting it as default |
 | `compact self check` | `s check` | Check for CLI tool updates |
 | `compact self update` | `s update` | Update the CLI tool itself |

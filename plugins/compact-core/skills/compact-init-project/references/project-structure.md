@@ -91,7 +91,7 @@ updated since — run `npm view <package> version` to check current versions:
 | `@midnight-ntwrk/midnight-js-types` | 4.1.1 |
 | `@midnight-ntwrk/midnight-js-utils` | 4.1.1 |
 | `@midnight-ntwrk/testkit-js` | 4.1.1 |
-| `@midnight-ntwrk/wallet-sdk` | 1.2.0 |
+| `@midnightntwrk/wallet-sdk` | 1.2.0 |
 
 Other runtime deps: `pino ^9`, `pino-pretty ^13`, `rxjs ^7.8.2`, `ws ^8.14.2`.
 Dev dependencies: `typescript ^5.7.0`, `vitest ^4.1.0`, `vite-node ^6.0.0`, `@types/node ^22.0.0`,

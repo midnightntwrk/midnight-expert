@@ -13,7 +13,7 @@ browser extension wallets (Lace and others) are handled by
 
 ### midnight-wallet:wallet-sdk
 
-Package-level reference for `@midnight-ntwrk/wallet-sdk-*` covering
+Package-level reference for `@midnightntwrk/wallet-sdk-*` covering
 construction (`WalletFacade.init`), HD key derivation, the three
 sub-wallets (shielded, unshielded, dust), state and balances,
 transactions, infrastructure clients, the variant/runtime pattern, the

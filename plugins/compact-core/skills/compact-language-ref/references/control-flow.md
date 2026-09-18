@@ -1,5 +1,7 @@
 # Control Flow
 
+> **Last verified:** 2026-09-18 — all positive examples (const multi-binding, tuple/struct destructuring, `if`/`else`, range & vector `for`, ternary) compile-verified against Compact compiler `0.31.1` / language `0.23` / runtime `0.16.0` (`compact compile --skip-zk`).
+
 Compact circuits have restricted control flow to guarantee that every program compiles to a fixed-size zero-knowledge circuit. There are no unbounded loops, no recursion, and no mutable variables. Every construct described here reflects that constraint.
 
 ## Variable Declarations (const)

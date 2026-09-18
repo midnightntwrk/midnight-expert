@@ -4,7 +4,7 @@ This is a step-by-step procedural workflow. Follow each phase in order. Do not s
 
 The project is scaffolded by a **vendored, deterministic generator** shipped inside this skill
 (`scripts/new-example.mjs` + `templates/example/`). It is zero-dependency (Node built-ins only) and
-produces byte-identical output for the same inputs — no network fetch, no template download.
+produces byte-identical output for the same inputs — no network fetch, no template download. It creates the most lightweight way possible to generate Compact and test that compact on a local devnet.
 
 ## Phase 1 — Environment Check
 

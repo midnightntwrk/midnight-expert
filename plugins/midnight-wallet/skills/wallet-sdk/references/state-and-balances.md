@@ -126,7 +126,7 @@ during construction so that `state.dust.balance(time)` and other
 time-sensitive operations can use a deterministic time source. This is
 useful for tests where you want to control "now". The `Clock` is set
 on `WalletFacade.init`'s configuration (see `wallet-construction.md`).
-The default clock is `systemClock` (exported from `@midnight-ntwrk/wallet-sdk-facade`),
+The default clock is `systemClock` (exported from `@midnightntwrk/wallet-sdk-facade`),
 which delegates to `new Date()`.
 
 ```typescript

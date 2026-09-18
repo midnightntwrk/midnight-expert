@@ -2,7 +2,7 @@
 
 How the Midnight Wallet SDK derives cryptographic keys from seeds and mnemonics using BIP-32 hierarchical deterministic (HD) derivation.
 
-**Package:** `@midnight-ntwrk/wallet-sdk-hd`
+**Package:** `@midnightntwrk/wallet-sdk-hd`
 
 ---
 
@@ -13,7 +13,7 @@ There are two ways to produce a seed for HD key derivation.
 ### Random Seed (No Mnemonic Backup)
 
 ```typescript
-import { generateRandomSeed } from '@midnight-ntwrk/wallet-sdk-hd';
+import { generateRandomSeed } from '@midnightntwrk/wallet-sdk-hd';
 
 // Returns Uint8Array of ceil(strength/8) bytes (default: 32 bytes for strength=256)
 const seed: Uint8Array = generateRandomSeed();        // 256-bit default
@@ -32,7 +32,7 @@ import {
   validateMnemonic,
   joinMnemonicWords,
   mnemonicToWords,
-} from '@midnight-ntwrk/wallet-sdk-hd';
+} from '@midnightntwrk/wallet-sdk-hd';
 import { mnemonicToSeedSync } from '@scure/bip39';
 
 // Step 1: Generate 24 mnemonic words (strength=256 default)
@@ -69,7 +69,7 @@ const seed: Uint8Array = mnemonicToSeedSync(phrase);
 The full derivation pipeline follows a builder pattern: seed -> wallet -> account -> roles -> keys.
 
 ```typescript
-import { HDWallet, Roles } from '@midnight-ntwrk/wallet-sdk-hd';
+import { HDWallet, Roles } from '@midnightntwrk/wallet-sdk-hd';
 import { mnemonicToSeedSync } from '@scure/bip39';
 
 // 1. Create seed from mnemonic

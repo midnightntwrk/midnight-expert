@@ -63,7 +63,7 @@ Use Glob, Grep, and Bash to detect what CQ tooling is present and what is missin
 | Mock contracts | `Glob **/test/mocks/*.compact` | One per `.compact` source |
 | Simulators | `Glob **/test/simulators/*.ts` | One per `.compact` source |
 | Test files | `Glob **/*.test.ts` | One per `.compact` source |
-| Wallet SDK deps | `Grep @midnight-ntwrk/wallet-sdk in package.json` | Determines if Wallet SDK project |
+| Wallet SDK deps | `Grep @midnightntwrk/wallet-sdk in package.json` | Determines if Wallet SDK project |
 | DApp Connector deps | `Grep @midnight-ntwrk/dapp-connector-api in package.json` | Determines if DApp Connector project |
 | Wallet test doubles | `Glob **/test/**/wallet-stub*.ts` | If wallet SDK or connector project |
 | Effect test patterns | `Grep Effect.runPromise in **/*.test.ts` | If wallet SDK project |
@@ -100,7 +100,7 @@ Read each config file that exists and check it against the standard. Do not assu
 | Check | What to Look For |
 |-------|-----------------|
 | `globalSetup` present | `globalSetup` entry that compiles `.compact` sources before tests run |
-| Simulator dependency | `@openzeppelin-compact/contracts-simulator` in `package.json` |
+| Simulator dependency | `@openzeppelin/compact-simulator` in `package.json` |
 
 **`.husky/pre-commit` checks:**
 

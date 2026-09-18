@@ -6,6 +6,8 @@ version: 0.1.0
 
 # Compact Standard Library Reference
 
+> **Last verified:** 2026-09-17 — stdlib symbol inventory & signatures compile-probed against Compact compiler `0.31.1` / language `0.23` / `@midnight-ntwrk/compact-runtime` `0.16.0`; every listed symbol resolves via `import CompactStandardLibrary;` and deprecated names (`CurvePoint`, `NativePoint`, `CoinInfo`) are correctly rejected.
+
 This is the single authoritative index of everything `import CompactStandardLibrary;` provides. Every type, constructor, circuit, and builtin documented here has been verified against the Compact compiler. For contract anatomy and scaffold patterns, see `compact-structure`. For language mechanics (types, operators, control flow), see `compact-language-ref`. For ledger ADT state design and privacy, see `compact-ledger`. For token mint/send/receive operations and patterns, see `compact-tokens`. This skill follows a verification-first philosophy: when in doubt, verify -- never assume a function exists.
 
 ## Verification Protocol

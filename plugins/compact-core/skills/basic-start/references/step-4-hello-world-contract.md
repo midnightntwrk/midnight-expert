@@ -58,7 +58,7 @@ Create `package.json`:
     "@midnight-ntwrk/midnight-js-types": "4.1.1",
     "@midnight-ntwrk/midnight-js-utils": "4.1.1",
     "@midnight-ntwrk/testkit-js": "4.1.1",
-    "@midnight-ntwrk/wallet-sdk": "1.2.0",
+    "@midnightntwrk/wallet-sdk": "1.2.0",
     "axios": "^1.15.0",
     "pino": "^9.0.0",
     "pino-pretty": "^13.0.0",
@@ -73,13 +73,13 @@ Create `package.json`:
     "vitest": "^4.1.0"
   },
   "resolutions": {
-    "@midnight-ntwrk/wallet-sdk": "1.2.0"
+    "@midnightntwrk/wallet-sdk": "1.2.0"
   },
   "packageManager": "yarn@1.22.22"
 }
 ```
 
-> Use **yarn** here — the `resolutions` field (which pins `@midnight-ntwrk/wallet-sdk` to `1.2.0` across the dependency tree) is a yarn feature. The `@midnight-ntwrk/wallet-sdk` meta-package re-exports the individual wallet sub-packages, and `@midnight-ntwrk/midnight-js-protocol` exposes the ledger, compact-js, and compact-runtime bindings via subpath exports (`/ledger`, `/compact-js`, `/compact-runtime`).
+> Use **yarn** here — the `resolutions` field (which pins `@midnightntwrk/wallet-sdk` to `1.2.0` across the dependency tree) is a yarn feature. The `@midnightntwrk/wallet-sdk` meta-package re-exports the individual wallet sub-packages, and `@midnight-ntwrk/midnight-js-protocol` exposes the ledger, compact-js, and compact-runtime bindings via subpath exports (`/ledger`, `/compact-js`, `/compact-runtime`).
 
 Create `tsconfig.json`:
 
@@ -301,7 +301,7 @@ import type {
   WalletProvider,
 } from '@midnight-ntwrk/midnight-js-types';
 import { ttlOneHour } from '@midnight-ntwrk/midnight-js-utils';
-import type { WalletFacade, FacadeState, UnshieldedKeystore } from '@midnight-ntwrk/wallet-sdk';
+import type { WalletFacade, FacadeState, UnshieldedKeystore } from '@midnightntwrk/wallet-sdk';
 import {
   type DustWalletOptions,
   type EnvironmentConfiguration,

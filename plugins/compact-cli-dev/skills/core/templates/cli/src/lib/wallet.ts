@@ -2,17 +2,17 @@ import fs from "node:fs";
 import path from "node:path";
 import * as ledger from "@midnight-ntwrk/ledger-v8";
 import { getNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
-import { InMemoryTransactionHistoryStorage } from "@midnight-ntwrk/wallet-sdk-abstractions";
-import { DustWallet } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
-import { WalletEntrySchema, WalletFacade } from "@midnight-ntwrk/wallet-sdk-facade";
-import { HDWallet, Roles, generateRandomSeed } from "@midnight-ntwrk/wallet-sdk-hd";
-import { ShieldedWallet } from "@midnight-ntwrk/wallet-sdk-shielded";
+import { InMemoryTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
+import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
+import { WalletEntrySchema, WalletFacade } from "@midnightntwrk/wallet-sdk-facade";
+import { HDWallet, Roles, generateRandomSeed } from "@midnightntwrk/wallet-sdk-hd";
+import { ShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
 import {
 	PublicKey,
 	type UnshieldedKeystore,
 	UnshieldedWallet,
 	createKeystore,
-} from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
+} from "@midnightntwrk/wallet-sdk-unshielded-wallet";
 import { WebSocket } from "ws";
 import {
 	ADDITIONAL_FEE_OVERHEAD,

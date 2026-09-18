@@ -15,14 +15,14 @@ Three separate conversions turn raw derived bytes into wallet-ready keys. Each c
 | Conversion | Function | Package |
 |---|---|---|
 | Shielded (Zswap) keys | `ZswapSecretKeys.fromSeed()` | `@midnight-ntwrk/ledger-v8` |
-| Unshielded keystore | `createKeystore()` | `@midnight-ntwrk/wallet-sdk-unshielded-wallet` |
+| Unshielded keystore | `createKeystore()` | `@midnightntwrk/wallet-sdk-unshielded-wallet` |
 | Dust secret key | `DustSecretKey.fromSeed()` | `@midnight-ntwrk/ledger-v8` |
 
-> **CRITICAL:** `createKeystore()` is exported from `@midnight-ntwrk/wallet-sdk-unshielded-wallet`, **not** from `@midnight-ntwrk/address-format` or any other package.
+> **CRITICAL:** `createKeystore()` is exported from `@midnightntwrk/wallet-sdk-unshielded-wallet`, **not** from `@midnight-ntwrk/address-format` or any other package.
 
 ```typescript
 import * as ledger from '@midnight-ntwrk/ledger-v8';
-import { createKeystore, PublicKey as UnshieldedPublicKey } from '@midnight-ntwrk/wallet-sdk-unshielded-wallet';
+import { createKeystore, PublicKey as UnshieldedPublicKey } from '@midnightntwrk/wallet-sdk-unshielded-wallet';
 
 // After HD key derivation (see key-derivation.md):
 const shieldedSecretKeys = ledger.ZswapSecretKeys.fromSeed(derivationResult.keys[Roles.Zswap]);
@@ -49,8 +49,8 @@ type DefaultConfiguration =
 A typical configuration object:
 
 ```typescript
-import { InMemoryTransactionHistoryStorage } from '@midnight-ntwrk/wallet-sdk-abstractions';
-import { type DefaultConfiguration, WalletEntrySchema } from '@midnight-ntwrk/wallet-sdk-facade';
+import { InMemoryTransactionHistoryStorage } from '@midnightntwrk/wallet-sdk-abstractions';
+import { type DefaultConfiguration, WalletEntrySchema } from '@midnightntwrk/wallet-sdk-facade';
 
 const configuration: DefaultConfiguration = {
   networkId: 'undeployed',
@@ -103,10 +103,10 @@ basic-start tutorial and the compact-cli-dev template use `300_000_000_000_000n`
 `WalletFacade.init()` accepts an `InitParams` object with the configuration and factory functions for each wallet sub-system:
 
 ```typescript
-import { ShieldedWallet } from '@midnight-ntwrk/wallet-sdk-shielded';
-import { UnshieldedWallet } from '@midnight-ntwrk/wallet-sdk-unshielded-wallet';
-import { DustWallet } from '@midnight-ntwrk/wallet-sdk-dust-wallet';
-import { WalletFacade } from '@midnight-ntwrk/wallet-sdk-facade';
+import { ShieldedWallet } from '@midnightntwrk/wallet-sdk-shielded';
+import { UnshieldedWallet } from '@midnightntwrk/wallet-sdk-unshielded-wallet';
+import { DustWallet } from '@midnightntwrk/wallet-sdk-dust-wallet';
+import { WalletFacade } from '@midnightntwrk/wallet-sdk-facade';
 
 const wallet: WalletFacade = await WalletFacade.init({
   configuration,
@@ -166,7 +166,7 @@ interface TransactionHistoryStorage<T extends { hash: TransactionHash }> {
 
 > **Note:** The interface uses `upsert()`, not `put()` or `set()`. This is an insert-or-update semantic keyed by the entry's `hash` property.
 
-The SDK provides `InMemoryTransactionHistoryStorage` from `@midnight-ntwrk/wallet-sdk-abstractions` as a ready-made in-memory implementation. Pass `WalletEntrySchema` (from `@midnight-ntwrk/wallet-sdk-facade`) to its constructor to enable serialization.
+The SDK provides `InMemoryTransactionHistoryStorage` from `@midnightntwrk/wallet-sdk-abstractions` as a ready-made in-memory implementation. Pass `WalletEntrySchema` (from `@midnightntwrk/wallet-sdk-facade`) to its constructor to enable serialization.
 
 > **Note:** `InMemoryTransactionHistoryStorage` (from `wallet-sdk-abstractions`) and `WalletEntrySchema` (from `wallet-sdk-facade`) are the canonical imports used in the SDK's own docs-snippets. If these are missing from your installed package versions, update to the latest release or implement `TransactionHistoryStorage` directly.
 

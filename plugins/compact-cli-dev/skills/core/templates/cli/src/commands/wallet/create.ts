@@ -1,5 +1,5 @@
 import { getNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
-import { createKeystore } from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
+import { createKeystore } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
 import { Args } from "@oclif/core";
 import { BaseCommand } from "../../base-command.js";
 import { deriveKeys, newSeed, saveWallet } from "../../lib/wallet.js";

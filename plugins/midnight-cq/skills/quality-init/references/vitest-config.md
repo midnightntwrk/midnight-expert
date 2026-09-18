@@ -1,11 +1,13 @@
 # Vitest Configuration Reference
 
+> **Last verified:** 2026-09-17 — dependency names/versions checked against npm: `@openzeppelin/compact-simulator@0.3.1` (pairs with `compact-runtime` 0.16.0).
+
 ## Dependencies
 
 Install these as dev dependencies for Compact contract testing:
 
 ```bash
-npm install --save-dev vitest @openzeppelin-compact/contracts-simulator @types/node typescript @tsconfig/node24
+npm install --save-dev vitest @openzeppelin/compact-simulator @types/node typescript @tsconfig/node24
 ```
 
 The runtime dependency is separate:
@@ -17,7 +19,7 @@ npm install @midnight-ntwrk/compact-runtime
 | Package | Purpose |
 |---------|---------|
 | `vitest` | Test runner -- fast, Vite-native, TypeScript without config |
-| `@openzeppelin-compact/contracts-simulator` | Local Compact contract simulator for unit tests |
+| `@openzeppelin/compact-simulator` | Local Compact contract simulator for unit tests |
 | `@midnight-ntwrk/compact-runtime` | Runtime types and helpers consumed by compiled Compact artifacts |
 | `@types/node` | Node.js type definitions |
 | `typescript` | TypeScript compiler for type checking |

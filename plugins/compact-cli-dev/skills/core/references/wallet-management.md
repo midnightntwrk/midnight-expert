@@ -24,7 +24,7 @@ Seed (64 hex chars = 32 bytes)
 Implementation from `wallet.ts`:
 
 ```typescript
-import { HDWallet, Roles, generateRandomSeed } from "@midnight-ntwrk/wallet-sdk-hd";
+import { HDWallet, Roles, generateRandomSeed } from "@midnightntwrk/wallet-sdk-hd";
 
 export function deriveKeys(seed: string): {
   zswap: Uint8Array;
@@ -90,7 +90,7 @@ const facade = await WalletFacade.init({
 ## Seed Format
 
 - **Length:** 64 hex characters (32 bytes)
-- **Generation:** `generateRandomSeed()` from `@midnight-ntwrk/wallet-sdk-hd`
+- **Generation:** `generateRandomSeed()` from `@midnightntwrk/wallet-sdk-hd`
 - **Genesis seed:** `000...001` (64 chars, pre-funded on local devnet)
 
 ```typescript

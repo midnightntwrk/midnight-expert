@@ -2,7 +2,7 @@
 name: midnight-wallet:wallet-sdk
 description: >-
   This skill should be used when the user asks about the Midnight Wallet SDK
-  packages (@midnight-ntwrk/wallet-sdk-*), how to construct a wallet with
+  packages (@midnightntwrk/wallet-sdk-*), how to construct a wallet with
   WalletFacade, HD key derivation from seeds or mnemonics,
   the three-wallet architecture (shielded, unshielded, dust), observing wallet
   state and sync progress, transaction balancing and signing, proving and
@@ -13,7 +13,7 @@ description: >-
 
 # Wallet SDK Reference
 
-Reference for the `@midnight-ntwrk/wallet-sdk-*` packages.
+Reference for the `@midnightntwrk/wallet-sdk-*` packages.
 
 ## Critical caveat — verify SDK is current
 
@@ -26,7 +26,7 @@ before trusting any pattern here.
 ## Scope — browser wallets are out of scope
 
 This skill is the package-level reference for the wallet SDK
-(`@midnight-ntwrk/wallet-sdk-*`), used in programmatic contexts where
+(`@midnightntwrk/wallet-sdk-*`), used in programmatic contexts where
 the script owns the keys directly. If the user is integrating their
 DApp with a browser extension wallet (Lace or other), load
 `midnight-dapp-dev:dapp-connector` instead.
@@ -46,11 +46,11 @@ Key packages involved:
 
 | Package | What it provides |
 |---------|-----------------|
-| `@midnight-ntwrk/wallet-sdk-hd` | `HDWallet`, `Roles`, `generateRandomSeed` |
-| `@midnight-ntwrk/wallet-sdk-facade` | `WalletFacade` — unified API |
-| `@midnight-ntwrk/wallet-sdk-shielded` | `ShieldedWallet` factory |
-| `@midnight-ntwrk/wallet-sdk-unshielded-wallet` | `UnshieldedWallet` factory, `createKeystore`, `PublicKey` |
-| `@midnight-ntwrk/wallet-sdk-dust-wallet` | `DustWallet` factory |
+| `@midnightntwrk/wallet-sdk-hd` | `HDWallet`, `Roles`, `generateRandomSeed` |
+| `@midnightntwrk/wallet-sdk-facade` | `WalletFacade` — unified API |
+| `@midnightntwrk/wallet-sdk-shielded` | `ShieldedWallet` factory |
+| `@midnightntwrk/wallet-sdk-unshielded-wallet` | `UnshieldedWallet` factory, `createKeystore`, `PublicKey` |
+| `@midnightntwrk/wallet-sdk-dust-wallet` | `DustWallet` factory |
 
 For the full construction code, see `examples/basic-wallet-setup.ts`.
 For configuration details, see `references/wallet-construction.md`.

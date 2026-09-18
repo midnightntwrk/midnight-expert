@@ -6,6 +6,8 @@ version: 0.1.0
 
 # TypeScript Witness Implementation & Contract Runtime
 
+> **Last verified:** 2026-09-18 — Compact→TypeScript type mappings verified by compiling with `0.31.1` / language `0.23` / runtime `0.16.0` and inspecting the generated `index.d.ts` (struct, generic-`#n`-dropped, and `Maybe` shapes confirmed; **enum representation corrected** — the compiler emits a TS `enum`, not a `const … as const` object).
+
 This skill covers the TypeScript half of every Compact contract: implementing witnesses, understanding compiler-generated types, and using the Contract runtime. For Compact witness declarations and disclosure rules, see `compact-structure`. For privacy patterns using witnesses, see `compact-privacy-disclosure`. For standard library functions referenced in witnesses, see `compact-standard-library`.
 
 ## Compiler Output
