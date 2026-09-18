@@ -85,3 +85,4 @@ A circuit with `k` outside the prefetched range (`10..=15`) will trigger an on-d
 - `proof-server:proof-server-configuration` — `--no-fetch-params` flag details and startup time trade-offs
 - `proof-server:proof-server-architecture` — proving pipeline overview and worker pool
 - `compact-core:compact-circuit-costs` — how circuit structure determines `k` and proof cost
+- `midnight-dapp-dev:core` — client-side counterpart: how a DApp's own `zkConfigProvider` interacts with these same four builtin keys (`midnight/zswap/spend`, `midnight/zswap/output`, `midnight/zswap/sign`, `midnight/dust/spend`) when proving is self-hosted via `httpClientProofProvider` instead of wallet-delegated — see the "Gotcha" box in `references/provider-patterns.md`
