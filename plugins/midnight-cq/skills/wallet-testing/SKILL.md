@@ -12,6 +12,8 @@ version: 0.1.0
 
 # Wallet SDK Testing
 
+> **Last verified:** 2026-09-18 — wallet SDK npm scope corrected to `@midnightntwrk` (no hyphen; commit 9485a0f). `ProtocolVersion` confirmed exported by `@midnightntwrk/wallet-sdk-abstractions` 2.1.0 as a `Brand.Branded<bigint>` with a brand constructor (matching the `ProtocolVersion(8n)` fixture pattern). Deeper `WalletBuilder`/`WalletFacade`/capability signatures are cross-referenced from `midnight-wallet:wallet-sdk` (its dedicated pass).
+
 Write tests for custom wallet implementations and extensions built on the
 Midnight Wallet SDK packages (`@midnightntwrk/wallet-sdk-*`).
 

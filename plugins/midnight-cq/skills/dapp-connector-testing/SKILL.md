@@ -13,6 +13,8 @@ version: 0.1.0
 
 # DApp Connector API Testing
 
+> **Last verified:** 2026-09-18 — checked against `@midnight-ntwrk/dapp-connector-api` 4.0.1: all 16 documented `ConnectedAPI` methods and all 5 error codes (`InternalError`, `InvalidRequest`, `Rejected`, `PermissionRejected`, `Disconnected`) are present in the published type definitions; the `apiVersion` 4.0.1 fixture matches the current package.
+
 Write tests for DApp code that integrates with the wallet through the
 DApp Connector API — the `window.midnight` injection, `InitialAPI.connect()`,
 and the `ConnectedAPI` methods.
