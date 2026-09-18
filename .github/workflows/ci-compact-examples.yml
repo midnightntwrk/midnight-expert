@@ -50,7 +50,8 @@ jobs:
           compact --version
           # Pin the compiler version explicitly — `compact update` with no
           # argument tracks the latest release, which drifts the CI baseline.
-          compact update 0.31.1
+          # The pin lives in one place so install-cli and CI agree.
+          compact update "$(tr -d '[:space:]' < plugins/midnight-tooling/network-supported-compiler.txt)"
 
       - name: Compile all examples
         run: bash plugins/compact-examples/scripts/compile-examples.sh

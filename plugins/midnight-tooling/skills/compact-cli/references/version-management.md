@@ -21,6 +21,10 @@ compact: aarch64-darwin -- 0.31.1 -- already installed
 
 > ⚠️ **The newest *published* compiler can outpace live-network support.** `compact update` / `compact check` report the absolute latest (currently `0.34.0`), but **`0.34.0` is not yet supported on any live network**. Pin to the latest **network-supported** version (currently `0.31.1`) for anything you intend to deploy — "latest available" is not the same as "latest supported".
 
+### Where the network-supported version is pinned
+
+The operational pin is `plugins/midnight-tooling/network-supported-compiler.txt` (a single semver line). `install-cli` and the CI example-compile workflows read it, so bumping the supported version is a one-line change there. Source of truth for what the networks accept is the [compatibility matrix](https://docs.midnight.network/relnotes/support-matrix); update the pin when the matrix moves. Prose mentions of the version in this skill (like the note above) are documentation and should be refreshed at the same time.
+
 ### Install a Specific Version
 
 The `update` command accepts three version formats:
@@ -139,11 +143,12 @@ compact update 0.31.1
 ### Pin a Project to a Specific Version
 
 ```bash
-# Install into project-local directory
-compact --directory ./.compact update 0.29.0
+# Install into project-local directory (use an absolute path: with a
+# relative --directory the CLI fails to extract the downloaded artifact)
+compact --directory "$PWD/.compact" update 0.29.0
 
 # Set COMPACT_DIRECTORY so all commands use it
-export COMPACT_DIRECTORY=./.compact
+export COMPACT_DIRECTORY="$PWD/.compact"
 
 # Now compile uses the project-local version
 compact compile src/contract.compact build/

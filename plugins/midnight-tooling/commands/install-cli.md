@@ -13,6 +13,20 @@ Install or update the Compact CLI tool, with intelligent handling of global vs. 
 - **Compact compiler**: The compiler managed by the CLI, stored in the artifact directory
 - These are separate. Installing the CLI is separate from downloading a compiler version.
 
+## Step 0: Resolve the Network-Supported Compiler Version
+
+> ⚠️ **"Latest available" is not "latest supported".** A bare `compact update` downloads the newest *published* compiler, which can be ahead of what any live network accepts. Every `compact update` in this command must pass an explicit version. See the compact-cli skill's [version-management reference](../skills/compact-cli/references/version-management.md).
+
+The network-supported version is pinned in one place so it can be bumped without editing this command:
+
+```bash
+cat "${CLAUDE_PLUGIN_ROOT}/network-supported-compiler.txt"
+```
+
+Store the result (a single semver string, e.g. `0.31.1`) as `NETWORK_COMPILER` and use it in every `compact update` below. Shell variables do not persist between tool calls, so substitute the literal value (e.g. `compact update 0.31.1`) when you run the commands; `"$NETWORK_COMPILER"` in this file is a placeholder for that value.
+
+If `CLAUDE_PLUGIN_ROOT` is not set or the file is not found there, use the `midnight-plugin-utils:find-claude-plugin-root` skill to locate the `midnight-tooling` plugin root and read `network-supported-compiler.txt` from that path. If the file still cannot be read, stop and tell the user: do not fall back to a bare `compact update`.
+
 ## Step 1: Parse Intent from Arguments
 
 Analyze `$ARGUMENTS` to determine what the user wants:
@@ -64,10 +78,10 @@ Adjust for the user's shell (check `$SHELL` to determine zsh vs bash).
 
 5. Remind the user to reload their shell or open a new terminal.
 
-6. Download the latest compiler:
+6. Download the network-supported compiler (not the latest):
 
 ```bash
-compact update
+compact update "$NETWORK_COMPILER"
 ```
 
 7. Verify:
@@ -76,6 +90,8 @@ compact update
 compact --version
 compact compile --version
 ```
+
+Then run the check in Step 3D.
 
 ## Step 3B: Global Update (CLI Already Installed)
 
@@ -94,23 +110,26 @@ compact check 2>&1
 
 3. Report findings:
    - If CLI update available: offer to run `compact self update`
-   - If compiler update available: offer to run `compact update`
-   - If both are up to date: report that everything is current
+   - If `compact check` reports a compiler newer than `$NETWORK_COMPILER`: tell the user it is published but **not yet network-supported**, and do not offer to install it. Link the [compatibility matrix](https://docs.midnight.network/relnotes/support-matrix).
+   - If the current default compiler (`compact compile --version`) differs from `$NETWORK_COMPILER`: offer to run `compact update "$NETWORK_COMPILER"`
+   - If the default compiler already equals `$NETWORK_COMPILER` and no CLI update is available: report that everything is current
 
-4. If updates are applied, verify the new versions.
+4. If updates are applied, verify the new versions, then run the check in Step 3D.
 
 ## Step 3C: Project-Local Installation
 
 When the user wants a project-specific toolchain:
 
 1. Determine the target directory:
-   - Default: `./.compact` (relative to project root)
-   - Or use the explicit `--directory` path from arguments
+   - Default: `$PWD/.compact` (the project root)
+   - Or use the explicit `--directory` path from arguments, resolved to an absolute path
 
-2. Install the compiler into the project directory:
+   Always pass `--directory` an **absolute** path. With a relative path (`./.compact`) the CLI changes into the version directory and then looks for `artifact.zip` by the same relative path again, so extraction fails (`unzip: cannot find or open ./.compact/versions/<ver>/<target>/artifact.zip`). The absolute form works. This is a CLI bug, tracked separately in midnightntwrk/compact.
+
+2. Install the network-supported compiler into the project directory:
 
 ```bash
-compact --directory ./.compact update
+compact --directory "$PWD/.compact" update "$NETWORK_COMPILER"
 ```
 
 If the CLI is not installed globally, install it first (Step 3A), then proceed with the project-local setup.
@@ -187,9 +206,11 @@ Compiler binaries and proving keys should not be committed to version control.
 5. **Verify the setup:**
 
 ```bash
-compact --directory ./.compact list --installed
-compact --directory ./.compact compile --version
+compact --directory "$PWD/.compact" list --installed
+compact --directory "$PWD/.compact" compile --version
 ```
+
+Then run the check in Step 3D against the project-local compiler.
 
 6. **Report what was configured:**
 
@@ -199,11 +220,28 @@ Summarize all changes made:
 - `.gitignore` updated
 - How to use: just run `compact compile` normally (env var handles the directory)
 
+## Step 3D: Confirm the Installed Compiler Is Network-Supported
+
+Run this after any install or update, global or project-local:
+
+```bash
+compact compile --version
+# project-local:
+compact --directory "$PWD/.compact" compile --version
+```
+
+Compare the reported compiler version to `$NETWORK_COMPILER`.
+
+- **Match:** report "compiler `<version>` is the current network-supported version".
+- **Mismatch:** warn clearly. The installed compiler may not be accepted by Preview, Preprod, or Mainnet, and contracts compiled with it can pass every local check yet fail at deploy. Offer to run `compact update "$NETWORK_COMPILER"` (with `--directory` for project-local installs) and link the [compatibility matrix](https://docs.midnight.network/relnotes/support-matrix).
+
+Do not skip this step because the install "succeeded"; a successful download of the wrong version is exactly the case it exists to catch.
+
 ## Step 4: Final Summary
 
 Present a summary of what was done:
 - Installation status (new install, updated, or already current)
 - CLI version
-- Compiler version
+- Compiler version, and whether it matches the network-supported version from Step 0
 - If project-local: directory and configured environment tools
 - Any manual steps the user still needs to take (e.g., reload shell)
