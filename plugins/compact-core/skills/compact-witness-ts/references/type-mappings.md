@@ -1,5 +1,7 @@
 # Compact to TypeScript Type Mappings
 
+> **Last verified:** 2026-09-18 — generated `index.d.ts` shapes verified by compiling against Compact compiler `0.31.1` / language `0.23` / runtime `0.16.0`: `Config` struct, generic `S<T>` (numeric `#n` dropped), and `Maybe<T>` match exactly; the enum mapping was corrected to the actual TS `enum` output.
+
 Complete reference for how Compact types map to TypeScript representations. All type translations are handled by the compiler-generated code and the `@midnight-ntwrk/compact-runtime` package.
 
 ## Primitive Types
@@ -84,7 +86,7 @@ if (result.is_left) {
 
 ### Enums
 
-Compact enums become numeric constants:
+Compact enums become a TypeScript `enum` (each variant assigned its numeric index):
 
 ```compact
 // Compact
@@ -93,7 +95,7 @@ export enum GameState { waiting, playing, finished }
 
 ```typescript
 // TypeScript (compiler-generated)
-export const GameState = { waiting: 0, playing: 1, finished: 2 } as const;
+export enum GameState { waiting = 0, playing = 1, finished = 2 }
 // Runtime checks: value must be a valid index (0, 1, or 2)
 ```
 

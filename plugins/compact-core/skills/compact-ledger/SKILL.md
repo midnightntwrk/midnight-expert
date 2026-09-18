@@ -6,6 +6,8 @@ version: 0.1.0
 
 # Compact Ledger & On-Chain State
 
+> **Last verified:** 2026-09-18 — every documented ledger ADT method (Counter, Map, Set, List, MerkleTree, HistoricMerkleTree) + Kernel operation (self/mint*/balance*/blockTime*/incUnshielded*) and nested-`default<V>` init compile-verified against Compact compiler `0.31.1` / language `0.23` / runtime `0.16.0`.
+
 This skill covers everything about on-chain state in Compact: declaring ledger fields, choosing and using ADT types, initializing state in constructors, designing state for privacy, and understanding what is visible on-chain. It does not cover general language mechanics (types, operators, control flow) -- those belong in `compact-language-ref`. It does not cover overall contract anatomy or circuit/witness design -- those belong in `compact-structure`.
 
 ## Ledger Declaration Quick Reference

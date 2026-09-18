@@ -1,5 +1,7 @@
 # Disclosure Mechanics
 
+> **Last verified:** 2026-09-18 — commit-vs-hash taint behavior and signatures compile-verified against Compact compiler `0.31.1` / language `0.23` / runtime `0.16.0`: `persistentCommit<Field>(_, Bytes<32>): Bytes<32>` and `transientCommit<Field>(_, Field): Field` clear taint (ledger write without `disclose()` compiles); `persistentHash` does not (rejected: "ledger operation might disclose a hash of the witness value").
+
 Deep reference for how `disclose()` works in Compact, what the compiler tracks,
 where disclosure is required, and how to place it correctly.
 

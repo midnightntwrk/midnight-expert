@@ -1,5 +1,7 @@
 # Operators and Expressions
 
+> **Last verified:** 2026-09-18 — cast paths (Uint→Bytes direct & via Field, Field↔Boolean, Bytes→Field), the ternary operator, and the `map` global keyword with anonymous-circuit lambdas + destructuring params compile-verified against Compact compiler `0.31.1` / language `0.23` / runtime `0.16.0`.
+
 Every Compact expression has a statically known type. The compiler rejects programs where operator usage does not satisfy the required type constraints.
 
 ## Arithmetic Operators

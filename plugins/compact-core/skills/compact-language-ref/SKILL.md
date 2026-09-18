@@ -6,6 +6,8 @@ version: 0.1.0
 
 # Compact Language Reference
 
+> **Last verified:** 2026-09-18 — core language syntax (control flow, types & values, operators/casts, `map`/lambda) compile-verified against Compact compiler `0.31.1` / language `0.23` / runtime `0.16.0` (`compact compile --skip-zk`, confirmed via `contract-info.json`); stdlib symbols cross-checked against the already-verified `compact-standard-library`.
+
 This skill covers Compact language mechanics: the type system, operators, expressions, type casting, control flow, the module system, and the standard library. It does not cover contract architecture (ledger declarations, circuit design, witness integration, constructor layout) -- those belong in `compact-structure`. Use this skill when you need to know how the language works rather than how to structure a contract.
 
 ## Types Quick Reference

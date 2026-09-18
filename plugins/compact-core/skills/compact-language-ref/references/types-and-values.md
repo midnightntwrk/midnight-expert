@@ -1,5 +1,7 @@
 # Types and Values
 
+> **Last verified:** 2026-09-18 — concrete syntax (single-quote string literals, `pad`, `Uint<0..N>`, `Maybe`/`Either` + `some`/`none`/`left`/`right`, enum `as Field`, positional/mixed/spread struct construction, generic structs, `default<T>` incl. `default<Counter>`) compile-verified against Compact compiler `0.31.1` / language `0.23` / runtime `0.16.0`.
+
 Compact is statically and strongly typed. Every expression has a type known at compile time. The compiler rejects programs that do not type check. When type annotations are omitted, the compiler infers them.
 
 ## Primitive Types

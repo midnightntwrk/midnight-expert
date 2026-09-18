@@ -6,6 +6,8 @@ version: 0.1.0
 
 # Compact Privacy & Disclosure
 
+> **Last verified:** 2026-09-18 — disclosure mechanics compile-verified against Compact compiler `0.31.1` / language `0.23` / runtime `0.16.0`: `persistentCommit`/`transientCommit` clear witness taint (store without `disclose()` compiles) while `persistentHash`/`transientHash` do not (rejected with the documented disclosure error); commit/hash signatures confirmed.
+
 This skill covers the privacy dimension of Compact: understanding what is private by default, when and how to disclose, and how to build contracts that preserve user privacy. For visibility rules per ledger operation, see `compact-ledger`. For contract anatomy and circuit/witness design, see `compact-structure`. For standard library function signatures, see `compact-standard-library`. For shielded token privacy, see `compact-tokens`.
 
 ## Midnight's Privacy Model
