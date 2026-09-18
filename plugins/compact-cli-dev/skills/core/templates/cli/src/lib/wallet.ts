@@ -14,6 +14,7 @@ import {
 	createKeystore,
 } from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
 import { WebSocket } from "ws";
+import { DEVNET_CONFIG } from "./config.js";
 import {
 	ADDITIONAL_FEE_OVERHEAD,
 	DIR_MODE,
@@ -95,11 +96,11 @@ export async function buildFacade(seed: string): Promise<WalletContext> {
 	const walletConfig = {
 		networkId,
 		indexerClientConnection: {
-			indexerHttpUrl: "http://127.0.0.1:8088/api/v4/graphql",
-			indexerWsUrl: "ws://127.0.0.1:8088/api/v4/graphql/ws",
+			indexerHttpUrl: DEVNET_CONFIG.indexer,
+			indexerWsUrl: DEVNET_CONFIG.indexerWS,
 		},
 		// The default submission service submits via the node's RPC relay.
-		relayURL: new URL("http://127.0.0.1:9944"),
+		relayURL: new URL(DEVNET_CONFIG.node),
 		costParameters: {
 			additionalFeeOverhead: ADDITIONAL_FEE_OVERHEAD,
 			feeBlocksMargin: FEE_BLOCKS_MARGIN,
