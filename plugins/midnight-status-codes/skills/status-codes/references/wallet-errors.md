@@ -1,6 +1,6 @@
 # Midnight Wallet SDK — Error Reference
 
-> **Last verified:** 2026-05-04 against published npm tarballs of `@midnightntwrk/wallet-sdk-*` packages (source repo `midnight-ntwrk/artifacts` is private; package versions per section). Most packages last published 2026-04-23.
+> **Last verified:** error inventory (tags, union members, messages) 2026-05-04 against published tarballs of the `@midnightntwrk/wallet-sdk-*` packages (private source repo `midnightntwrk/artifacts`; package versions per section). **npm scope corrected 2026-09-18** from `@midnight-ntwrk` to `@midnightntwrk` (no hyphen) — the hyphenated packages are a stale mirror. Documented per-section version numbers are unchanged; re-verifying the error inventory against the current releases (e.g. `wallet-sdk` 1.2.0, `wallet-sdk-facade` 4.1.0, `wallet-sdk-dust-wallet` 4.2.0) is a pending follow-up.
 
 All errors in the Midnight wallet SDK are Effect `Data.TaggedError` instances unless noted otherwise. Catch them with `Effect.catchTag` using the `_tag` field shown for each error. Union types can be caught with `Effect.catchTags`.
 

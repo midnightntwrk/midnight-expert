@@ -1,6 +1,6 @@
 # Proof Server Errors
 
-> **Last verified:** 2026-05-04 against `midnightntwrk/midnight-ledger@ledger-8`, `proof-server/` crate (anchor: `proof-server/src/worker_pool.rs`, modified 2026-03-01).
+> **Last verified:** anchor re-confirmed **2026-09-18** against `midnightntwrk/midnight-ledger@ledger-8` (still the repo's default branch), `proof-server/` crate (anchor `proof-server/src/worker_pool.rs` present). Content deep-verified 2026-05-04. Note: on the divergent `ledger-9` dev branch one worker-pool error message gained an interpolated field (`"bad input"` → `` "bad input: `{0}`" ``); otherwise unchanged — re-verify once `ledger-9` becomes the default branch.
 
 ## Source
 

@@ -1,6 +1,6 @@
 # Ledger Errors Reference
 
-> **Last verified:** 2026-05-04 against `midnightntwrk/midnight-ledger@ledger-8` (anchor: `ledger/src/error.rs`, modified 2026-03-30; sibling crates `zswap`, `onchain-runtime`, `onchain-vm`, `transient-crypto`, `proof-server`).
+> **Last verified:** anchor re-confirmed **2026-09-18** against `midnightntwrk/midnight-ledger@ledger-8` (still the repo's default branch; anchor `ledger/src/error.rs` present, sibling crates `zswap`, `onchain-runtime`, `onchain-vm`, `transient-crypto`, `proof-server`). Error-variant inventory deep-verified 2026-05-04. Note: a divergent `ledger-9` dev branch has begun adding new error variants (e.g. `MalformedTransaction::ContractMetadataTooLarge`, `IrNotFound`, `IrAlreadyPresent`) — re-verify against `ledger-9` once it becomes the default branch.
 
 ## Source
 
