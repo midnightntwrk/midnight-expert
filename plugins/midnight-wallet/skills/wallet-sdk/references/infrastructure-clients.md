@@ -12,7 +12,7 @@ The wallet SDK connects to three backend services. Each has a dedicated client p
 
 ## Indexer Client
 
-**Package:** `@midnight-ntwrk/wallet-sdk-indexer-client`
+**Package:** `@midnightntwrk/wallet-sdk-indexer-client`
 **Protocol:** GraphQL over WebSocket (subscriptions) and HTTP (queries)
 
 The indexer client is not used directly in most DApp code. The wallet manages
@@ -37,7 +37,7 @@ wallet.state().subscribe((state) => {
 
 ## Node Client
 
-**Package:** `@midnight-ntwrk/wallet-sdk-node-client`
+**Package:** `@midnightntwrk/wallet-sdk-node-client`
 **Class:** `PolkadotNodeClient`
 
 The node client has two entry points: the main export wraps the Effect layer and exposes
@@ -45,7 +45,7 @@ an `Observable`-based API, while the `/effect` sub-path exposes the raw Effect-t
 `sendMidnightTransaction` returns `Stream.Stream`.
 
 ```typescript
-import { PolkadotNodeClient } from '@midnight-ntwrk/wallet-sdk-node-client/effect';
+import { PolkadotNodeClient } from '@midnightntwrk/wallet-sdk-node-client/effect';
 
 // sendMidnightTransaction signature:
 // sendMidnightTransaction(
@@ -66,13 +66,13 @@ client directly. The wallet handles serialization, signing, and error recovery.
 
 ## Proof Server (Prover Client)
 
-**Package:** `@midnight-ntwrk/wallet-sdk-prover-client`
+**Package:** `@midnightntwrk/wallet-sdk-prover-client`
 **Class:** `HttpProverClient`
 
 The prover client sends unproven transactions to the proof server over HTTP:
 
 ```typescript
-import { HttpProverClient } from '@midnight-ntwrk/wallet-sdk-prover-client';
+import { HttpProverClient } from '@midnightntwrk/wallet-sdk-prover-client';
 
 const prover = new HttpProverClient({
   url: new URL('http://localhost:6300'),
@@ -90,7 +90,7 @@ The proof server runs the ZK circuit to generate a SNARK proof for each
 transaction. This is the most time-consuming step in the transaction pipeline.
 
 **WASM alternative:** For browser environments or offline proving, the
-`@midnight-ntwrk/wallet-sdk-prover-client` package also exports a WASM-based
+`@midnightntwrk/wallet-sdk-prover-client` package also exports a WASM-based
 prover through its capabilities package. This avoids the need for a separate
 proof server process but is significantly slower.
 
@@ -100,7 +100,7 @@ proof server process but is significantly slower.
 
 ## Address Encoding
 
-**Package:** `@midnight-ntwrk/wallet-sdk-address-format`
+**Package:** `@midnightntwrk/wallet-sdk-address-format`
 **Class:** `MidnightBech32m`
 
 Midnight uses Bech32m encoding with a static `"mn"` prefix for all addresses.
@@ -109,7 +109,7 @@ The `MidnightBech32m` class provides static methods for encoding and parsing.
 ### Encoding an address
 
 ```typescript
-import { MidnightBech32m, UnshieldedAddress } from '@midnight-ntwrk/wallet-sdk-address-format';
+import { MidnightBech32m, UnshieldedAddress } from '@midnightntwrk/wallet-sdk-address-format';
 
 // MidnightBech32m.encode is static:
 // static encode<T extends HasCodec<T>>(networkId: NetworkId, item: T): MidnightBech32m
@@ -132,11 +132,11 @@ const address = parsed.decode(UnshieldedAddress, 'testnet');
 
 ### Keystore and public keys
 
-The `createKeystore` function lives in `@midnight-ntwrk/wallet-sdk-unshielded-wallet`,
+The `createKeystore` function lives in `@midnightntwrk/wallet-sdk-unshielded-wallet`,
 not in the address-format package:
 
 ```typescript
-import { createKeystore, PublicKey } from '@midnight-ntwrk/wallet-sdk-unshielded-wallet';
+import { createKeystore, PublicKey } from '@midnightntwrk/wallet-sdk-unshielded-wallet';
 
 const keystore = createKeystore(secretKey, 'testnet');
 
@@ -159,7 +159,7 @@ The `UnshieldedKeystore` interface provides:
 
 `WalletFacade.init` accepts factory functions for `submissionService`,
 `pendingTransactionsService`, and `provingService`. The default
-implementations come from `@midnight-ntwrk/wallet-sdk-capabilities`.
+implementations come from `@midnightntwrk/wallet-sdk-capabilities`.
 
 To customize a service (e.g. swap the HTTP prover for the WASM prover,
 add metrics to submission, or use a custom pending-transactions store),

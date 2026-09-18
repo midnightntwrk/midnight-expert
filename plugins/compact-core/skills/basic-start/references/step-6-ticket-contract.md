@@ -206,16 +206,16 @@ import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-p
 import { levelPrivateStateProvider } from "@midnight-ntwrk/midnight-js-level-private-state-provider";
 import { NodeZkConfigProvider } from "@midnight-ntwrk/midnight-js-node-zk-config-provider";
 import { CompiledContract } from "@midnight-ntwrk/compact-js";
-import { HDWallet, Roles } from "@midnight-ntwrk/wallet-sdk-hd";
-import { WalletFacade, WalletEntrySchema } from "@midnight-ntwrk/wallet-sdk-facade";
-import { DustWallet } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
-import { ShieldedWallet } from "@midnight-ntwrk/wallet-sdk-shielded";
-import { InMemoryTransactionHistoryStorage } from "@midnight-ntwrk/wallet-sdk-abstractions";
+import { HDWallet, Roles } from "@midnightntwrk/wallet-sdk-hd";
+import { WalletFacade, WalletEntrySchema } from "@midnightntwrk/wallet-sdk-facade";
+import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
+import { ShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
+import { InMemoryTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
 import {
   createKeystore,
   PublicKey,
   UnshieldedWallet,
-} from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
+} from "@midnightntwrk/wallet-sdk-unshielded-wallet";
 import * as ledger from "@midnight-ntwrk/ledger-v8";
 import * as Rx from "rxjs";
 import path from "node:path";

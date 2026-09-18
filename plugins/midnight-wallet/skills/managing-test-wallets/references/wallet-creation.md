@@ -6,14 +6,14 @@ A wallet is built from a seed → derived keys → three sub-wallets → unified
 
 | Source | API |
 |--------|-----|
-| Random | `generateRandomSeed()` from `@midnight-ntwrk/wallet-sdk-hd` returns a `Uint8Array` |
-| BIP-39 mnemonic | `generateMnemonicWords()` + `validateMnemonic(phrase)` from `@midnight-ntwrk/wallet-sdk-hd`, then `mnemonicToSeedSync(phrase)` from `@scure/bip39` to produce the seed `Buffer` |
+| Random | `generateRandomSeed()` from `@midnightntwrk/wallet-sdk-hd` returns a `Uint8Array` |
+| BIP-39 mnemonic | `generateMnemonicWords()` + `validateMnemonic(phrase)` from `@midnightntwrk/wallet-sdk-hd`, then `mnemonicToSeedSync(phrase)` from `@scure/bip39` to produce the seed `Buffer` |
 | Hex string | `Buffer.from(hexString, 'hex')` (e.g. for the local-devnet genesis seed) |
 
 ## HD derivation
 
 ```typescript
-import { HDWallet, Roles } from '@midnight-ntwrk/wallet-sdk-hd';
+import { HDWallet, Roles } from '@midnightntwrk/wallet-sdk-hd';
 
 const hd = HDWallet.fromSeed(seedBuffer);
 if (hd.type !== 'seedOk') throw new Error('Invalid seed');
@@ -31,7 +31,7 @@ hd.hdWallet.clear(); // memory hygiene — call as soon as keys are derived
 
 ```typescript
 import * as ledger from '@midnight-ntwrk/ledger-v8';
-import { createKeystore, PublicKey } from '@midnight-ntwrk/wallet-sdk-unshielded-wallet';
+import { createKeystore, PublicKey } from '@midnightntwrk/wallet-sdk-unshielded-wallet';
 
 const shieldedSecretKeys = ledger.ZswapSecretKeys.fromSeed(derived.keys[Roles.Zswap]);
 const dustSecretKey = ledger.DustSecretKey.fromSeed(derived.keys[Roles.Dust]);
@@ -41,11 +41,11 @@ const unshieldedKeystore = createKeystore(derived.keys[Roles.NightExternal], net
 ## Construction
 
 ```typescript
-import { WalletFacade, WalletEntrySchema } from '@midnight-ntwrk/wallet-sdk-facade';
-import { ShieldedWallet } from '@midnight-ntwrk/wallet-sdk-shielded';
-import { UnshieldedWallet } from '@midnight-ntwrk/wallet-sdk-unshielded-wallet';
-import { DustWallet } from '@midnight-ntwrk/wallet-sdk-dust-wallet';
-import { InMemoryTransactionHistoryStorage } from '@midnight-ntwrk/wallet-sdk-abstractions';
+import { WalletFacade, WalletEntrySchema } from '@midnightntwrk/wallet-sdk-facade';
+import { ShieldedWallet } from '@midnightntwrk/wallet-sdk-shielded';
+import { UnshieldedWallet } from '@midnightntwrk/wallet-sdk-unshielded-wallet';
+import { DustWallet } from '@midnightntwrk/wallet-sdk-dust-wallet';
+import { InMemoryTransactionHistoryStorage } from '@midnightntwrk/wallet-sdk-abstractions';
 
 const wallet = await WalletFacade.init({
   configuration,  // see network-config.md

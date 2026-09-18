@@ -6,8 +6,8 @@ import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-p
 import { levelPrivateStateProvider } from "@midnight-ntwrk/midnight-js-level-private-state-provider";
 import { NodeZkConfigProvider } from "@midnight-ntwrk/midnight-js-node-zk-config-provider";
 import type { MidnightProvider, WalletProvider } from "@midnight-ntwrk/midnight-js-types";
-import type { WalletFacade } from "@midnight-ntwrk/wallet-sdk-facade";
-import type { UnshieldedKeystore } from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
+import type { WalletFacade } from "@midnightntwrk/wallet-sdk-facade";
+import type { UnshieldedKeystore } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
 import * as Rx from "rxjs";
 import { DEVNET_CONFIG } from "./config.js";
 import { LOCAL_PRIVATE_STATE_PASSWORD, ZK_CONFIG_PATH } from "./constants.js";

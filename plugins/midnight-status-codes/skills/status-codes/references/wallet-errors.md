@@ -1,12 +1,12 @@
 # Midnight Wallet SDK — Error Reference
 
-> **Last verified:** 2026-05-04 against published npm tarballs of `@midnight-ntwrk/wallet-sdk-*` packages (source repo `midnight-ntwrk/artifacts` is private; package versions per section). Most packages last published 2026-04-23.
+> **Last verified:** 2026-05-04 against published npm tarballs of `@midnightntwrk/wallet-sdk-*` packages (source repo `midnight-ntwrk/artifacts` is private; package versions per section). Most packages last published 2026-04-23.
 
 All errors in the Midnight wallet SDK are Effect `Data.TaggedError` instances unless noted otherwise. Catch them with `Effect.catchTag` using the `_tag` field shown for each error. Union types can be caught with `Effect.catchTags`.
 
 ---
 
-## Node Client (`@midnight-ntwrk/wallet-sdk-node-client`)
+## Node Client (`@midnightntwrk/wallet-sdk-node-client`)
 
 These 7 errors form the `NodeClientError` union type.
 
@@ -130,7 +130,7 @@ Effect.catchTag('TransactionInvalidError', (e) => ...)
 
 ---
 
-## Shielded Wallet (`@midnight-ntwrk/wallet-sdk-shielded`)
+## Shielded Wallet (`@midnightntwrk/wallet-sdk-shielded`)
 
 > **Package version:** 3.0.0.
 
@@ -221,7 +221,7 @@ Effect.catchTag('Wallet.InsufficientFunds', (e) => {
 
 The provided address is invalid.
 
-**Fix:** Validate the address format before use. See `@midnight-ntwrk/wallet-sdk-address-format` for format rules. The `originalAddress` field contains the rejected input.
+**Fix:** Validate the address format before use. See `@midnightntwrk/wallet-sdk-address-format` for format rules. The `originalAddress` field contains the rejected input.
 
 ```ts
 Effect.catchTag('Wallet.Address', (e) => ...)
@@ -278,7 +278,7 @@ Effect.catchTag('Wallet.TransactionHistory', (e) => ...)
 
 ---
 
-## Unshielded Wallet (`@midnight-ntwrk/wallet-sdk-unshielded-wallet`)
+## Unshielded Wallet (`@midnightntwrk/wallet-sdk-unshielded-wallet`)
 
 > **Package version:** 3.0.0.
 
@@ -373,7 +373,7 @@ Effect.catchTag('UtxoNotFoundError', (e) => ...)
 
 ---
 
-## Dust Wallet (`@midnight-ntwrk/wallet-sdk-dust-wallet`)
+## Dust Wallet (`@midnightntwrk/wallet-sdk-dust-wallet`)
 
 > **Package version:** 4.0.0.
 
@@ -398,7 +398,7 @@ See the [Shielded Wallet](#shielded-wallet-midnight-ntwrkwallet-sdk-shielded) se
 
 ---
 
-## Capabilities (`@midnight-ntwrk/wallet-sdk-capabilities`)
+## Capabilities (`@midnightntwrk/wallet-sdk-capabilities`)
 
 ### `ProvingError`
 
@@ -443,7 +443,7 @@ This is a plain JavaScript `Error`, **not** a `Data.TaggedError`. It is thrown (
 
 ---
 
-## Utilities (`@midnight-ntwrk/wallet-sdk-utilities`)
+## Utilities (`@midnightntwrk/wallet-sdk-utilities`)
 
 ### `LedgerError`
 
@@ -543,7 +543,7 @@ Effect.catchTag('ServerError', (e) => ...)
 
 ---
 
-## Runtime (`@midnight-ntwrk/wallet-sdk-runtime`)
+## Runtime (`@midnightntwrk/wallet-sdk-runtime`)
 
 ### `WalletRuntimeError`
 
@@ -566,7 +566,7 @@ Effect.catchTag('WalletRuntimeError', (e) => ...)
 
 ---
 
-## Address Format (`@midnight-ntwrk/wallet-sdk-address-format`)
+## Address Format (`@midnightntwrk/wallet-sdk-address-format`)
 
 These are plain JavaScript `Error` throws, not `Data.TaggedError` instances. Catch with standard `try/catch`.
 
@@ -642,7 +642,7 @@ All 29 `_tag` values, alphabetically:
 
 ---
 
-## Wallet Facade (`@midnight-ntwrk/wallet-sdk-facade`)
+## Wallet Facade (`@midnightntwrk/wallet-sdk-facade`)
 
 > **Package version:** 4.0.0.
 
@@ -665,8 +665,8 @@ These packages are part of the wallet SDK but expose no `Data.TaggedError` types
 
 | Package | Version | Notes |
 |---------|---------|-------|
-| `@midnight-ntwrk/wallet-sdk` | 1.0.0 | Barrel re-export only; the recommended entry point. |
-| `@midnight-ntwrk/wallet-sdk-indexer-client` | 1.2.1 | Uses utilities `ClientError`/`ServerError`. |
-| `@midnight-ntwrk/wallet-sdk-prover-client` | 1.2.1 | Used by `ProvingError` in capabilities. Surfaces utilities client/server errors. |
-| `@midnight-ntwrk/wallet-sdk-abstractions` | 2.1.0 | Throws `new TypeError('Invalid protocol version range.')` from `dist/ProtocolVersion.js`. Native `TypeError`, not tagged. |
-| `@midnight-ntwrk/wallet-sdk-hd` | 3.0.2 | No errors. |
+| `@midnightntwrk/wallet-sdk` | 1.0.0 | Barrel re-export only; the recommended entry point. |
+| `@midnightntwrk/wallet-sdk-indexer-client` | 1.2.1 | Uses utilities `ClientError`/`ServerError`. |
+| `@midnightntwrk/wallet-sdk-prover-client` | 1.2.1 | Used by `ProvingError` in capabilities. Surfaces utilities client/server errors. |
+| `@midnightntwrk/wallet-sdk-abstractions` | 2.1.0 | Throws `new TypeError('Invalid protocol version range.')` from `dist/ProtocolVersion.js`. Native `TypeError`, not tagged. |
+| `@midnightntwrk/wallet-sdk-hd` | 3.0.2 | No errors. |

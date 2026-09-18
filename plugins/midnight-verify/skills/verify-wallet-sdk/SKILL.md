@@ -4,7 +4,7 @@ description: >-
   Wallet SDK claim classification and method routing. Determines what kind of
   wallet SDK claim is being verified and which verification methods apply:
   type-checking (pre-flight only), source investigation (primary), or devnet
-  E2E (fallback). Handles claims about @midnight-ntwrk/wallet-sdk-* packages,
+  E2E (fallback). Handles claims about @midnightntwrk/wallet-sdk-* packages,
   WalletFacade, WalletBuilder, the DApp Connector API, HD derivation, Bech32m
   addresses, branded types, and the three-wallet architecture. Loaded by the
   /midnight-verify:verify command alongside the hub skill.

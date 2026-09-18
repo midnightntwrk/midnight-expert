@@ -38,7 +38,7 @@ Classifies witness-related claims and dispatches to the witness-verifier agent. 
 
 ### midnight-verify:verify-wallet-sdk
 
-Classifies wallet SDK claims and determines which verification methods apply: type-checking (pre-flight only), source investigation (primary), or devnet E2E (fallback). Handles claims about @midnight-ntwrk/wallet-sdk-* packages, WalletFacade, WalletBuilder, and the three-wallet architecture.
+Classifies wallet SDK claims and determines which verification methods apply: type-checking (pre-flight only), source investigation (primary), or devnet E2E (fallback). Handles claims about @midnightntwrk/wallet-sdk-* packages, WalletFacade, WalletBuilder, and the three-wallet architecture.
 
 ### midnight-verify:verify-by-execution
 

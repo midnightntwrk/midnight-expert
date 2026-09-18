@@ -31,7 +31,7 @@ import type {
   WalletFacade,
   FacadeState,
   UnshieldedKeystore,
-} from '@midnight-ntwrk/wallet-sdk';
+} from '@midnightntwrk/wallet-sdk';
 import {
   type DustWalletOptions,
   type EnvironmentConfiguration,

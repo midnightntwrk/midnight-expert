@@ -2,7 +2,7 @@
 
 ## Overview
 
-`@midnight-ntwrk/wallet-sdk-capabilities` is a single package with five sub-exports. Each sub-export is a self-contained service module that `WalletFacade.init()` wires together internally. Three of the five (`submission`, `proving`, `pendingTransactions`) can be overridden in `WalletFacade.init()` via optional factory functions; `balancer` and `simulation` are not injected through the facade but are used internally or directly in tests.
+`@midnightntwrk/wallet-sdk-capabilities` is a single package with five sub-exports. Each sub-export is a self-contained service module that `WalletFacade.init()` wires together internally. Three of the five (`submission`, `proving`, `pendingTransactions`) can be overridden in `WalletFacade.init()` via optional factory functions; `balancer` and `simulation` are not injected through the facade but are used internally or directly in tests.
 
 All five sub-exports have been import-verified with `npx tsx check-capabilities-imports.ts` against the installed package.
 
@@ -14,7 +14,7 @@ Source of truth: `/tmp/midnight-wallet/packages/capabilities/src/`
 
 ## `./balancer`
 
-**Import:** `@midnight-ntwrk/wallet-sdk-capabilities/balancer`
+**Import:** `@midnightntwrk/wallet-sdk-capabilities/balancer`
 
 The balancer sub-module provides a coin-selection and transaction-balancing algorithm. It is not a single shared "Balancer" instance that rebalances across all three wallet types. Instead, it exports the building blocks (`getBalanceRecipe`, `chooseCoin`, `CounterOffer`, `Imbalances`, etc.) that each wallet's v1 transacting implementation uses independently. Shielded, unshielded, and dust wallets each call `getBalanceRecipe` with their own coin types.
 
@@ -52,7 +52,7 @@ type CoinRecipe = { type: TokenType; value: TokenValue };
 
 ## `./submission`
 
-**Import:** `@midnight-ntwrk/wallet-sdk-capabilities/submission`
+**Import:** `@midnightntwrk/wallet-sdk-capabilities/submission`
 
 Provides the service that serialises and submits finalised transactions to the Midnight node, then tracks their progress through `Submitted → InBlock → Finalized` stages.
 
@@ -101,7 +101,7 @@ WalletFacade.init({
 
 ## `./proving`
 
-**Import:** `@midnight-ntwrk/wallet-sdk-capabilities/proving`
+**Import:** `@midnightntwrk/wallet-sdk-capabilities/proving`
 
 Provides the service that takes an unproven transaction (containing pre-proof placeholders) and returns a proven transaction by calling a Proof Server or Wasm prover.
 
@@ -157,7 +157,7 @@ Note: The facade requires either `provingServerUrl` in the configuration or an e
 
 ## `./pendingTransactions`
 
-**Import:** `@midnight-ntwrk/wallet-sdk-capabilities/pendingTransactions`
+**Import:** `@midnightntwrk/wallet-sdk-capabilities/pendingTransactions`
 
 Tracks in-flight transactions from submission through to indexer confirmation. The service polls the indexer to update the status of each pending transaction and exposes the current set as an RxJS `Observable`.
 
@@ -214,7 +214,7 @@ WalletFacade.init({
 
 ## `./simulation`
 
-**Import:** `@midnight-ntwrk/wallet-sdk-capabilities/simulation`
+**Import:** `@midnightntwrk/wallet-sdk-capabilities/simulation`
 
 An in-memory ledger simulator for testing. It replaces the real Midnight node, indexer, and proof server in unit and integration tests. The `Simulator` class manages a complete in-memory `SimulatorState` — including mempool, blocks, ledger state, and time — and exposes it as an Effect `Stream`.
 
@@ -243,9 +243,9 @@ An in-memory ledger simulator for testing. It replaces the real Midnight node, i
 **When to use:** Use `Simulator` whenever you want wallet tests that run without a devnet. The simulator is what `makeSimulatorSubmissionService` and `makeSimulatorProvingService` target internally.
 
 ```typescript
-import { Simulator, immediateBlockProducer } from "@midnight-ntwrk/wallet-sdk-capabilities/simulation";
+import { Simulator, immediateBlockProducer } from "@midnightntwrk/wallet-sdk-capabilities/simulation";
 import { makeSimulatorSubmissionService, makeSimulatorProvingService }
-  from "@midnight-ntwrk/wallet-sdk-capabilities/submission";
+  from "@midnightntwrk/wallet-sdk-capabilities/submission";
 
 const simulator = new Simulator({ networkId: 'undeployed', blockProducer: immediateBlockProducer });
 const submissionService = makeSimulatorSubmissionService({ simulator });

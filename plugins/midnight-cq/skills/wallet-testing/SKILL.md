@@ -13,7 +13,7 @@ version: 0.1.0
 # Wallet SDK Testing
 
 Write tests for custom wallet implementations and extensions built on the
-Midnight Wallet SDK packages (`@midnight-ntwrk/wallet-sdk-*`).
+Midnight Wallet SDK packages (`@midnightntwrk/wallet-sdk-*`).
 
 ## When to Use This Skill
 
@@ -108,7 +108,7 @@ ProtocolVersion, WalletSeed, WalletState, and NetworkId are branded types.
 Use the SDK's constructors — never cast raw values.
 
 ```typescript
-import { ProtocolVersion } from '@midnight-ntwrk/wallet-sdk-abstractions';
+import { ProtocolVersion } from '@midnightntwrk/wallet-sdk-abstractions';
 
 const version = ProtocolVersion(8n); // Use the brand constructor
 ```

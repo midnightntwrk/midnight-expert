@@ -53,13 +53,13 @@ Wallet creation, NIGHT token funding from the genesis wallet, and DUST registrat
        "@midnight-ntwrk/midnight-js-network-id": "4.1.1",
        "@midnight-ntwrk/midnight-js-node-zk-config-provider": "4.1.1",
        "@midnight-ntwrk/midnight-js-types": "4.1.1",
-       "@midnight-ntwrk/wallet-sdk-abstractions": "2.1.0",
-       "@midnight-ntwrk/wallet-sdk-address-format": "3.1.2",
-       "@midnight-ntwrk/wallet-sdk-dust-wallet": "4.1.0",
-       "@midnight-ntwrk/wallet-sdk-facade": "4.0.1",
-       "@midnight-ntwrk/wallet-sdk-hd": "3.0.2",
-       "@midnight-ntwrk/wallet-sdk-shielded": "3.0.1",
-       "@midnight-ntwrk/wallet-sdk-unshielded-wallet": "3.1.0",
+       "@midnightntwrk/wallet-sdk-abstractions": "2.1.0",
+       "@midnightntwrk/wallet-sdk-address-format": "3.1.2",
+       "@midnightntwrk/wallet-sdk-dust-wallet": "4.1.0",
+       "@midnightntwrk/wallet-sdk-facade": "4.0.1",
+       "@midnightntwrk/wallet-sdk-hd": "3.0.2",
+       "@midnightntwrk/wallet-sdk-shielded": "3.0.1",
+       "@midnightntwrk/wallet-sdk-unshielded-wallet": "3.1.0",
        "rxjs": "^7.8.0",
        "ws": "^8.18.0"
      },
@@ -89,27 +89,27 @@ Wallet creation, NIGHT token funding from the genesis wallet, and DUST registrat
      HDWallet,
      Roles,
      generateRandomSeed,
-   } from "@midnight-ntwrk/wallet-sdk-hd";
+   } from "@midnightntwrk/wallet-sdk-hd";
    import {
      WalletFacade,
      WalletEntrySchema,
      type DefaultConfiguration,
      type CombinedTokenTransfer,
      type UtxoWithMeta,
-   } from "@midnight-ntwrk/wallet-sdk-facade";
-   import { ShieldedWallet } from "@midnight-ntwrk/wallet-sdk-shielded";
+   } from "@midnightntwrk/wallet-sdk-facade";
+   import { ShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
    import {
      UnshieldedWallet,
      createKeystore,
      PublicKey,
-   } from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
-   import { DustWallet } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
-   import { InMemoryTransactionHistoryStorage } from "@midnight-ntwrk/wallet-sdk-abstractions";
+   } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
+   import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
+   import { InMemoryTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
    import * as ledger from "@midnight-ntwrk/ledger-v8";
    import {
      MidnightBech32m,
      UnshieldedAddress,
-   } from "@midnight-ntwrk/wallet-sdk-address-format";
+   } from "@midnightntwrk/wallet-sdk-address-format";
    import { firstValueFrom } from "rxjs";
    import { filter, timeout } from "rxjs/operators";
 
@@ -298,7 +298,7 @@ Wallet creation, NIGHT token funding from the genesis wallet, and DUST registrat
    node --import tsx src/setup-deployer.ts
    ```
 
-   Use `node --import tsx` not `npx tsx` — some `@midnight-ntwrk/wallet-sdk-*` packages have ESM export issues with tsx's CJS loader.
+   Use `node --import tsx` not `npx tsx` — some `@midnightntwrk/wallet-sdk-*` packages have ESM export issues with tsx's CJS loader.
 
 5. **Save the printed `Deployer seed hex`.** You will paste it into the deploy and transfer scripts in Steps 4 and 5. The wallet's funds live on-chain, so re-deriving from this seed reconnects to the same funded wallet.
 

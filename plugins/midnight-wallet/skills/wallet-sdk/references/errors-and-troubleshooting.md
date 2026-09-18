@@ -39,7 +39,7 @@ Effect.catchTags(someEffect, {
 
 ## Per-Wallet Errors
 
-### Shielded Wallet (`@midnight-ntwrk/wallet-sdk-shielded`)
+### Shielded Wallet (`@midnightntwrk/wallet-sdk-shielded`)
 
 Source: `/tmp/midnight-wallet/packages/shielded-wallet/src/v1/WalletError.ts`
 
@@ -57,9 +57,9 @@ Source: `/tmp/midnight-wallet/packages/shielded-wallet/src/v1/WalletError.ts`
 | `TransactionHistoryError` | `'Wallet.TransactionHistory'` | `message`, `cause?` | Error accessing or writing transaction history |
 | `LedgerOps.LedgerError` | `'LedgerError'` | `message`, `cause?` | Error returned by the `@midnight-ntwrk/ledger-v8` library |
 
-Note: `SubmissionError` here is a *wallet-level* error (tag `'Wallet.SubmissionWalletError'`), distinct from `SubmissionError` in `@midnight-ntwrk/wallet-sdk-capabilities/submission` (tag `'SubmissionError'`).
+Note: `SubmissionError` here is a *wallet-level* error (tag `'Wallet.SubmissionWalletError'`), distinct from `SubmissionError` in `@midnightntwrk/wallet-sdk-capabilities/submission` (tag `'SubmissionError'`).
 
-### Unshielded Wallet (`@midnight-ntwrk/wallet-sdk-unshielded-wallet`)
+### Unshielded Wallet (`@midnightntwrk/wallet-sdk-unshielded-wallet`)
 
 Source: `/tmp/midnight-wallet/packages/unshielded-wallet/src/v1/WalletError.ts`
 
@@ -80,7 +80,7 @@ Source: `/tmp/midnight-wallet/packages/unshielded-wallet/src/v1/WalletError.ts`
 
 Also exported (not in the union): `UtxoNotFoundError` (`_tag: 'UtxoNotFoundError'`, field `utxo: Utxo`) — raised when a specific UTXO is expected but absent.
 
-### Dust Wallet (`@midnight-ntwrk/wallet-sdk-dust-wallet`)
+### Dust Wallet (`@midnightntwrk/wallet-sdk-dust-wallet`)
 
 Source: `/tmp/midnight-wallet/packages/dust-wallet/src/v1/WalletError.ts`
 
@@ -114,7 +114,7 @@ class WalletRuntimeError extends Data.TaggedError('WalletRuntimeError')<{
 
 Emitted by `Runtime.dispatch` and through the `stateChanges` stream when the runtime itself encounters a failure: empty variant list, variant initialization failure, or an unrecoverable error in the running variant stream. This is the error that surfaces if the variant system breaks down — it wraps lower-level failures.
 
-**Import:** `import { WalletRuntimeError } from "@midnight-ntwrk/wallet-sdk-runtime/abstractions";`
+**Import:** `import { WalletRuntimeError } from "@midnightntwrk/wallet-sdk-runtime/abstractions";`
 
 ### Networking Errors
 
@@ -131,7 +131,7 @@ These are shared across all infrastructure clients:
 
 `URLError = InvalidProtocolSchemeError | FailedToDeriveWebSocketUrlError`
 
-**Import:** `import { ClientError, ServerError, InvalidProtocolSchemeError } from "@midnight-ntwrk/wallet-sdk-utilities/networking";`
+**Import:** `import { ClientError, ServerError, InvalidProtocolSchemeError } from "@midnightntwrk/wallet-sdk-utilities/networking";`
 
 ### Node Client Errors
 
@@ -158,7 +158,7 @@ type NodeClientError =
 | `TransactionDroppedError` | `'TransactionDroppedError'` | `message`, `txData: Uint8Array` | Transaction was dropped from the mempool |
 | `TransactionInvalidError` | `'TransactionInvalidError'` | `message`, `txData: Uint8Array`, `cause?` | Node rejected the transaction as invalid |
 
-**Import:** `import { NodeClientError } from "@midnight-ntwrk/wallet-sdk-node-client/effect";`
+**Import:** `import { NodeClientError } from "@midnightntwrk/wallet-sdk-node-client/effect";`
 
 ### `LedgerError`
 

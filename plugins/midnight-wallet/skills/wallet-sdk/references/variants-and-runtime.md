@@ -12,9 +12,9 @@ Source of truth: `/tmp/midnight-wallet/packages/runtime/src/`
 
 Each concrete wallet package exposes a variant builder for its current protocol version. The pattern is:
 
-- `@midnight-ntwrk/wallet-sdk-shielded` — `V1Builder` (produces a `V1Variant` tagged with `V1Tag`)
-- `@midnight-ntwrk/wallet-sdk-unshielded-wallet` — analogous `V1Builder`
-- `@midnight-ntwrk/wallet-sdk-dust-wallet` — analogous `V1Builder`
+- `@midnightntwrk/wallet-sdk-shielded` — `V1Builder` (produces a `V1Variant` tagged with `V1Tag`)
+- `@midnightntwrk/wallet-sdk-unshielded-wallet` — analogous `V1Builder`
+- `@midnightntwrk/wallet-sdk-dust-wallet` — analogous `V1Builder`
 
 Variants carry a unique symbol tag (`V1Tag: unique symbol = Symbol('V1')`) that the runtime uses for type-safe dispatch. A "versioned variant" pairs the variant object with the `ProtocolVersion` it handles:
 
@@ -29,7 +29,7 @@ type VersionedVariant<T extends AnyVariant> = Readonly<{
 
 ## `WalletBuilder<TBuilders>`
 
-**Package:** `@midnight-ntwrk/wallet-sdk-runtime`  
+**Package:** `@midnightntwrk/wallet-sdk-runtime`  
 **Export:** named class `WalletBuilder`
 
 ```typescript
@@ -50,7 +50,7 @@ The returned class (`BaseWalletClass`) has static methods `startEmpty`, `startFi
 
 ## `Runtime.Runtime<Variants>` Interface
 
-**Package:** `@midnight-ntwrk/wallet-sdk-runtime`  
+**Package:** `@midnightntwrk/wallet-sdk-runtime`  
 **Export:** `export * as Runtime from './Runtime.js'` — accessed as `Runtime.Runtime<Variants>`
 
 ```typescript
@@ -95,7 +95,7 @@ When a hard-fork migration occurs mid-session, `dispatch` automatically routes s
 
 ## `./abstractions` Sub-Export
 
-**Package export path:** `@midnight-ntwrk/wallet-sdk-runtime/abstractions`
+**Package export path:** `@midnightntwrk/wallet-sdk-runtime/abstractions`
 
 This sub-export contains the contracts that variant builders and variants must implement. It is intended for authors of custom variants, not for typical application consumers.
 
@@ -149,17 +149,17 @@ For everything else, work through the facade API or the per-wallet wallet classe
 
 ## Import Verification
 
-The following imports resolve against `@midnight-ntwrk/wallet-sdk-runtime@1.0.4` (verified with `tsc --noEmit` in the verify harness):
+The following imports resolve against `@midnightntwrk/wallet-sdk-runtime@1.0.4` (verified with `tsc --noEmit` in the verify harness):
 
 ```typescript
-import { WalletBuilder, Runtime } from "@midnight-ntwrk/wallet-sdk-runtime";
+import { WalletBuilder, Runtime } from "@midnightntwrk/wallet-sdk-runtime";
 import type {
   Variant,
   VariantBuilder,
   WalletLike,
   StateChange,
   VersionChangeType,
-} from "@midnight-ntwrk/wallet-sdk-runtime/abstractions";
+} from "@midnightntwrk/wallet-sdk-runtime/abstractions";
 ```
 
 `WalletRuntimeError` is re-exported from the `./abstractions` sub-export (via `export * from './WalletRuntimeError.js'`) and is also available via the named `WalletRuntimeError` export from the abstractions namespace.

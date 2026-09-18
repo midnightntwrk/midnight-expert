@@ -92,7 +92,7 @@ When testing code that depends on SDK services, provide test doubles via
 
 ```typescript
 import { Effect, Layer } from 'effect';
-import { ProvingService } from '@midnight-ntwrk/wallet-sdk-capabilities';
+import { ProvingService } from '@midnightntwrk/wallet-sdk-capabilities';
 
 const MockProvingService = Layer.succeed(ProvingService, {
   proveTransaction: (tx) => Effect.succeed(mockProvenTx),

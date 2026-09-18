@@ -19,7 +19,7 @@ Every transfer goes through five stages:
 
 ```typescript
 import * as ledger from '@midnight-ntwrk/ledger-v8';
-import { MidnightBech32m, UnshieldedAddress } from '@midnight-ntwrk/wallet-sdk-address-format';
+import { MidnightBech32m, UnshieldedAddress } from '@midnightntwrk/wallet-sdk-address-format';
 
 const NIGHT_TOKEN_TYPE = ledger.nativeToken().raw;
 const recipientAddress = MidnightBech32m

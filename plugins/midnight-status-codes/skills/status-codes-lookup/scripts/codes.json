@@ -9635,7 +9635,7 @@
       "category": "wallet-facade",
       "group": {
         "name": "Wallet Facade plain-Error throws",
-        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+        "description": "Plain `new Error(...)` throws from @midnightntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
       },
       "description": "Init was called without a proving service or proving-server URL.",
       "fixes": [
@@ -9662,7 +9662,7 @@
       "category": "wallet-facade",
       "group": {
         "name": "Wallet Facade plain-Error throws",
-        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+        "description": "Plain `new Error(...)` throws from @midnightntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
       },
       "description": "The chain has no Terms and Conditions state set.",
       "fixes": [
@@ -9689,7 +9689,7 @@
       "category": "wallet-facade",
       "group": {
         "name": "Wallet Facade plain-Error throws",
-        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+        "description": "Plain `new Error(...)` throws from @midnightntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
       },
       "description": "Dust generation tx is missing the required intent segment 1.",
       "fixes": [
@@ -9716,7 +9716,7 @@
       "category": "wallet-facade",
       "group": {
         "name": "Wallet Facade plain-Error throws",
-        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+        "description": "Plain `new Error(...)` throws from @midnightntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
       },
       "description": "Balancer produced no balancing transaction.",
       "fixes": [
@@ -9744,7 +9744,7 @@
       "category": "wallet-facade",
       "group": {
         "name": "Wallet Facade plain-Error throws",
-        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+        "description": "Plain `new Error(...)` throws from @midnightntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
       },
       "description": "Transaction has no shielded or unshielded outputs.",
       "fixes": [
@@ -9771,7 +9771,7 @@
       "category": "wallet-facade",
       "group": {
         "name": "Wallet Facade plain-Error throws",
-        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+        "description": "Plain `new Error(...)` throws from @midnightntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
       },
       "description": "Swap transaction has no swap entries.",
       "fixes": [
@@ -9798,7 +9798,7 @@
       "category": "wallet-facade",
       "group": {
         "name": "Wallet Facade plain-Error throws",
-        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+        "description": "Plain `new Error(...)` throws from @midnightntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
       },
       "description": "State machine reached a transitional state it does not expect.",
       "fixes": [
@@ -9825,7 +9825,7 @@
       "category": "wallet-facade",
       "group": {
         "name": "Wallet Facade plain-Error throws",
-        "description": "Plain `new Error(...)` throws from @midnight-ntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
+        "description": "Plain `new Error(...)` throws from @midnightntwrk/wallet-sdk-facade. No tag, no class identity beyond `Error`. Match by message substring."
       },
       "description": "Operation requires at least one NIGHT UTXO.",
       "fixes": [
@@ -9852,7 +9852,7 @@
       "category": "wallet-abstractions",
       "group": {
         "name": "Wallet Abstractions native throws",
-        "description": "Native `Error` / `TypeError` throws from @midnight-ntwrk/wallet-sdk-abstractions."
+        "description": "Native `Error` / `TypeError` throws from @midnightntwrk/wallet-sdk-abstractions."
       },
       "description": "ProtocolVersion constructor received a range whose `from` is greater than its `to`.",
       "fixes": [
