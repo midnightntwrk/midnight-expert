@@ -14,7 +14,7 @@ services:
       start_period: 10s
 
   indexer:
-    image: 'midnightntwrk/indexer-standalone:4.3.3'
+    image: 'midnightntwrk/indexer-standalone:4.3.7@sha256:2e2646d03c448dc4611c1117c2395539de6ce11ab9b4e8e3ad56a8779c4b9a19'
     ports:
       - '127.0.0.1:8088:8088'
     environment:
@@ -38,7 +38,7 @@ services:
         condition: service_healthy
 
   node:
-    image: 'midnightntwrk/midnight-node:1.0.0'
+    image: 'midnightntwrk/midnight-node:1.0.1@sha256:a340cdea456d58d79c0d0e6c8891a3988b472febc228496d33c8448cc1b5b632'
     ports:
       - '127.0.0.1:9944:9944'
     healthcheck:
