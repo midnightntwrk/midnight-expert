@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Bumped the `compact-core` plugin to `0.13.0` so the PR #253 `compact-init-project` rewrite actually ships. The skill was reworked from `create-mn-app` onto the vendored, zero-dependency `new-example.mjs` generator (+ `templates/example/`), but the plugin version was left at `0.12.0` — meaning already-installed users stayed pinned to the stale, cached `0.12.0` and never received the new generator or templates. Version-keyed plugin caching requires the bump to propagate the change.
 - README "At a glance" now reflects all 16 marketplace plugins (was 13) and updated skill/command counts.
 - `install-cli` passes an explicit version to every `compact update` instead of downloading the latest published compiler; project-local installs use an absolute `--directory` path.
 - CI example-compile workflows read the compiler pin from `network-supported-compiler.txt` instead of a hardcoded `0.31.1`.
