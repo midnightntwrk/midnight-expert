@@ -18,7 +18,7 @@ jobs:
           cache: npm
 
       - name: Update NPM
-        run: npm install -g npm@12.0.2
+        run: npm install -g npm@12.1.0
 
       - run: npm ci
 
