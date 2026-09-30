@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The project is now dual-licensed `MIT OR Apache-2.0`. Added `LICENSE-APACHE` (the midnightntwrk org template text) at the repo root and alongside the per-plugin `LICENSE` files in `compact-core`, `midnight-tooling`, and `midnight-verify`; every plugin manifest and package `license` field now reads `MIT OR Apache-2.0`. Vendored OpenZeppelin files keep their original `SPDX-License-Identifier: MIT` headers.
 - README "At a glance" now reflects all 16 marketplace plugins (was 13) and updated skill/command counts.
 - `install-cli` passes an explicit version to every `compact update` instead of downloading the latest published compiler; project-local installs use an absolute `--directory` path.
 - CI example-compile workflows read the compiler pin from `network-supported-compiler.txt` instead of a hardcoded `0.31.1`.
