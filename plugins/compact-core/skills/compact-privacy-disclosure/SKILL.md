@@ -107,12 +107,21 @@ line is easy to skip past.
 **This is why every membership example in this skill asserts immediately:**
 
 ```compact
+assert(path.leaf == pk, "Path is not for this caller");
 assert(members.checkRoot(disclose(digest)), "Not a member");
 ```
 
 Asserting makes the published bit *constant*. A caller whose check fails never
 lands a transaction, so every transcript on-chain carries the same value and it
 reveals nothing.
+
+The first line is a separate requirement and it is not about disclosure.
+`merkleTreePathRoot` hashes the path's own `leaf` field, and a witness return is
+unconstrained, so `checkRoot` alone proves that *some* leaf is in the tree rather
+than the one the circuit just recomputed. Bind the path to that value before the
+root check. `examples/NullifierDoubleSpend.compact` shows the bound form; see
+`compact-patterns/references/identity-membership-patterns.md` for the full
+pattern.
 
 Capturing the result and branching on it removes that property:
 

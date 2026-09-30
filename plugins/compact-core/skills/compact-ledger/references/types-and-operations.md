@@ -284,6 +284,10 @@ export circuit insert(item: Field): [] {
 
 export circuit check(item: Field): [] {
   const path = findItem(item);
+  // Bind the witness path to the item being checked. merkleTreePathRoot
+  // hashes path.leaf, so without this the check passes for any item in
+  // the tree, not the one that was asked about.
+  assert(path.leaf == item, "path must be for this item");
   assert(items.checkRoot(disclose(merkleTreePathRoot<10, Field>(path))), "path must be valid");
 }
 ```

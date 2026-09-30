@@ -188,16 +188,24 @@ The Merkle membership proof involves coordinated on-chain and off-chain work:
    root. TypeScript provides `findPathForLeaf(leaf)` (O(n) scan) or
    `pathForLeaf(index, leaf)` (O(log n) by index).
 
-3. **Circuit computes the root.** The circuit calls
+3. **Circuit binds the path to its own value.** The circuit asserts
+   `path.leaf == <the value it recomputed>`. The witness return is
+   unconstrained, so this is what makes the proof about this caller rather than
+   about some arbitrary member.
+
+4. **Circuit computes the root.** The circuit calls
    `merkleTreePathRoot<N, T>(path)` to recompute the Merkle root from the leaf
    and its authentication path.
 
-4. **Circuit verifies the root on-chain.** `tree.checkRoot(digest)` confirms
+5. **Circuit verifies the root on-chain.** `tree.checkRoot(digest)` confirms
    the computed root matches a current (or historic) root of the tree.
 
 ### Full Flow: Anonymous Authentication with Nullifier
 
 ```compact
+pragma language_version 0.23;
+import CompactStandardLibrary;
+
 export ledger members: HistoricMerkleTree<16, Bytes<32>>;
 export ledger usedNullifiers: Set<Bytes<32>>;
 
@@ -223,13 +231,17 @@ export circuit act(): [] {
   // Step 1: Get Merkle proof from off-chain state
   const path = getMemberPath(pk);
 
-  // Step 2: Compute root from leaf + path
+  // Step 2: Bind the path to this caller's key. Without this the witness can
+  // return any member's path and the check below still passes.
+  assert(path.leaf == pk, "Path is not for this member");
+
+  // Step 3: Compute root from leaf + path
   const digest = merkleTreePathRoot<16, Bytes<32>>(path);
 
-  // Step 3: Verify against on-chain tree (disclose needed for checkRoot arg)
+  // Step 4: Verify against on-chain tree (disclose needed for checkRoot arg)
   assert(members.checkRoot(disclose(digest)), "Not a member");
 
-  // Step 4: Derive nullifier to prevent reuse
+  // Step 5: Derive nullifier to prevent reuse
   const nul = persistentHash<Vector<2, Bytes<32>>>([
     pad(32, "myapp:act-nul:"), sk
   ]);
