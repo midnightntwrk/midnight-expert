@@ -17,12 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The project is now dual-licensed `MIT OR Apache-2.0`. Added `LICENSE-APACHE` (the midnightntwrk org template text) at the repo root and alongside the per-plugin `LICENSE` files in `compact-core`, `midnight-tooling`, and `midnight-verify`; every plugin manifest and package `license` field now reads `MIT OR Apache-2.0`. Vendored OpenZeppelin files keep their original `SPDX-License-Identifier: MIT` headers.
 - README "At a glance" now reflects all 16 marketplace plugins (was 13) and updated skill/command counts.
 - `install-cli` passes an explicit version to every `compact update` instead of downloading the latest published compiler; project-local installs use an absolute `--directory` path.
 - CI example-compile workflows read the compiler pin from `network-supported-compiler.txt` instead of a hardcoded `0.31.1`.
 
 ### Fixed
 
+- `template-engine` CI: the CLI tests now run a pinned `tsx` dev dependency directly instead of `npx tsx`, whose `npm notice` stderr lines (npm 12) broke the tests' JSON parsing of stderr; the lockfile is refreshed to clear the high-severity `nanoid` advisory (GHSA-2v37-7h3g-55p8) failing `npm audit`.
 - A fresh install via `install-cli` produced compiler `0.34.0`, which no live network accepts, while the compact-cli skill documented `0.31.1` as the supported version. Contracts compiled with the wrong version pass every local check and fail at deploy. (#261)
 - Aligned the proof-server Docker example to the current `8.1.0` image tag.
 - Refreshed the compact-tokens "Known Limitations" note from compiler 0.29.0 to the current 0.31.1.

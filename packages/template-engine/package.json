@@ -3,7 +3,7 @@
 	"version": "0.1.0",
 	"description": "Generic template directory copier with placeholder substitution. Reads JSON from stdin, copies a template directory, replaces {{KEY}} placeholders, writes result to stdout.",
 	"type": "module",
-	"license": "MIT",
+	"license": "MIT OR Apache-2.0",
 	"author": {
 		"name": "Aaron Bassett",
 		"email": "aaron@devrel-ai.com"
@@ -47,6 +47,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
 		"@types/node": "^20.17.0",
+		"tsx": "^4.23.15",
 		"typescript": "^5.7.0",
 		"vitest": "^3.2.6"
 	}

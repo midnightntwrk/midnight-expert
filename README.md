@@ -245,4 +245,9 @@ Slash commands are also available when you want to invoke a specific workflow di
 
 ## License
 
-[MIT](LICENSE) — Copyright (c) 2026 Aaron Bassett
+Licensed under either of
+
+- [Apache License, Version 2.0](LICENSE-APACHE)
+- [MIT License](LICENSE) — Copyright (c) 2026 Aaron Bassett
+
+at your option.
