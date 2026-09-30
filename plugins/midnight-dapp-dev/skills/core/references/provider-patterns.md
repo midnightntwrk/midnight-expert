@@ -77,6 +77,44 @@ The proof server is a separate process that performs the computationally
 intensive ZK proof generation. In the browser, proof generation is delegated
 to this server via HTTP requests rather than running locally.
 
+#### Gotcha: builtin protocol keys with a self-hosted `httpClientProofProvider`
+
+A transaction that touches the shielded pool needs proofs not just for your
+contract's own circuits, but also for protocol-level builtin circuits —
+`midnight/zswap/spend`, `midnight/zswap/output`, `midnight/zswap/sign`,
+`midnight/dust/spend`. These are part of the ledger/kernel (see
+`proof-server:proof-server-architecture`'s `key-material.md` for the
+server-side prefetch/on-demand-fetch mechanics), not something any DApp
+compiles or serves itself.
+
+**Wallet-delegated proving** (`api.getProvingProvider(...)` from the DApp
+Connector, i.e. no `proofServerUri` configured) resolves these builtins
+*internally* inside the wallet — your `zkConfigProvider` is never asked for
+them. Your `zkConfigProvider`/`KeyMaterialProvider` is still consulted for
+your own contract's circuits, just not for the protocol builtins.
+
+**Self-hosted `httpClientProofProvider`** (the pattern shown above) has no
+such fallback. `@midnight-ntwrk/midnight-js-http-client-proof-provider`
+falls through to whatever `zkConfigProvider` you gave it for *any* circuit
+ID it doesn't recognize as a `contract:<address>/<circuitId>` location —
+including the protocol builtins. If your `zkConfigProvider` only serves
+your own contract's `.zkir`/prover/verifier files under
+`window.location.origin` (the common case shown above), fetching
+`midnight/zswap/output` (and friends) 404s, and proving fails with an
+opaque `'check' returned an error` or `key not found: <circuit>` message —
+easy to misdiagnose as a broken proof server or a missing key for your
+*own* circuit rather than a missing builtin.
+
+**Fix:** either don't configure `proofServerUri` at all and let wallet-delegated
+proving handle it (the simplest option — this is why apps that never set a
+proof server URI don't hit this), or, if a self-hosted proof server is a
+hard requirement, intercept builtin circuit IDs before they reach your
+contract's `zkConfigProvider` and resolve them separately (fetch from a
+known-good source, or delegate just those lookups to a wallet-provided
+resolver). `midnightntwrk/passport` (`demo/mn-passport-foundations/app/src/lib/wasmProver.ts`)
+does this with a hand-rolled `SYSTEM_KEYS` map and a `lookupSystemKey()`
+shim checked before falling through to the contract `zkConfigProvider`.
+
 ### 4. walletProvider
 
 **Purpose:** Provides cryptographic keys and transaction balancing. This is
