@@ -6,10 +6,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const FIXTURES = path.resolve(import.meta.dirname, "..", "test-fixtures", "sample-template");
 const CLI_PATH = path.resolve(import.meta.dirname, "index.ts");
+const TSX_BIN = path.resolve(import.meta.dirname, "..", "node_modules", ".bin", "tsx");
 
 function runCli(input: string): { stdout: string; stderr: string; exitCode: number } {
 	try {
-		const stdout = execFileSync("npx", ["tsx", CLI_PATH], {
+		const stdout = execFileSync(TSX_BIN, [CLI_PATH], {
 			input,
 			encoding: "utf-8",
 			cwd: path.resolve(import.meta.dirname, ".."),
