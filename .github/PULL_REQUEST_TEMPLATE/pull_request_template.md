@@ -9,6 +9,7 @@
 - [ ] Useful pull request description
 - [ ] Tests are provided (if possible)
 - [ ] Key commits have useful messages
+- [ ] All commits are signed off (DCO)
 - [ ] All check jobs of the CI have succeeded
 - [ ] Self-reviewed the diff
 - [ ] Reviewer requested

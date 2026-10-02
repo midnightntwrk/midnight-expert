@@ -3,12 +3,11 @@
   "version": "0.1.1",
   "description": "Audits and resolves Claude plugin dependencies \u2014 validates installed plugins against extends-plugin.json declarations, scans plugin files for undeclared dependencies, and resolves installation paths with fuzzy matching.",
   "author": {
-    "name": "Aaron Bassett",
-    "email": "aaron@devrel-ai.com"
+    "name": "Midnight Foundation"
   },
   "homepage": "https://github.com/midnightntwrk/midnight-expert",
   "repository": "https://github.com/midnightntwrk/midnight-expert.git",
-  "license": "MIT OR Apache-2.0",
+  "license": "Apache-2.0",
   "keywords": [
     "plugin-management",
     "dependency-checker",
