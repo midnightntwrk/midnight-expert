@@ -3,10 +3,9 @@
 	"version": "0.1.0",
 	"description": "Generic template directory copier with placeholder substitution. Reads JSON from stdin, copies a template directory, replaces {{KEY}} placeholders, writes result to stdout.",
 	"type": "module",
-	"license": "MIT OR Apache-2.0",
+	"license": "Apache-2.0",
 	"author": {
-		"name": "Aaron Bassett",
-		"email": "aaron@devrel-ai.com"
+		"name": "Midnight Foundation"
 	},
 	"repository": {
 		"type": "git",

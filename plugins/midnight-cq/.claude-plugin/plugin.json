@@ -3,12 +3,11 @@
   "version": "0.4.0",
   "description": "Code quality tooling for Midnight Network projects \u2014 linting, formatting, type checking, testing, Git hooks, and CI workflows.",
   "author": {
-    "name": "Aaron Bassett",
-    "email": "aaron@devrel-ai.com"
+    "name": "Midnight Foundation"
   },
   "homepage": "https://github.com/midnightntwrk/midnight-expert",
   "repository": "https://github.com/midnightntwrk/midnight-expert.git",
-  "license": "MIT OR Apache-2.0",
+  "license": "Apache-2.0",
   "keywords": [
     "midnight",
     "compact",

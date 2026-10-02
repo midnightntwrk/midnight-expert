@@ -2,11 +2,26 @@
 
 We welcome your contributions to the Midnight network! By contributing, you'll play a vital role in shaping the future of a blockchain focused on data privacy.
 
-## Contributor License Agreement
+## Developer Certificate of Origin
 
-Like many other open source projects, we ask contributors to sign a contributor
-License Agreement before accepting contributions. We use CLA assistant (https://github.com/cla-assistant/cla-assistant) to streamline the CLA
-signing process, enabling contributors to sign our CLAs directly within a GitHub pull request.
+We accept contributions under the [Developer Certificate of Origin (DCO)](https://developercertificate.org/).
+By signing off a commit, you certify that you wrote the change or otherwise have the right to submit it
+under the project's license (Apache-2.0).
+
+Sign off every commit by adding the `-s` flag:
+
+```bash
+git commit -s -m "your commit message"
+```
+
+This appends a `Signed-off-by` line, which must match the commit author:
+
+```
+Signed-off-by: Jane Doe <jane@example.com>
+```
+
+If you forget, amend your latest commit with `git commit --amend -s`, or sign off every commit on your
+branch with `git rebase --signoff main` before requesting review.
 
 ## Getting Started
 
@@ -46,7 +61,7 @@ Ensure the title is a clear summary of the requirement and provides enough conte
 * **Coding Standards:** Code must adhere to the coding style guides defined in our documentation
 * **Testing:** New functionality must include corresponding unit tests and integration tests.
 * **Documentation:** Code changes should be accompanied by proposed relevant documentation updates.
-* **License:** All contributions must be compatible with the project's license.
+* **License:** All contributions are licensed under the project's license (Apache-2.0).
   Where possible all files should have this license header:
 
 ```ts

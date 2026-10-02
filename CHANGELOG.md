@@ -11,13 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `ci-compact-core-examples` workflow and `plugins/compact-core/scripts/compile-compact-core-examples.sh`, which compile the compact-core skill example contracts against the network-supported compiler (0.31.1) — previously only the `compact-examples` contracts had compile coverage.
 - README "Network & Component References" section documenting the `proof-server`, `midnight-indexer`, and `midnight-node` plugins.
+- `NOTICE` files at the repo root and in `compact-core` and `compact-examples`, crediting the project's original author (Aaron Bassett) and carrying the MIT notices for vendored OpenZeppelin and other MIT-licensed example code.
 
 - `plugins/midnight-tooling/network-supported-compiler.txt`, a single-line pin of the network-supported Compact compiler (currently `0.31.1`) read by `install-cli` and both example-compile CI workflows.
 - `install-cli` Step 3D: after any install or update, compare the installed compiler to the network-supported version and warn on mismatch, linking the compatibility matrix.
 
 ### Changed
 
-- The project is now dual-licensed `MIT OR Apache-2.0`. Added `LICENSE-APACHE` (the midnightntwrk org template text) at the repo root and alongside the per-plugin `LICENSE` files in `compact-core`, `midnight-tooling`, and `midnight-verify`; every plugin manifest and package `license` field now reads `MIT OR Apache-2.0`. Vendored OpenZeppelin files keep their original `SPDX-License-Identifier: MIT` headers.
+- The project is now licensed under Apache-2.0, replacing MIT (no dual licensing). The root `LICENSE` and the per-plugin `LICENSE` files in `compact-core`, `midnight-tooling`, and `midnight-verify` contain the Apache-2.0 text with the copyright line `Copyright (c) 2026 Midnight Foundation and contributors`, and `LICENSE-APACHE` is removed. Every plugin manifest and package `license` field now reads `Apache-2.0`. Vendored OpenZeppelin files and other MIT-headered example files keep their original `SPDX-License-Identifier: MIT` headers, and their MIT notices are carried in `NOTICE`.
+- Plugin manifest and package `author` is now Midnight Foundation.
+- `CONTRIBUTING.md` asks for Developer Certificate of Origin sign-off (`git commit -s`) instead of a CLA via CLA assistant; the PR template gains a DCO checklist item.
 - README "At a glance" now reflects all 16 marketplace plugins (was 13) and updated skill/command counts.
 - `install-cli` passes an explicit version to every `compact update` instead of downloading the latest published compiler; project-local installs use an absolute `--directory` path.
 - CI example-compile workflows read the compiler pin from `network-supported-compiler.txt` instead of a hardcoded `0.31.1`.
