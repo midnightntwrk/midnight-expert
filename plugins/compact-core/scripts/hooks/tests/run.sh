@@ -66,6 +66,8 @@ run_step "test-subagent-transcript-compile.sh" \
   bash "$TESTS_DIR/test-subagent-transcript-compile.sh"
 run_step "test-stop-quiet-on-missing-state.sh" \
   bash "$TESTS_DIR/test-stop-quiet-on-missing-state.sh"
+run_step "test-sessionstart-compiler-advice.sh" \
+  bash "$TESTS_DIR/test-sessionstart-compiler-advice.sh"
 
 echo
 if [ "${#FAILED[@]}" -gt 0 ]; then
