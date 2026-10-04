@@ -3,12 +3,11 @@
   "version": "0.6.0",
   "description": "Wallet SDK reference, test-wallet management patterns, and SDK regression checking for Midnight Network development.",
   "author": {
-    "name": "Aaron Bassett",
-    "email": "aaron@devrel-ai.com"
+    "name": "Midnight Foundation"
   },
   "homepage": "https://github.com/midnightntwrk/midnight-expert",
   "repository": "https://github.com/midnightntwrk/midnight-expert.git",
-  "license": "MIT OR Apache-2.0",
+  "license": "Apache-2.0",
   "keywords": [
     "midnight",
     "wallet",

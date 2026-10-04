@@ -3,12 +3,11 @@
   "version": "0.8.1",
   "description": "Meta-plugin for the midnight-expert marketplace. Provides comprehensive diagnostics and health reporting for the entire midnight-expert ecosystem — plugin installation, MCP server connectivity, external CLI tools, cross-plugin references, and NPM registry access.",
   "author": {
-    "name": "Aaron Bassett",
-    "email": "aaron@devrel-ai.com"
+    "name": "Midnight Foundation"
   },
   "homepage": "https://github.com/midnightntwrk/midnight-expert",
   "repository": "https://github.com/midnightntwrk/midnight-expert.git",
-  "license": "MIT OR Apache-2.0",
+  "license": "Apache-2.0",
   "keywords": [
     "midnight",
     "diagnostics",

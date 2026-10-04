@@ -3,12 +3,11 @@
   "version": "0.3.0",
   "description": "Technical reference for the Midnight node \u2014 Substrate-based architecture, runtime pallets, RPC interface, configuration, operations, and governance",
   "author": {
-    "name": "Aaron Bassett",
-    "email": "aaron@devrel-ai.com"
+    "name": "Midnight Foundation"
   },
   "homepage": "https://github.com/midnightntwrk/midnight-expert",
   "repository": "https://github.com/midnightntwrk/midnight-expert.git",
-  "license": "MIT OR Apache-2.0",
+  "license": "Apache-2.0",
   "keywords": [
     "midnight",
     "node",
