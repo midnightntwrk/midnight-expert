@@ -6,6 +6,8 @@ on:
     paths:
       - 'plugins/compact-core/scripts/hooks/**'
       - 'plugins/compact-core/hooks/hooks.json'
+      - 'plugins/compact-core/scripts/SessionStart.sh'
+      - 'plugins/midnight-tooling/network-supported-compiler.txt'
       - 'plugins/midnight-verify/scripts/hooks/_compact-check.sh'
       - 'plugins/midnight-verify/scripts/hooks/subagent-stop-*.sh'
       - 'plugins/midnight-verify/hooks/hooks.json'
@@ -18,6 +20,8 @@ on:
     paths:
       - 'plugins/compact-core/scripts/hooks/**'
       - 'plugins/compact-core/hooks/hooks.json'
+      - 'plugins/compact-core/scripts/SessionStart.sh'
+      - 'plugins/midnight-tooling/network-supported-compiler.txt'
       - 'plugins/midnight-verify/scripts/hooks/_compact-check.sh'
       - 'plugins/midnight-verify/scripts/hooks/subagent-stop-*.sh'
       - 'plugins/midnight-verify/hooks/hooks.json'

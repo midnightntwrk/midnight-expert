@@ -48,6 +48,19 @@ chk_contains() {
   fi
 }
 
+chk_not_contains() {
+  local label="$1" haystack="$2" needle="$3"
+  if printf '%s' "$haystack" | grep -qF -- "$needle"; then
+    FAIL=$((FAIL + 1))
+    FAIL_NAMES+=("$label")
+    echo "  FAIL: $label  (needle '$needle' unexpectedly in output)"
+    echo "    haystack: $haystack"
+  else
+    PASS=$((PASS + 1))
+    echo "  PASS: $label"
+  fi
+}
+
 chk_jq() {
   local label="$1" file="$2" filter="$3" expected="$4"
   local actual
