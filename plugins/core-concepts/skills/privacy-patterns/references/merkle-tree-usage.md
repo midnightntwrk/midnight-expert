@@ -24,6 +24,8 @@ Verifies that `digest` matches a valid root of the tree. For `HistoricMerkleTree
 
 **Important**: There is no `historicMember` method. Use `checkRoot` only. There is no `.member(value, path)` method either -- membership is verified by computing the root from a path and checking it.
 
+Because there is no `.member(value, path)`, nothing in `checkRoot` ties the proof to a particular value. It answers "is this a real root of the tree", not "is *my* value in the tree". The circuit has to supply that second half itself by asserting `path.leaf == <the value it recomputed>`. See the five-step pattern below.
+
 ## MerkleTreePath Struct
 
 The `MerkleTreePath<N, T>` struct contains everything needed to recompute a Merkle root from a leaf:
@@ -50,18 +52,21 @@ merkleTreePathRoot<N, T>(path: MerkleTreePath<N, T>): MerkleTreeDigest
 
 Recomputes the Merkle root by hashing from the leaf up through all siblings. Pass the entire `MerkleTreePath` struct -- not a field of it. For example: `merkleTreePathRoot<16, Bytes<32>>(memberPath)`. A common mistake is trying to pass `memberPath.value` -- `MerkleTreePath` has no `.value` field.
 
+The leaf it hashes from is `path.leaf`, the one carried inside the struct you passed in. When the struct came from a witness, that field is whatever the witness chose to put there, and every path in the tree is public ledger state. So a `checkRoot(merkleTreePathRoot(path))` that is not preceded by `assert(path.leaf == <recomputed value>)` proves only that *some* leaf is in the tree, and any member's path will satisfy any caller's check.
+
 ## Complete Membership Proof Pattern
 
-The canonical four-step pattern for anonymous membership verification uses an `HistoricMerkleTree<16, Bytes<32>>` for members and a `Set<Bytes<32>>` for spent nullifiers. Witnesses provide the secret key and the Merkle path.
+The canonical five-step pattern for anonymous membership verification uses an `HistoricMerkleTree<16, Bytes<32>>` for members and a `Set<Bytes<32>>` for spent nullifiers. Witnesses provide the secret key and the Merkle path.
 
 **Registration:** An admin circuit inserts a member's public key into the tree via `members.insert(disclose(memberPk))`. The leaf value is hidden on-chain.
 
-**Anonymous action (four steps):**
+**Anonymous action (five steps):**
 
 1. **Derive identity.** The circuit obtains the secret key from a witness and derives the public key via `persistentHash` with a domain-separated prefix.
-2. **Obtain and compute proof.** A witness returns the `MerkleTreePath` for the public key. The circuit calls `merkleTreePathRoot` on the full struct to compute the digest.
-3. **Verify on-chain.** The circuit calls `members.checkRoot(disclose(digest))` to confirm membership. The `disclose()` is required because the digest is witness-derived.
-4. **Nullifier check.** The circuit derives a nullifier via `persistentHash` with a different domain prefix, checks it against the spent set with `Set.member(disclose(nul))`, and records it with `Set.insert(disclose(nul))`. Both operations require `disclose()` because nullifiers are witness-derived and Set arguments must be public.
+2. **Obtain proof.** A witness returns the `MerkleTreePath` for the public key.
+3. **Bind the path to the identity.** The circuit asserts `path.leaf == pk` against the key it derived in step 1, then calls `merkleTreePathRoot` on the full struct to compute the digest. Without this assertion the witness is free to return any member's path and the proof says nothing about this caller.
+4. **Verify on-chain.** The circuit calls `members.checkRoot(disclose(digest))` to confirm membership. The `disclose()` is required because the digest is witness-derived.
+5. **Nullifier check.** The circuit derives a nullifier via `persistentHash` with a different domain prefix, checks it against the spent set with `Set.member(disclose(nul))`, and records it with `Set.insert(disclose(nul))`. Both operations require `disclose()` because nullifiers are witness-derived and Set arguments must be public.
 
 ## TypeScript Integration
 

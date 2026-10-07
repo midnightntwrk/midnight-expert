@@ -83,9 +83,11 @@ Use `HistoricMerkleTree<N, T>` instead of `MerkleTree<N, T>` when members are ad
 
 2. **User obtains a MerkleTreePath off-chain.** The witness function queries the local copy of the tree state. TypeScript provides `findPathForLeaf(leaf)` (O(n) scan) or `pathForLeaf(index, leaf)` (O(log n) by index).
 
-3. **Circuit computes the root.** `merkleTreePathRoot<N, T>(path)` recomputes the Merkle root from the path. The `MerkleTreePath<N, T>` struct has fields `leaf: T` and `path: Vector<N, MerkleTreePathEntry>`, where each `MerkleTreePathEntry` has `sibling: MerkleTreeDigest` and `goes_left: Boolean`. Pass the whole struct -- there is no `.value` field.
+3. **Circuit binds the path to its own value and computes the root.** Assert `path.leaf == <the value the circuit recomputed>` first. `merkleTreePathRoot<N, T>(path)` then recomputes the Merkle root from the path. The `MerkleTreePath<N, T>` struct has fields `leaf: T` and `path: Vector<N, MerkleTreePathEntry>`, where each `MerkleTreePathEntry` has `sibling: MerkleTreeDigest` and `goes_left: Boolean`. Pass the whole struct -- there is no `.value` field.
 
 4. **Circuit verifies the root on-chain.** `tree.checkRoot(disclose(digest))` confirms the computed root matches a current (or historic) root. The `disclose()` is required because the digest is derived from witness data (the path). There is no `historicMember` method -- use `checkRoot` only.
+
+The binding assertion in step 3 is not optional. `merkleTreePathRoot` hashes the `leaf` field carried inside the struct, so a witness that returns another member's path produces a root that `checkRoot` accepts. Together the two steps prove "this caller's value is in the tree"; step 4 on its own proves only "some value is in the tree".
 
 ### Full Flow: Anonymous Authentication with Nullifier
 
@@ -93,12 +95,13 @@ The contract declares an `HistoricMerkleTree<16, Bytes<32>>` for member registra
 
 **Admin registration:** An `addMember` circuit inserts a member's public key commitment into the tree. The leaf value is hidden on-chain (the special privacy property of MerkleTree inserts), though `disclose()` is still required on the argument.
 
-**Anonymous action (four steps):**
+**Anonymous action (five steps):**
 
 1. **Obtain proof off-chain.** The circuit derives the user's public key from their secret key via `persistentHash` with a `"myapp:pk:"` domain prefix, then calls a witness to get the `MerkleTreePath` for that public key.
-2. **Compute root in-circuit.** Call `merkleTreePathRoot<16, Bytes<32>>(memberPath)` passing the whole `MerkleTreePath` struct (there is no `.value` field).
-3. **Verify root on-chain.** Call `members.checkRoot(disclose(digest))` to confirm the computed root matches a current or historic root. The `disclose()` is required because the digest is derived from witness data.
-4. **Check and record nullifier.** Derive a nullifier via `persistentHash` with a different domain prefix (`"myapp:act-nul:"`), check it is not in the spent set, and insert it. Both `Set.member()` and `Set.insert()` require `disclose()` on the witness-derived nullifier.
+2. **Bind the path to that public key.** Assert `memberPath.leaf == pk`. The witness return is unconstrained, so without this the caller can submit any member's path.
+3. **Compute root in-circuit.** Call `merkleTreePathRoot<16, Bytes<32>>(memberPath)` passing the whole `MerkleTreePath` struct (there is no `.value` field).
+4. **Verify root on-chain.** Call `members.checkRoot(disclose(digest))` to confirm the computed root matches a current or historic root. The `disclose()` is required because the digest is derived from witness data.
+5. **Check and record nullifier.** Derive a nullifier via `persistentHash` with a different domain prefix (`"myapp:act-nul:"`), check it is not in the spent set, and insert it. Both `Set.member()` and `Set.insert()` require `disclose()` on the witness-derived nullifier.
 
 **Capacity planning:** `HistoricMerkleTree<N, T>` holds at most 2^N leaves. Depth 16 supports 65,536 members; depth 20 supports about 1 million. Depth also determines proof size (N sibling hashes), so balance capacity against circuit cost.
 

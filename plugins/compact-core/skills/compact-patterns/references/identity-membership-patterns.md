@@ -323,13 +323,18 @@ export circuit memberAction(): [] {
   // Step 1: Get Merkle proof from off-chain state
   const path = getMemberPath(pk);
 
-  // Step 2: Compute root from leaf + path
+  // Step 2: Bind the path to the key this circuit just derived.
+  // merkleTreePathRoot hashes path.leaf, and a witness return is unconstrained,
+  // so without this line any member's path satisfies any caller's check.
+  assert(path.leaf == pk, "Path is not for this member");
+
+  // Step 3: Compute root from leaf + path
   const digest = merkleTreePathRoot<16, Bytes<32>>(path);
 
-  // Step 3: Verify against on-chain tree
+  // Step 4: Verify against on-chain tree
   assert(members.checkRoot(disclose(digest)), "Not a member");
 
-  // Step 4: Nullifier prevents reuse
+  // Step 5: Nullifier prevents reuse
   const nul = disclose(persistentHash<Vector<2, Bytes<32>>>([
     pad(32, "myapp:member:act-nul:"), sk
   ]));
@@ -348,9 +353,24 @@ prior version of the tree, so a proof generated before new members were added
 remains valid. With plain `MerkleTree`, each insertion changes the root and
 invalidates all existing proofs.
 
+### Bind the Path to the Leaf
+
+Step 2 above is the step that is easiest to leave out, and leaving it out is a
+soundness bug rather than a style problem. `merkleTreePathRoot(path)` hashes the
+`leaf` field carried inside `path`, not the value the circuit recomputed. A
+witness return is unconstrained and every path in the tree is public ledger
+state, so `checkRoot(merkleTreePathRoot(path))` on its own proves only that
+*some* leaf is in the tree. Any member can hand in any other member's path and
+pass the gate.
+
+Asserting `path.leaf == <recomputed value>` before the root check is what makes
+the proof about this caller. Apply it anywhere a witness supplies a path that
+gates a decision, including issuer and authorization checks, not just anonymous
+membership.
+
 ### Keep the checkRoot Result Constant
 
-Step 3 above asserts on `checkRoot` immediately rather than storing the result.
+Step 4 above asserts on `checkRoot` immediately rather than storing the result.
 That is load-bearing. `checkRoot` is a ledger operation and its Boolean result is
 written to the public transcript, tagged with the ledger field checked. Asserting
 immediately means every transaction that lands carries `true`, so the published

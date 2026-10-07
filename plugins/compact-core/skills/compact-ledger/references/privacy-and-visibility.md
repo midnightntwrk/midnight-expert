@@ -120,6 +120,10 @@ export circuit vote(): [] {
   const pk = get_public_key(sk);
   const path = getVoterPath(pk);
 
+  // Bind the witness path to this caller's key first. merkleTreePathRoot
+  // hashes path.leaf, so without this any eligible voter's path passes.
+  assert(path.leaf == pk, "Path is not for this voter");
+
   // Proves membership without revealing which voter
   assert(eligibleVoters.checkRoot(
     disclose(merkleTreePathRoot<10, Bytes<32>>(path))
@@ -258,7 +262,12 @@ export circuit useToken(): [] {
   const sk = local_secret_key();
 
   // Prove the commitment exists (without revealing which one)
-  const authPath = findAuthPath(get_public_key(sk));
+  const pk = get_public_key(sk);
+  const authPath = findAuthPath(pk);
+
+  // Bind the path to this caller's key before checking the root, or any
+  // authorized holder's path satisfies the gate for any caller.
+  assert(authPath.leaf == pk, "Path is not for this token");
   assert(commitments.checkRoot(
     disclose(merkleTreePathRoot<10, Bytes<32>>(authPath))
   ), "Not authorized");

@@ -86,6 +86,13 @@ export circuit use_ticket(): [] {
 
   // Prove the commitment exists in the tree (without revealing which leaf)
   const path = get_ticket_path(commitment);
+
+  // Bind the path to the commitment we just derived. get_ticket_path is a
+  // witness running on the prover's machine. Without this check someone can
+  // supply another holder's path and be admitted with a ticket they never
+  // held. Soundness, not privacy.
+  assert(path.leaf == commitment, "Merkle path is not for this ticket");
+
   assert(
     tickets.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(path))),
     "Invalid ticket"
@@ -116,6 +123,8 @@ Key concepts in this contract:
 - **`persistentHash`** (used for nullifiers) is deterministic — the same secret always produces the same nullifier, which is what prevents double-spending. Unlike `persistentCommit`, it does NOT clear taint, so the result must be explicitly `disclose()`d before it can appear on-chain.
 
 - **`merkleTreePathRoot` + `checkRoot`** together form an anonymous membership proof. The witness provides a Merkle path, `merkleTreePathRoot` recomputes the root from that path, and `checkRoot` verifies the root exists in the tree's history. This proves a commitment exists without revealing which leaf it occupies.
+
+- **`assert(path.leaf == commitment, ...)`** is what makes that proof about _your_ ticket. `merkleTreePathRoot` hashes the `leaf` field carried inside the path, and the path comes from a witness, so on its own the pair above proves only that _some_ commitment is in the tree. Any holder's path would satisfy it. Bind the path to the value the circuit recomputed whenever a witness supplies it.
 
 #### 6.2. Compile
 
