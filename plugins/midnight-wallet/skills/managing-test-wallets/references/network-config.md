@@ -30,15 +30,25 @@ const configuration: DefaultConfiguration = {
 
 ### `preprod`
 
+Blockfrost hosts the public Preprod indexer and node RPC. The Midnight-hosted
+`*.preprod.midnight.network` endpoints shut down at 22:00 UTC on 9 October 2026.
+Every request needs the project ID of a Blockfrost **Midnight Preprod** project
+(it starts with `nightpreprod`) as a `project_id` query parameter, including the
+WebSocket URLs. A Mainnet project ID is rejected with HTTP `403`. The token is
+part of each URL, so don't log them.
+
 ```typescript
+const projectId = process.env.BLOCKFROST_PROJECT_ID!;  // a Midnight Preprod project ID
+const withKey = (url: string) => `${url}?project_id=${encodeURIComponent(projectId)}`;
+
 const configuration: DefaultConfiguration = {
   networkId: 'preprod',
   costParameters: { feeBlocksMargin: 5 },
-  relayURL: new URL('wss://rpc.preprod.midnight.network'),
+  relayURL: new URL(withKey('wss://rpc.midnight-preprod.blockfrost.io')),
   provingServerUrl: new URL('http://localhost:6300'),  // proof server runs locally
   indexerClientConnection: {
-    indexerHttpUrl: 'https://indexer.preprod.midnight.network/api/v3/graphql',
-    indexerWsUrl: 'wss://indexer.preprod.midnight.network/api/v3/graphql/ws',
+    indexerHttpUrl: withKey('https://midnight-preprod.blockfrost.io/api/v0'),
+    indexerWsUrl: withKey('wss://midnight-preprod.blockfrost.io/api/v0/ws'),
   },
   txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
 };
