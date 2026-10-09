@@ -34,6 +34,18 @@ import { filter, timeout } from "rxjs/operators";
 
 type PublicNetwork = "preprod" | "preview";
 
+// Blockfrost hosts the public Preprod indexer and node RPC, and every request
+// needs a "Midnight Preprod" project ID (it starts with `nightpreprod`) in
+// BLOCKFROST_PROJECT_ID. The getters below read it only when preprod is used.
+// The token is part of each URL, so don't log these URLs.
+function withBlockfrostKey(url: string): string {
+  const projectId = process.env.BLOCKFROST_PROJECT_ID?.trim();
+  if (!projectId) {
+    throw new Error("Set BLOCKFROST_PROJECT_ID to run against preprod.");
+  }
+  return `${url}${url.includes("?") ? "&" : "?"}project_id=${encodeURIComponent(projectId)}`;
+}
+
 const NETWORK_CONFIG: Record<
   PublicNetwork,
   {
@@ -45,11 +57,15 @@ const NETWORK_CONFIG: Record<
   }
 > = {
   preprod: {
-    relayURL: new URL("wss://rpc.preprod.midnight.network"),
-    indexerHttpUrl:
-      "https://indexer.preprod.midnight.network/api/v3/graphql",
-    indexerWsUrl:
-      "wss://indexer.preprod.midnight.network/api/v3/graphql/ws",
+    get relayURL() {
+      return new URL(withBlockfrostKey("wss://rpc.midnight-preprod.blockfrost.io"));
+    },
+    get indexerHttpUrl() {
+      return withBlockfrostKey("https://midnight-preprod.blockfrost.io/api/v0");
+    },
+    get indexerWsUrl() {
+      return withBlockfrostKey("wss://midnight-preprod.blockfrost.io/api/v0/ws");
+    },
     faucetUrl: "https://faucet.preprod.midnight.network/",
     networkId: "preprod",
   },

@@ -66,7 +66,7 @@ export circuit set(x: Uint<64>): [] {
 | `test` | `vitest run` (with `--experimental-vm-modules`) | Run the vitest suite (network from `MIDNIGHT_NETWORK`) |
 | `test:local` | `MIDNIGHT_NETWORK=local yarn test` | Run against the local Docker network |
 | `test:preview` | `MIDNIGHT_NETWORK=preview yarn test` | Run against Preview (needs a funded seed) |
-| `test:preprod` | `MIDNIGHT_NETWORK=preprod yarn test` | Run against Preprod (needs a funded seed) |
+| `test:preprod` | `MIDNIGHT_NETWORK=preprod yarn test` | Run against Preprod (needs a funded seed and a Blockfrost Midnight Preprod `BLOCKFROST_PROJECT_ID`) |
 | `env:up` | `docker compose up -d --wait` | Start node + indexer + proof server |
 | `env:down` | `docker compose down` | Stop and remove the local network |
 | `proof:up` | `docker compose up -d --wait proof-server` | Start only the proof server |

@@ -220,21 +220,32 @@ export const PREVIEW_CONFIG: NetworkConfig = {
   faucet: 'https://midnight-tmnight-preview.nethermind.dev/',
 };
 
-export const PREPROD_CONFIG: NetworkConfig = {
-  networkId: 'preprod',
-  indexer: 'https://indexer.preprod.midnight.network/api/v4/graphql',
-  indexerWS: 'wss://indexer.preprod.midnight.network/api/v4/graphql/ws',
-  node: 'https://rpc.preprod.midnight.network',
-  nodeWS: 'wss://rpc.preprod.midnight.network',
-  proofServer: process.env['MIDNIGHT_PROOF_SERVER'] ?? 'http://127.0.0.1:6300',
-  faucet: 'https://midnight-tmnight-preprod.nethermind.dev/',
-};
+// Blockfrost hosts the public Preprod indexer and node RPC, and every request
+// needs a "Midnight Preprod" project ID (it starts with `nightpreprod`).
+// The token is part of each URL, so don't log these URLs.
+function withBlockfrostKey(url: string, projectId: string): string {
+  return `${url}${url.includes('?') ? '&' : '?'}project_id=${encodeURIComponent(projectId)}`;
+}
+
+export function preprodConfig(): NetworkConfig {
+  const projectId = process.env['BLOCKFROST_PROJECT_ID']?.trim();
+  if (!projectId) throw new Error('Set BLOCKFROST_PROJECT_ID to run against preprod.');
+  return {
+    networkId: 'preprod',
+    indexer: withBlockfrostKey('https://midnight-preprod.blockfrost.io/api/v0', projectId),
+    indexerWS: withBlockfrostKey('wss://midnight-preprod.blockfrost.io/api/v0/ws', projectId),
+    node: withBlockfrostKey('https://rpc.midnight-preprod.blockfrost.io', projectId),
+    nodeWS: withBlockfrostKey('wss://rpc.midnight-preprod.blockfrost.io', projectId),
+    proofServer: process.env['MIDNIGHT_PROOF_SERVER'] ?? 'http://127.0.0.1:6300',
+    faucet: 'https://midnight-tmnight-preprod.nethermind.dev/',
+  };
+}
 
 export function getConfig(): NetworkConfig {
   const network = process.env['MIDNIGHT_NETWORK'] ?? 'local';
   if (network === 'local') return LOCAL_CONFIG;
   if (network === 'preview') return PREVIEW_CONFIG;
-  if (network === 'preprod') return PREPROD_CONFIG;
+  if (network === 'preprod') return preprodConfig();
   throw new Error(
     `Unknown network: ${network}. Supported: 'local', 'preview', 'preprod'.`,
   );

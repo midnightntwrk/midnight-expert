@@ -22,7 +22,10 @@ This skill summarises the API. For the **complete** per-method reference at node
 |---------|---------------|
 | Local / Dev | `ws://localhost:9944` |
 | Preview | `wss://rpc.preview.midnight.network` |
-| Preprod | `wss://rpc.preprod.midnight.network` |
+| Preprod | `wss://rpc.midnight-preprod.blockfrost.io?project_id=<token>` |
+| Mainnet | `wss://rpc.midnight-mainnet.blockfrost.io?project_id=<token>` |
+
+Blockfrost hosts the public Preprod and Mainnet node RPC, so each needs the project ID of a Blockfrost project for that network (a Midnight Preprod ID starts with `nightpreprod`, a Midnight Mainnet ID with `nightmainnet`). Without a valid token for the network, requests fail with HTTP `403`. The Midnight-hosted `rpc.mainnet.midnight.network` and `rpc.preprod.midnight.network` are retired. The `https://` form of each host serves the same JSON-RPC over HTTP. For the current list, fetch `docs/relnotes/network.mdx` from `midnightntwrk/midnight-docs`.
 
 ## API Discovery
 

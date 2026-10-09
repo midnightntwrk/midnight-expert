@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ci-compact-core-examples` workflow and `plugins/compact-core/scripts/compile-compact-core-examples.sh`, which compile the compact-core skill example contracts against the network-supported compiler (0.31.1) — previously only the `compact-examples` contracts had compile coverage.
 - README "Network & Component References" section documenting the `proof-server`, `midnight-indexer`, and `midnight-node` plugins.
 - `NOTICE` files at the repo root and in `compact-core` and `compact-examples`, crediting the project's original author (Aaron Bassett) and carrying the MIT notices for vendored OpenZeppelin and other MIT-licensed example code.
+- `midnight-dapp-dev:midnight-sdk` `references/mainnet-deployment.md`: deploying to mainnet now that deployment is permissionless (since 2026-09-28). It covers the compiler that matches mainnet's ledger v8 (0.31.x), the Blockfrost endpoints and project token, cNIGHT→DUST funding, and a readiness checklist. It also notes that the docs' "deployment authorisation" step is out of date.
 
 - `plugins/midnight-tooling/network-supported-compiler.txt`, a single-line pin of the network-supported Compact compiler (currently `0.31.1`) read by `install-cli` and both example-compile CI workflows.
 - `install-cli` Step 3D: after any install or update, compare the installed compiler to the network-supported version and warn on mismatch, linking the compatibility matrix.

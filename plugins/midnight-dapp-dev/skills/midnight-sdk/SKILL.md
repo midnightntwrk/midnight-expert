@@ -8,13 +8,14 @@ description: >-
   SDK provider types (WalletProvider, MidnightProvider, PublicDataProvider,
   ProofProvider, ZKConfigProvider, PrivateStateProvider), testkit-js testing,
   observable state subscriptions, contract maintenance and verifier keys,
-  or connecting to the indexer or proof server.
+  connecting to the indexer or proof server, or deploying to mainnet
+  (Blockfrost endpoints and project tokens, mainnet readiness).
 version: 0.1.0
 ---
 
 # Midnight SDK Reference
 
-Comprehensive reference for the Midnight.js SDK (v4.1.1 — all `@midnight-ntwrk/midnight-js-*` packages move in lockstep): the core packages, the MidnightProviders architecture, the full transaction lifecycle, advanced contract operations, observable patterns, and testkit-js. For the deployment workflow, see `references/transaction-lifecycle.md`. For TypeScript witness implementation, see `compact-core:compact-witness-ts`. For browser wallet integration via the DApp Connector, see `midnight-dapp-dev:dapp-connector`.
+Comprehensive reference for the Midnight.js SDK (v4.1.1 — all `@midnight-ntwrk/midnight-js-*` packages move in lockstep): the core packages, the MidnightProviders architecture, the full transaction lifecycle, advanced contract operations, observable patterns, and testkit-js. For the deployment workflow, see `references/transaction-lifecycle.md`; for deploying to mainnet, see `references/mainnet-deployment.md`. For TypeScript witness implementation, see `compact-core:compact-witness-ts`. For browser wallet integration via the DApp Connector, see `midnight-dapp-dev:dapp-connector`.
 
 For the underlying Wallet SDK packages (WalletFacade, HD derivation, three-wallet architecture), see `midnight-wallet:wallet-sdk`.
 
@@ -518,3 +519,4 @@ Both types provide the on-chain confirmation data needed to verify that the oper
 |-------|---------------|
 | Detailed exports, constructor signatures, and configuration for the SDK packages | `references/package-reference.md` |
 | Complete transaction lifecycle with low-level API, proving flow, balancing internals, and finalization | `references/transaction-lifecycle.md` |
+| Deploying to mainnet: who can deploy, the compiler to use, Blockfrost endpoints and token, DUST funding, readiness checklist | `references/mainnet-deployment.md` |
