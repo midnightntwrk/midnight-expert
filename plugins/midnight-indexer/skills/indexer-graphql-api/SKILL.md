@@ -37,7 +37,10 @@ The v3 endpoint paths (`/api/v3/graphql` and `/api/v3/graphql/ws`) still work as
 |---------|------|-----------|
 | Local/Undeployed | `http://localhost:8088/api/v4/graphql` | `ws://localhost:8088/api/v4/graphql/ws` |
 | Preview | `https://indexer.preview.midnight.network/api/v4/graphql` | `wss://indexer.preview.midnight.network/api/v4/graphql/ws` |
-| Preprod | `https://indexer.preprod.midnight.network/api/v4/graphql` | `wss://indexer.preprod.midnight.network/api/v4/graphql/ws` |
+| Preprod | `https://midnight-preprod.blockfrost.io/api/v0?project_id=<token>` | `wss://midnight-preprod.blockfrost.io/api/v0/ws?project_id=<token>` |
+| Mainnet | `https://midnight-mainnet.blockfrost.io/api/v0?project_id=<token>` | `wss://midnight-mainnet.blockfrost.io/api/v0/ws?project_id=<token>` |
+
+Blockfrost hosts the public Preprod and Mainnet indexer, so each needs the project ID of a Blockfrost project for that network (a Midnight Preprod ID starts with `nightpreprod`, a Midnight Mainnet ID with `nightmainnet`). Without a valid token for the network, requests fail with HTTP `403`. Blockfrost runs the same GraphQL API, with one difference: `Subscription.dustGenerations` takes `(dustAddress, blockHash, dtimeCutoffHeight)` instead of `(dustAddress, startIndex, endIndex)`. Saved wallet sync state from the retired Midnight-hosted indexer (`indexer.mainnet.midnight.network`, `indexer.preprod.midnight.network`) does not carry over, so wallets that saved it must resync from genesis. For the current list, fetch `docs/relnotes/network.mdx` from `midnightntwrk/midnight-docs`.
 
 ## Queries
 

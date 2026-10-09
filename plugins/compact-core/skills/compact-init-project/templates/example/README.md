@@ -48,4 +48,6 @@ yarn env:down
 
 This project is set up for a local devnet running via Docker. Configurations for
 other networks live in `src/config.ts`; supply a funded wallet seed via
-`.env.<network>` to run against them.
+`.env.<network>` to run against them. Preprod also needs a Blockfrost
+**Midnight Preprod** project ID in `BLOCKFROST_PROJECT_ID`, because Blockfrost
+hosts the public Preprod indexer and node RPC.
