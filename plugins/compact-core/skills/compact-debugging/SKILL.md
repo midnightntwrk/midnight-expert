@@ -73,7 +73,6 @@ If `/midnight-verify:verify` identifies the issue directly, present the finding 
 | `parse error: found...` | compact-language-ref (troubleshooting) | Root Cause |
 | `unbound identifier` | compact-language-ref + compact-standard-library (hallucination traps) | Root Cause |
 | `potential witness-value disclosure` | compact-privacy-disclosure (debugging-disclosure) | Root Cause |
-| `implicit disclosure of witness value` | compact-privacy-disclosure (debugging-disclosure) | Root Cause |
 | `incompatible combination of types` | compact-language-ref (types-and-values) | Root Cause |
 | `cannot cast from type` | compact-language-ref (types-and-values) | Root Cause |
 | `cannot prove assertion` | compact-language-ref (troubleshooting, runtime section) | Hypothesis |

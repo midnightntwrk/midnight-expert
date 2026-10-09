@@ -12,13 +12,13 @@ pragma language_version 0.23;
 
 > **Tip:** Run `compact compile --language-version` to find the language version supported by your installed compiler. Use that version in your pragma declaration.
 
-Pin the specific language version you verified against (e.g. `0.23`). An open-ended lower bound like `>= 0.22` silently accepts future compiler versions the contract was never tested against.
+A lower bound (`>= 0.22`), a patch version (`>= 0.22.0`), and an exact version (`0.23`) all compile. Pinning the exact version you verified against (e.g. `0.23`) is a choice, not a compiler requirement: an open-ended lower bound like `>= 0.22` also accepts future compiler versions the contract was never tested against.
 
 Common mistakes:
 
-| Wrong | Correct |
-|-------|---------|
-| `pragma language_version >= 0.22;` | `pragma language_version 0.23;` |
+| Wrong | Correct | Error |
+|-------|---------|-------|
+| `pragma >= 0.22;` | `pragma language_version >= 0.22;` | `parse error: found ">=" looking for an identifier` |
 
 ## Include Files
 

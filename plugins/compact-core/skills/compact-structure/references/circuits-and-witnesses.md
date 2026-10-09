@@ -168,7 +168,7 @@ export circuit setOwner(): [] {
 }
 ```
 
-Without `disclose()`: `implicit disclosure of witness value` error.
+Without `disclose()`: `potential witness-value disclosure must be declared but is not: …` error.
 
 ### Common Witness Patterns
 

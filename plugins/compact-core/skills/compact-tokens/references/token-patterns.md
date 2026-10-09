@@ -32,19 +32,17 @@ Key points:
 
 ### Unshielded Mint to Self (Contract Holds Tokens)
 
-Mints tokens and immediately credits them to the contract's own balance. The contract can later distribute them via `sendUnshielded`.
+Mints tokens to the contract's own balance. The contract can later distribute them via `sendUnshielded`.
 
 ```compact
 export circuit mintToSelf(amount: Uint<64>): Bytes<32> {
   const domain = pad(32, "mytoken:");
-  const color = mintUnshieldedToken(disclose(domain), disclose(amount),
+  return mintUnshieldedToken(disclose(domain), disclose(amount),
     left<ContractAddress, UserAddress>(kernel.self()));
-  receiveUnshielded(color, disclose(amount) as Uint<128>);
-  return color;
 }
 ```
 
-The `left<ContractAddress, UserAddress>(kernel.self())` wraps the contract's own address as the recipient. `receiveUnshielded` credits the minted amount to the contract's on-chain balance for that color.
+The `left<ContractAddress, UserAddress>(kernel.self())` wraps the contract's own address as the recipient. Because the recipient is the contract itself, `mintUnshieldedToken` credits the minted amount to the contract's balance on its own. Do not add `receiveUnshielded`: it would count the same tokens twice.
 
 ### Unshielded Mint to User
 

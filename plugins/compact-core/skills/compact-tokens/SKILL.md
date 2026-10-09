@@ -85,12 +85,12 @@ export circuit send(coin: ShieldedCoinInfo, to: ZswapCoinPublicKey, amount: Uint
 
 ```compact
 export circuit mintToSelf(domainSep: Bytes<32>, amount: Uint<64>): Bytes<32> {
-  const color = mintUnshieldedToken(
+  // Minting to kernel.self() already credits the contract: mintUnshieldedToken
+  // records the receipt itself. Do not also call receiveUnshielded.
+  return mintUnshieldedToken(
     disclose(domainSep), disclose(amount),
     left<ContractAddress, UserAddress>(kernel.self())
   );
-  receiveUnshielded(color, disclose(amount) as Uint<128>);
-  return color;
 }
 ```
 
@@ -127,7 +127,7 @@ On testnet, these are called **tNIGHT** and **tDUST**. Contracts cannot mint, se
 | Sending shielded to `ContractAddress` without `receiveShielded` | Call `receiveShielded(coin)` in the receiving contract | The receiving contract must explicitly accept the coin |
 | `Uint<64>` for shielded amounts in send/receive | `Uint<128>` | `ShieldedCoinInfo.value`, `sendShielded`, and `sendImmediateShielded` use `Uint<128>` |
 | `Uint<128>` for `mintShieldedToken` value | `Uint<64>` | `mintShieldedToken` accepts `Uint<64>` for the value parameter, not `Uint<128>` |
-| Minting unshielded to self without receiving | Call `receiveUnshielded(color, amount)` after `mintUnshieldedToken` | The contract must receive its own minted unshielded tokens to update its balance |
+| Calling `receiveUnshielded(color, amount)` after `mintUnshieldedToken` to self | Call `mintUnshieldedToken` alone | When the recipient is `kernel.self()`, `mintUnshieldedToken` already records the receipt. Adding `receiveUnshielded` counts it twice: a 1000 mint records 2000 unshielded inputs. The same applies to `sendUnshielded` to self. |
 
 ## Reference Routing
 

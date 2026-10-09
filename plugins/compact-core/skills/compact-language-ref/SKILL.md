@@ -111,7 +111,7 @@ All local bindings use `const`. No `let`, `var`, or reassignment. Multiple bindi
 
 ### Conditional Branching
 
-Standard `if`/`else` with `Boolean` condition. No `else if` keyword -- use nested `if`/`else`. Ternary `c ? a : b` is also available. An `if` without `else` is allowed only when the circuit returns `[]`.
+Standard `if`/`else` with `Boolean` condition. `else if` chains compile, as do nested `if`/`else` blocks. Ternary `c ? a : b` is also available. An `if` without `else` is allowed only when the circuit returns `[]`.
 
 ### For Loops
 
@@ -221,7 +221,7 @@ Common wrong-to-correct patterns:
 |-------|---------|
 | `ledger { field: Type; }` | `export ledger field: Type;` |
 | `circuit fn(): Void` | `circuit fn(): []` |
-| `pragma >= 0.22.0` | `pragma language_version 0.23;` |
+| `pragma >= 0.22;` | `pragma language_version >= 0.22;` |
 | `Choice::rock` | `Choice.rock` |
 | `public_key(sk)` | `persistentHash<Vector<2, Bytes<32>>>([pad(32, "myapp:pk:"), sk])` |
 | `counter.value()` | `counter.read()` |

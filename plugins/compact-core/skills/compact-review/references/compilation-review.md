@@ -24,7 +24,7 @@ Check the contract for deprecated or invalid syntax that will cause compilation 
   }
   ```
 
-  > **Tool:** `COMPILE_RESULT` will show `unknown type "Void"` or `found "{" looking for ";"` if present.
+  > **Tool:** `COMPILE_RESULT` will show `unbound identifier Void` if present.
 
 - [ ] **Deprecated `ledger { ... }` block instead of individual ledger declarations.** Older versions of Compact used a single `ledger { ... }` block to group all ledger declarations. Current Compact requires each ledger variable to be declared individually. The `export` modifier is optional — use it when the DApp needs to query the variable directly.
 
@@ -42,7 +42,7 @@ Check the contract for deprecated or invalid syntax that will cause compilation 
   ledger owner: Bytes<32>;
   ```
 
-  > **Tool:** `COMPILE_RESULT` shows `found "{" looking for ";"` for deprecated ledger block syntax.
+  > **Tool:** `COMPILE_RESULT` shows `parse error: found "{" looking for an identifier` for deprecated ledger block syntax.
 
 - [ ] **`Choice::variant` (Rust-style) instead of `Choice.variant` (dot notation).** Compact uses dot notation for enum/choice variant access, not Rust-style double-colon path syntax. LLMs trained on Rust code frequently produce the wrong syntax.
 
@@ -68,7 +68,7 @@ Check the contract for deprecated or invalid syntax that will cause compilation 
   witness local_secret_key(): Bytes<32>;
   ```
 
-  > **Tool:** `COMPILE_RESULT` will show a parsing error for witness bodies.
+  > **Tool:** `COMPILE_RESULT` will show `parse error: found "{" looking for ";"` for a witness body after a return type, or `parse error: found "{" looking for ":"` when the return type is also missing.
 
 - [ ] **`pure function` instead of `pure circuit`.** Compact does not have a `function` keyword. Reusable non-exported logic is declared as a `circuit` (or `pure circuit` for circuits that do not access ledger state). LLMs frequently hallucinate `function` because it is ubiquitous in other languages.
 
@@ -84,7 +84,7 @@ Check the contract for deprecated or invalid syntax that will cause compilation 
   }
   ```
 
-  > **Tool:** `COMPILE_RESULT` will show an error for the `function` keyword.
+  > **Tool:** `COMPILE_RESULT` will show `parse error: found keyword "function" (which is reserved for future use) looking for "circuit"`.
 
 - [ ] **`Cell<T>` used as a type.** `Cell<T>` is not a valid Compact type. LLMs sometimes hallucinate it from Rust or other ZK language patterns. Use the type directly for ledger declarations.
 
@@ -139,7 +139,7 @@ Check the contract for deprecated or invalid syntax that will cause compilation 
   export ledger balances: Map<Bytes<32>, Field>;
   ```
 
-  > **Tool:** `COMPILE_RESULT` will show undefined type errors for stdlib types if the import is missing.
+  > **Tool:** `COMPILE_RESULT` will show `unbound identifier Counter` (or the first other stdlib name used) if the import is missing.
 
 - [ ] **`include "std"` (outdated) instead of `import CompactStandardLibrary;`.** Older versions of Compact used `include "std"` to load the standard library. Since language version 0.12.3 (compiler 0.19.7), the standard library is a builtin module imported via `import CompactStandardLibrary;`. The `std.compact` file is still provided for backward compatibility, so `include "std"` may still compile, but the `import` form is the recommended approach. Note: the `include` keyword itself is still valid for including other `.compact` files — only its use for the standard library is outdated.
 
@@ -164,7 +164,7 @@ Check the contract for code that is syntactically valid but semantically incorre
   export circuit initialize(): [] {
     const owner_pk = get_owner();
     authority = owner_pk;
-    // Compiler error: implicit disclosure of witness value
+    // Compiler error: potential witness-value disclosure must be declared but is not: …
   }
 
   // GOOD — explicit disclose() at the public boundary
@@ -183,17 +183,16 @@ Check the contract for code that is syntactically valid but semantically incorre
       return 1;
     }
     return n * factorial(n - 1);
-    // Compiler error: recursive circuit call
+    // Compiler error: recursion involving factorial
   }
 
-  // GOOD — use bounded iteration instead
-  circuit factorial(n: Uint<64>): Uint<64> {
-    const result = 1;
-    for (const i of 1..20) {
-      // Bounded loop with compile-time limit
-      result = (i <= n) ? result * i : result;
-    }
-    return result;
+  // GOOD — fold over a fixed-size vector (a const cannot be reassigned
+  // inside a for loop, so accumulate with fold instead)
+  circuit factorial(n: Uint<8>): Uint<64> {
+    assert(n <= 20, "n! does not fit in Uint<64> above 20");
+    return fold((acc: Uint<64>, i: Uint<8>): Uint<64> => (i <= n ? acc * i : acc) as Uint<64>,
+                1 as Uint<64>,
+                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
   }
   ```
 
@@ -203,10 +202,10 @@ Check the contract for code that is syntactically valid but semantically incorre
   // BAD — reassigning a const binding
   const total = balances.lookup(account);
   total = total + amount;
-  // Compiler error: cannot reassign const binding
+  // Compiler error: expected left-hand side of = to have an ADT type, received …
 
   // GOOD — bind to a new const
-  const current_total = balances.lookup(account);
+  const current_total = balances.lookup(disclose(account));
   const new_total = current_total + amount;
   ```
 
@@ -223,7 +222,7 @@ Check the contract for code that is syntactically valid but semantically incorre
   export circuit register(): [] {
     const pk = computeKey();
     authority = pk;
-    // Compiler error: implicit disclosure of witness value
+    // Compiler error: potential witness-value disclosure must be declared but is not: …
   }
 
   // GOOD — disclose at the public boundary in the caller
@@ -243,8 +242,9 @@ Check the contract for code that is syntactically valid but semantically incorre
   }
 
   // PREFERRED — pass initial values as constructor parameters (simpler deployment)
+  // (constructor parameters are witness data too, so disclose them on write)
   constructor(initial_authority: Bytes<32>) {
-    authority = initial_authority;
+    authority = disclose(initial_authority);
   }
   ```
 
@@ -252,20 +252,16 @@ Check the contract for code that is syntactically valid but semantically incorre
 
 Check the contract for type mismatches, incorrect casts, and wrong method names that will cause compiler rejections.
 
-- [ ] **Direct cast from `Uint<N>` to `Bytes<M>`.** Compact does not support direct casting between `Uint` and `Bytes` types. The cast must go through `Field` as an intermediate step. This is a multi-step cast requirement that LLMs frequently miss.
+- [ ] **`Uint<N>` to `Bytes<M>` casts.** Do not flag a direct `Uint<N> as Bytes<M>` cast: it compiles on compiler 0.31.1. Casting through `Field` (`value as Field as Bytes<32>`) also compiles. Flag a cast only when `COMPILE_RESULT` reports one.
 
   ```compact
-  // BAD — direct cast not supported
+  // Both compile on 0.31.1
   const value: Uint<64> = 42;
-  const result = value as Bytes<32>;
-  // Compiler error: cannot cast from type Uint<64> to type Bytes<32>
-
-  // GOOD — cast through Field as intermediate
-  const value: Uint<64> = 42;
-  const result = value as Field as Bytes<32>;
+  const direct = value as Bytes<32>;
+  const viaField = value as Field as Bytes<32>;
   ```
 
-  > **Tool:** `COMPILE_RESULT` will show `cannot cast from type X to type Y`.
+  > **Tool:** `COMPILE_RESULT` will show `cannot cast from type X to type Y` for a cast the compiler rejects.
 
 - [ ] **`Boolean` to `Field` cast is direct.** `Boolean` can be cast directly to `Field` without an intermediate step. This is a common source of unnecessary complexity — LLMs sometimes generate a multi-step cast through `Uint<8>` which works but is not required.
 
@@ -286,7 +282,7 @@ Check the contract for type mismatches, incorrect casts, and wrong method names 
   const a: Field = 10;
   const b: Field = 20;
   assert(a < b, "a must be less than b");
-  // Compiler error: operation "<" undefined for Field
+  // Compiler error: incompatible combination of types Field and Field for relational operator
 
   // GOOD — cast to Uint for comparison
   const a: Field = 10;
@@ -316,7 +312,7 @@ Check the contract for type mismatches, incorrect casts, and wrong method names 
   const a: Uint<8> = 100;
   const b: Uint<8> = 50;
   const c: Uint<8> = a + b;
-  // Compiler error: cannot assign widened result to Uint<8>
+  // Compiler error: mismatch between actual type Uint<0..511> and declared type Uint<8> of const binding
 
   // GOOD — explicit cast back to narrower type
   const a: Uint<8> = 100;
@@ -329,7 +325,7 @@ Check the contract for type mismatches, incorrect casts, and wrong method names 
   ```compact
   // BAD — missing depth parameter
   export ledger members: MerkleTree<Bytes<32>>;
-  // Compiler error: MerkleTree requires 2 type parameters
+  // Compiler error: mismatch between actual number 1 and declared number 2 of ADT parameters for MerkleTree
 
   // GOOD — include depth and leaf type
   export ledger members: MerkleTree<16, Bytes<32>>;
@@ -340,26 +336,26 @@ Check the contract for type mismatches, incorrect casts, and wrong method names 
   ```compact
   // BAD — .value() does not exist on Counter
   const current = counter.value();
-  // Compiler error: operation "value" undefined for Counter
+  // Compiler error: operation value undefined for ledger field type Counter
 
   // GOOD — use .read()
   const current = counter.read();
   ```
 
-  > **Tool:** `COMPILE_RESULT` will show `operation "value" undefined for Counter`.
+  > **Tool:** `COMPILE_RESULT` will show `operation value undefined for ledger field type Counter`.
 
 - [ ] **`Map.get(key)` instead of `Map.lookup(key)`.** The `Map` type does not have a `.get()` method. The correct method to retrieve a value by key is `.lookup(key)`. LLMs hallucinate `.get()` from JavaScript `Map` or other language standard libraries.
 
   ```compact
   // BAD — .get() does not exist on Map
   const balance = balances.get(account);
-  // Compiler error: operation "get" undefined for Map
+  // Compiler error: operation get undefined for ledger field type Map<…>
 
-  // GOOD — use .lookup()
-  const balance = balances.lookup(account);
+  // GOOD — use .lookup() (disclose a parameter used as a key)
+  const balance = balances.lookup(disclose(account));
   ```
 
-  > **Tool:** `COMPILE_RESULT` will show `operation "get" undefined for Map`. Use `octocode` to search the LFDT-Minokawa/compact repository for correct Map usage patterns in reference code.
+  > **Tool:** `COMPILE_RESULT` will show `operation get undefined for ledger field type Map<…>`. Use `octocode` to search the LFDT-Minokawa/compact repository for correct Map usage patterns in reference code.
 
 - [ ] **`Map.has(key)` instead of `Map.member(key)`.** The `Map` type does not have a `.has()` method. The correct method to check whether a key exists is `.member(key)`. LLMs hallucinate `.has()` from JavaScript `Map` or similar APIs.
 
@@ -368,10 +364,10 @@ Check the contract for type mismatches, incorrect casts, and wrong method names 
   if (balances.has(account)) {
     // ...
   }
-  // Compiler error: operation "has" undefined for Map
+  // Compiler error: operation has undefined for ledger field type Map<…>
 
-  // GOOD — use .member()
-  if (balances.member(account)) {
+  // GOOD — use .member() (disclose a parameter used as a key)
+  if (balances.member(disclose(account))) {
     // ...
   }
   ```
@@ -389,10 +385,10 @@ Check the contract for functions and types that LLMs commonly invent but do not 
   // GOOD — use the specific hash function with type parameter
   const h = persistentHash<Bytes<32>>(input);
   // or
-  const h = transientHash<Bytes<32>>(input);
+  const h2 = transientHash<Bytes<32>>(input);
   ```
 
-  > **Tool:** `COMPILE_RESULT` will show `unknown function "hash"`.
+  > **Tool:** `COMPILE_RESULT` will show `unbound identifier hash`.
 
 - [ ] **`verify()` as a general verification function.** There is no general `verify()` function in Compact. Verification is done through `assert()` for condition checks, `checkRoot()` for Merkle tree root verification, or specific cryptographic operations. LLMs invent `verify()` because it sounds natural.
 
@@ -427,8 +423,11 @@ Check the contract for functions and types that LLMs commonly invent but do not 
 
   // GOOD — source randomness from a witness function
   witness get_randomness(): Bytes<32>;
-  // Then in a circuit:
-  const nonce = get_randomness();
+
+  export circuit next_nonce(): Bytes<32> {
+    const nonce = get_randomness();
+    return disclose(nonce);
+  }
   ```
 
 - [ ] **`public_key()` or `publicKey()` instead of domain-separated hash.** Neither `public_key()` nor `publicKey()` exists in the Compact standard library. LLMs frequently hallucinate these function names. The correct pattern for deriving a public key is a domain-separated hash:
@@ -458,7 +457,7 @@ Check the contract for functions and types that LLMs commonly invent but do not 
   const point: JubjubPoint = computePoint(scalar);
   ```
 
-  > **Tool:** `COMPILE_RESULT` will show an unknown type error for `CurvePoint` or `NativePoint`. Use `octocode` to search the LFDT-Minokawa/compact repository to confirm `JubjubPoint` as the current type name.
+  > **Tool:** `COMPILE_RESULT` will show `apparent use of an old standard-library / ledger operator name CurvePoint` (or `NativePoint`) on compiler 0.31.1, and `unbound identifier CurvePoint` on 0.35.0. Use `octocode` to search the LFDT-Minokawa/compact repository to confirm `JubjubPoint` as the current type name.
 
 - [ ] **`CoinInfo` instead of `ShieldedCoinInfo` or `QualifiedShieldedCoinInfo`.** The correct type names for coin information in Compact are `ShieldedCoinInfo` or `QualifiedShieldedCoinInfo`, not `CoinInfo`. LLMs simplify the type name because `CoinInfo` is shorter.
 
@@ -469,7 +468,7 @@ Check the contract for functions and types that LLMs commonly invent but do not 
   // GOOD — use the correct type name
   const coin: ShieldedCoinInfo = getCoinDetails();
   // or
-  const coin: QualifiedShieldedCoinInfo = getQualifiedCoinDetails();
+  const qcoin: QualifiedShieldedCoinInfo = getQualifiedCoinDetails();
   ```
 
 ## Compiler Error Quick Reference
@@ -478,18 +477,22 @@ Quick reference of common compiler error patterns, their likely causes, and fixe
 
 | Error Pattern | Likely Cause | Fix |
 |---|---|---|
-| `implicit disclosure of witness value` | Witness-derived value flows to a public context (ledger write, return from exported circuit) without `disclose()` | Add `disclose()` at the point where the value crosses the public boundary |
-| `found "{" looking for ";"` | Void return type used (e.g., `circuit foo(): Void {`) or deprecated ledger block syntax (`ledger { ... }`) | Use `[]` as the return type for circuits that return nothing; use individual `export ledger` declarations |
-| `cannot cast from type X to type Y` | Direct cast between incompatible types (e.g., `Uint<64>` to `Bytes<32>`) | Use multi-step cast via `Field` as intermediate: `x as Field as Bytes<32>`. Note: `Boolean` to `Field` IS a direct cast. |
-| `operation "value" undefined for Counter` | Using `.value()` instead of `.read()` on a `Counter` | Replace `.value()` with `.read()` |
-| `operation "get" undefined for Map` | Using `.get(key)` instead of `.lookup(key)` on a `Map` | Replace `.get()` with `.lookup()` |
-| `operation "has" undefined for Map` | Using `.has(key)` instead of `.member(key)` on a `Map` | Replace `.has()` with `.member()` |
-| `recursive circuit call` | A circuit calls itself directly or through mutual recursion | Refactor to use bounded `for` loops or restructure logic to avoid recursion |
-| `type X requires N type parameters` | Missing generic parameters on a data structure (e.g., `MerkleTree<Bytes<32>>` instead of `MerkleTree<16, Bytes<32>>`) | Add all required type parameters; check documentation for the type's full generic signature |
-| `type mismatch` in arithmetic | Mixing `Field` and `Uint<N>` in the same expression without casting | Cast one operand to match the other: `field_val + (uint_val as Field)` |
-| `cannot assign widened result to Uint<N>` | Arithmetic widening — `Uint<8> + Uint<8>` produces a wider type that cannot be assigned back to `Uint<8>` | Add explicit cast to narrow the result: `(a + b) as Uint<8>` |
-| `unknown type "Void"` | Using `Void` as a return type | Replace `Void` with `[]` (empty tuple) |
-| `unknown function "hash"` | Using `hash()` instead of `persistentHash<T>()` or `transientHash<T>()` | Use the correct hash function with explicit type parameter |
+| `potential witness-value disclosure must be declared but is not: …` | Witness-derived value (including a circuit parameter) flows to a public context (ledger write, branch condition, return from exported circuit) without `disclose()` | Add `disclose()` at the point where the value crosses the public boundary |
+| `unbound identifier Void` | `Void` used as a return type (e.g., `circuit foo(): Void {`) | Use `[]` as the return type for circuits that return nothing |
+| `parse error: found "{" looking for an identifier` | Deprecated ledger block syntax (`ledger { ... }`) | Use individual `export ledger` declarations |
+| `parse error: found "{" looking for ";"` | A witness declared with a body (`witness w(): T { ... }`) | End the witness declaration with `;` and implement it in TypeScript |
+| `parse error: found keyword "function" (which is reserved for future use) looking for "circuit"` | `pure function` instead of `pure circuit` | Use `pure circuit` (or `circuit`) |
+| `cannot cast from type X to type Y` | A cast the compiler does not allow | Check the cast rules; note that `Uint<N> as Bytes<M>` and `Boolean as Field` are both direct casts on 0.31.1 |
+| `operation value undefined for ledger field type Counter` | Using `.value()` instead of `.read()` on a `Counter` | Replace `.value()` with `.read()` |
+| `operation get undefined for ledger field type Map<…>` | Using `.get(key)` instead of `.lookup(key)` on a `Map` | Replace `.get()` with `.lookup()` |
+| `operation has undefined for ledger field type Map<…>` | Using `.has(key)` instead of `.member(key)` on a `Map` | Replace `.has()` with `.member()` |
+| `parse error: found keyword "delete" (which is reserved for future use) …` | Using `.delete(key)` on a `Map` (`delete` is a reserved word) | Replace `.delete()` with `.remove()` |
+| `recursion involving <circuit>` | A circuit calls itself directly or through mutual recursion | Rewrite with `fold` or `map` over a fixed-size vector, or restructure logic to avoid recursion |
+| `mismatch between actual number N and declared number M of ADT parameters for <ADT>` | Missing generic parameters on a data structure (e.g., `MerkleTree<Bytes<32>>` instead of `MerkleTree<16, Bytes<32>>`) | Add all required type parameters; check documentation for the type's full generic signature |
+| `mismatch between actual type Uint<0..N> and declared type Uint<M> of const binding` | Arithmetic widening — `Uint<8> + Uint<8>` produces `Uint<0..511>`, which cannot be bound as `Uint<8>` | Add explicit cast to narrow the result: `(a + b) as Uint<8>` |
+| `expected left-hand side of = to have an ADT type, received …` | Reassigning a `const` binding | Bind the new value to a new `const` |
+| `unbound identifier hash` | Using `hash()` instead of `persistentHash<T>()` or `transientHash<T>()` | Use the correct hash function with explicit type parameter |
 | Witness-related deployment error in constructor | Constructor calls a witness but the deployment workflow does not provide the witness implementation | Ensure witness providers are available at deploy time, or prefer passing initial values as constructor parameters |
-| `operation "<" undefined for Field` | Using relational operators on `Field` type | Cast to `Uint<N>` before comparison: `(a as Uint<64>) < (b as Uint<64>)` |
+| `incompatible combination of types Field and Field for relational operator` | Using relational operators on `Field` type | Cast to `Uint<N>` before comparison: `(a as Uint<64>) < (b as Uint<64>)` |
 
+> Messages verified 2026-10-09 by compiling each pattern with Compact compiler 0.31.1 (language 0.23.0), and re-checked on 0.35.0. Mixing `Field` and `Uint<N>` in `+` compiles on both versions (the `Uint` operand widens to `Field`). Mixing them in `==` compiles on 0.31.1, but 0.35.0 rejects it with `incompatible types Field and Uint<64> for equality operator`, so recommend `f == (u as Field)`.
