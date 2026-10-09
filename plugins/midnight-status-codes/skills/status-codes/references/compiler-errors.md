@@ -535,7 +535,7 @@ These errors enforce restrictions on circuit purity and access to sealed ledger 
 
 **Triggers:** An exported circuit attempts to write to a ledger field that is marked `sealed`.
 
-**Fix:** Move the sealed-field modification into an internal (non-exported) circuit, and call that from the exported circuit if needed.
+**Fix:** Write sealed fields only in the constructor, directly or through a helper circuit that only the constructor calls. Moving the write into a non-exported circuit does not help if an exported circuit calls it: the compiler rejects that with the indirect-call variant below. If the value has to change after deployment, declare the field without `sealed`.
 
 **Indirect-call variant:**
 

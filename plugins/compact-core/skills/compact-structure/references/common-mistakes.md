@@ -21,7 +21,7 @@ export ledger owner: Bytes<32>;
 ### Void Return Type
 
 ```compact
-// Wrong - parse error: found "{" looking for ";"
+// Wrong - unbound identifier Void
 export circuit doSomething(): Void {
   counter.increment(1);
 }
@@ -35,19 +35,21 @@ export circuit doSomething(): [] {
 ### Pragma Format
 
 ```compact
-// Wrong - open-ended lower bound accepts untested future versions
-pragma language_version >= 0.22;
+// Wrong - parse error: found ">=" looking for an identifier
+pragma >= 0.22;
 
-// Correct - pin the specific verified language version
-pragma language_version 0.23;
+// Correct - include the language_version keyword
+pragma language_version >= 0.22;
 ```
+
+A lower bound (`>= 0.22`), a patch version (`>= 0.22.0`), and an exact version (`0.23`) all compile. Pinning an exact version guards against future language changes, but it is a choice, not a compiler requirement.
 
 > **Tip:** Run `compact compile --language-version` to check your compiler's supported version.
 
 ### Enum Variant Access (Rust-style)
 
 ```compact
-// Wrong - parse error: found ":" looking for ")"
+// Wrong - parse error: found ":" looking for ")", … (";", … in a statement)
 if (choice == Choice::rock) { ... }
 state = GameState::waiting;
 
@@ -59,7 +61,7 @@ state = GameState.waiting;
 ### Witness With Body
 
 ```compact
-// Wrong - parse error after witness declaration
+// Wrong - parse error: found "{" looking for ";"
 witness get_caller(): Bytes<32> {
   return public_key(local_secret_key());
 }
@@ -72,7 +74,7 @@ witness get_caller(): Bytes<32>;
 ### Pure Function Keyword
 
 ```compact
-// Wrong - "function" keyword does not exist
+// Wrong - parse error: found keyword "function" (which is reserved for future use) looking for "circuit"
 pure function helper(x: Field): Field {
   return x + 1;
 }
@@ -86,7 +88,7 @@ pure circuit helper(x: Field): Field {
 ### Deprecated Cell<T> Wrapper
 
 ```compact
-// Wrong - Cell<T> is implicit and cannot be written explicitly
+// Wrong - unbound identifier Cell (Cell<T> is implicit and cannot be written explicitly)
 export ledger myField: Cell<Field>;
 
 // Correct - use the type directly
@@ -98,10 +100,10 @@ export ledger myField: Field;
 ### Missing Disclosure
 
 ```compact
-// Wrong - implicit disclosure of witness value
+// Wrong - potential witness-value disclosure must be declared but is not: …
 export circuit check(guess: Field): Boolean {
   const secret = get_secret();
-  if (guess == secret) {          // Error: implicit disclosure
+  if (guess == secret) {          // the comparison uses a witness value
     return true;
   }
   return false;
@@ -145,7 +147,7 @@ export enum State { active, inactive }
 ### Counter.value() Instead of Counter.read()
 
 ```compact
-// Wrong - operation "value" undefined for Counter
+// Wrong - operation value undefined for ledger field type Counter
 const current = counter.value();
 
 // Correct - use .read()
@@ -155,7 +157,7 @@ const current = counter.read();
 ### public_key() as Built-in
 
 ```compact
-// Wrong - unbound identifier "public_key"
+// Wrong - unbound identifier public_key
 const pk = public_key(sk);
 
 // Correct - use persistentHash pattern
@@ -173,7 +175,7 @@ circuit get_public_key(sk: Bytes<32>): Bytes<32> {
 ```compact
 // Both approaches work:
 const b: Bytes<32> = amount as Bytes<32>;              // Direct cast is valid
-const b: Bytes<32> = (amount as Field) as Bytes<32>;   // Via Field also works
+const b2: Bytes<32> = (amount as Field) as Bytes<32>;  // Via Field also works
 ```
 
 ### Boolean to Field Cast
@@ -181,37 +183,35 @@ const b: Bytes<32> = (amount as Field) as Bytes<32>;   // Via Field also works
 ```compact
 // Both approaches work:
 const f: Field = flag as Field;                        // Direct cast is valid
-const f: Field = (flag as Uint<0..1>) as Field;        // Via Uint also works
+const f2: Field = (flag as Uint<0..1>) as Field;       // Via Uint also works
 ```
 
 ### Arithmetic Result Without Cast
 
 ```compact
-// Wrong - expected Uint<64> but received Uint<0..N>
+// Wrong - expected second argument of insert to have type Uint<64> but received Uint<0..N>
 balances.insert(key, a + b);
 
-// Correct - cast arithmetic result
-balances.insert(key, (a + b) as Uint<64>);
+// Correct - cast arithmetic result (and disclose parameters written to the ledger)
+balances.insert(disclose(key), disclose((a + b) as Uint<64>));
 ```
 
-### Incompatible Type Comparison
+### Mixing Field and Uint
 
 ```compact
-// Wrong - incompatible combination of types Field and Uint
-if (myField == myUint) { ... }
+// Arithmetic compiles -- the Uint operand widens to Field
+const result = myField + myUint;      // result is Field
 
-// Correct - cast to same type
+// Equality: cast explicitly. 0.31.1 accepts myField == myUint, but 0.35.0
+// rejects it: incompatible types Field and Uint<64> for equality operator
 if (myField == (myUint as Field)) { ... }
-```
 
-### Incompatible Type Arithmetic
+// Relational operators are the exception: Field has no ordering
+// Wrong - incompatible combination of types Field and Field for relational operator
+if (myField < otherField) { ... }
 
-```compact
-// Wrong - Field + Uint not allowed
-const result = myField + myUint;
-
-// Correct - cast Uint to Field first
-const result = myField + (myUint as Field);
+// Correct - cast to Uint first
+if ((myField as Uint<64>) < (otherField as Uint<64>)) { ... }
 ```
 
 ## Compiler Error Quick Reference
@@ -219,16 +219,20 @@ const result = myField + (myUint as Field);
 | Error Message | Likely Cause | Fix |
 |---------------|-------------|-----|
 | `parse error: found "{" looking for an identifier` | `ledger { }` block syntax | Use individual `export ledger` declarations |
-| `parse error: found "{" looking for ";"` | `Void` return type | Use `[]` return type |
-| `parse error: found ":" looking for ")"` | `Enum::variant` syntax | Use `Enum.variant` dot notation |
-| `unbound identifier "public_key"` | Assuming built-in function | Use `persistentHash` pattern |
-| `unbound identifier "Cell"` | Deprecated wrapper | Remove Cell, use type directly |
-| `unbound identifier "function"` | `pure function` keyword | Use `pure circuit` |
-| `operation "value" undefined for Counter` | Wrong method name | Use `.read()` not `.value()` |
-| `implicit disclosure of witness value` | Missing `disclose()` in conditional | Wrap with `disclose()` |
-| `potential witness-value disclosure must be declared` | Witness value flowing to ledger | `disclose()` before ledger write |
-| `incompatible combination of types Field and Uint` | Type mismatch | Cast with `as` |
-| `cannot cast from type Uint<64> to type Bytes<32>` | Direct Uint->Bytes | Cast directly: `x as Bytes<32>` or via Field: `(x as Field) as Bytes<32>` |
-| `expected second argument ... Uint<64> but received Uint<0..N>` | Arithmetic result not cast | Cast: `(a + b) as Uint<64>` |
+| `unbound identifier Void` | `Void` return type | Use `[]` return type |
+| `parse error: found "{" looking for ";"` | Witness declared with a body | End the declaration with `;`; implement it in TypeScript |
+| `parse error: found ":" looking for ")", …` | `Enum::variant` syntax | Use `Enum.variant` dot notation |
+| `parse error: found ">=" looking for an identifier` | `pragma >= …` without `language_version` | `pragma language_version >= 0.22;` |
+| `unbound identifier public_key` | Assuming built-in function | Use `persistentHash` pattern |
+| `unbound identifier Cell` | Deprecated wrapper | Remove Cell, use type directly |
+| `parse error: found keyword "function" (which is reserved for future use) looking for "circuit"` | `pure function` keyword | Use `pure circuit` |
+| `operation value undefined for ledger field type Counter` | Wrong method name | Use `.read()` not `.value()` |
+| `potential witness-value disclosure must be declared but is not: …` | Witness value or parameter used in a branch, ledger write, or exported return | `disclose()` at the point of use |
+| `incompatible combination of types Field and Field for relational operator` | `<`, `<=`, `>`, `>=` on `Field` | Cast both operands to `Uint<N>` |
+| `incompatible types Field and Uint<64> for equality operator` | `Field == Uint` on compiler 0.35.0 (0.31.1 accepts it) | Cast: `f == (u as Field)` |
+| `cannot cast from type Uint<64> to type Bytes<32>` | Older compiler without direct Uint->Bytes casts | Cast directly on 0.31.1: `x as Bytes<32>`, or via Field: `(x as Field) as Bytes<32>` |
+| `expected second argument of insert to have type Uint<64> but received Uint<0..N>` | Arithmetic result not cast | Cast: `(a + b) as Uint<64>` |
 | `cannot prove assertion` | Logic error or bad witness value | Check logic, range checks, witness returns |
-| `member access requires struct type` | Accessing field on non-struct | Verify base type is a struct |
+| `expected structure type, received <type>` | Accessing field on non-struct | Verify base type is a struct |
+
+> Messages verified 2026-10-09 by compiling each pattern with Compact compiler 0.31.1 (language 0.23.0), and re-checked on 0.35.0.

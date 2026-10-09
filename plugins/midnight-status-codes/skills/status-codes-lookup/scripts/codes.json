@@ -5139,8 +5139,9 @@
       "id": "compiler.purity.export-modifies-sealed",
       "description": "An exported circuit attempts to write to a ledger field that is marked `sealed`. Includes both direct and indirect (transitive) variants.",
       "fixes": [
-        "Move the sealed-field modification into an internal (non-exported) circuit, and call that from the exported circuit if needed",
-        "Trace the call chain — if the violation is transitive, address it in the inner circuit"
+        "Write sealed fields only in the constructor, directly or through a helper circuit that only the constructor calls; a non-exported circuit that an exported circuit calls is rejected the same way",
+        "If the value must change after deployment, declare the field without `sealed`",
+        "Trace the call chain — for the transitive variant, remove the call from the exported circuit to the circuit that writes the sealed field"
       ],
       "aliases": [
         "exported circuits cannot modify sealed ledger fields but ~a at ~a",

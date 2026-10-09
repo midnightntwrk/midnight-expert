@@ -305,7 +305,7 @@ Verify that every standard library call in the contract actually exists in `Comp
   const h = persistentHash<Bytes<32>>(input);
   ```
 
-  > **Tool:** `COMPILE_RESULT` will show `unknown function "hash"` if present.
+  > **Tool:** `COMPILE_RESULT` will show `unbound identifier hash` if present.
 
 - [ ] **`verify()` does not exist.** There is no general verification function. Use `assert()` for condition checks and `checkRoot()` for Merkle tree root verification.
 
@@ -353,7 +353,7 @@ Verify that every standard library call in the contract actually exists in `Comp
   const current = counter.read();
   ```
 
-  > **Tool:** `COMPILE_RESULT` will show `operation "value" undefined for Counter`.
+  > **Tool:** `COMPILE_RESULT` will show `operation value undefined for ledger field type Counter`.
 
 - [ ] **`map.get()` does not exist.** The correct method is `map.lookup()`. LLMs hallucinate `.get()` from JavaScript's `Map`.
 

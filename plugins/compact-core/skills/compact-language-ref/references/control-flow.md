@@ -131,10 +131,20 @@ export circuit broken(c: Boolean): Boolean {
 }
 ```
 
-There is no `else if` keyword. Chain conditions with nested if/else blocks:
+Chain conditions with `else if`, or with nested if/else blocks. Both compile:
 
 ```compact
 circuit classify(n: Uint<8>): Uint<8> {
+  if (n == 0) {
+    return 0;
+  } else if (n < 10) {
+    return 1;
+  } else {
+    return 2;
+  }
+}
+
+circuit classify_nested(n: Uint<8>): Uint<8> {
   if (n == 0) {
     return 0;
   } else {

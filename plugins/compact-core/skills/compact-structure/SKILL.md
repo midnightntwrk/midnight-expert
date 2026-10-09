@@ -62,7 +62,7 @@ import CompactStandardLibrary;
 
 > **Tip:** Run `compact compile --language-version` to check which language version your compiler supports.
 
-The pragma specifies a minimum version without patch numbers. The standard library provides `persistentHash`, `persistentCommit` (takes `rand: Bytes<32>` parameter), `transientHash`, and `transientCommit`. Language built-ins include `pad`, `disclose`, `assert`, and `default`.
+The pragma needs the `language_version` keyword. A minimum version (`>= 0.22`), a patch version (`>= 0.22.0`), and an exact version (`0.23`) all compile. The standard library provides `persistentHash`, `persistentCommit` (takes `rand: Bytes<32>` parameter), `transientHash`, and `transientCommit`. Language built-ins include `pad`, `disclose`, `assert`, and `default`.
 
 ## Data Types Quick Reference
 
@@ -167,7 +167,7 @@ export { Maybe, Either }   // Re-export stdlib types
 |---------|---------|
 | `ledger { field: Type; }` | `export ledger field: Type;` |
 | `circuit fn(): Void` | `circuit fn(): []` |
-| `pragma >= 0.20.0` | `pragma >= 0.20` |
+| `pragma >= 0.20;` (no `language_version`) | `pragma language_version >= 0.20;` |
 | `enum State { ... }` (no export) | `export enum State { ... }` |
 | `if (witness_val == x)` | `if (disclose(witness_val == x))` |
 | `Cell<Field>` | `Field` (Cell implicit, cannot be written) |

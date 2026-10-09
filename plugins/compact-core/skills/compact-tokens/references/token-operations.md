@@ -207,19 +207,19 @@ export circuit mint(amount: Uint<64>): [] {
 }
 ```
 
-**Call `receiveUnshielded` after minting to self.** When a contract mints tokens to its own address, it must also call `receiveUnshielded` to credit its own balance:
+**Do not call `receiveUnshielded` after minting to self.** When the recipient is the contract's own address (`kernel.self()`), `mintUnshieldedToken` already records the receipt (it calls `kernel.incUnshieldedInputs`). Adding `receiveUnshielded` records it a second time: a 1000-token mint shows 2000 unshielded inputs. `sendUnshielded` to `kernel.self()` also receives automatically. Use `receiveUnshielded` only for tokens that someone else sends to the contract.
 
 ```compact
 export circuit mintToSelf(domainSep: Bytes<32>, amount: Uint<64>): Bytes<32> {
-  const color = mintUnshieldedToken(
+  return mintUnshieldedToken(
     disclose(domainSep),
     disclose(amount),
     left<ContractAddress, UserAddress>(kernel.self())
   );
-  receiveUnshielded(color, disclose(amount) as Uint<128>);
-  return color;
 }
 ```
+
+> Behaviour verified against `standard-library.compact` at `compactc-v0.31.1`, and observed in the circuit's effects with `@midnight-ntwrk/compact-runtime` 0.16.0.
 
 **`unshieldedBalance` has a stale-read caveat.** The balance is not updated during contract execution as a result of unshielded sends and receives. It is always fixed to the value provided at the start of execution. Additionally, using `unshieldedBalance` means the transaction will fail if the token balance at application time differs from the balance at construction time. Prefer the comparison functions (`unshieldedBalanceLt`, `unshieldedBalanceGte`, `unshieldedBalanceGt`, `unshieldedBalanceLte`) unless you specifically need the exact value.
 

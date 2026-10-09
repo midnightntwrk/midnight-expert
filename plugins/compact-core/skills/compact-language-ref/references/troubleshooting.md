@@ -11,7 +11,7 @@ These functions are commonly assumed to be built-in but are not part of Compact.
 There is no built-in key derivation function. Derive public keys using `persistentHash` with a domain-separation tag:
 
 ```compact
-// Wrong -- unbound identifier "public_key"
+// Wrong -- unbound identifier public_key
 const pk = public_key(sk);
 
 // Correct -- persistentHash pattern
@@ -27,7 +27,7 @@ circuit get_public_key(sk: Bytes<32>): Bytes<32> {
 Signature verification cannot run inside a ZK circuit. Verify signatures off-chain in the witness (TypeScript prover) and pass the boolean result into the circuit:
 
 ```compact
-// Wrong -- does not exist
+// Wrong -- unbound identifier verify_signature
 const valid = verify_signature(msg, sig, pk);
 
 // Correct -- verify off-chain, pass result as witness
@@ -43,7 +43,7 @@ export circuit submit(msg: Bytes<32>, pk: Bytes<32>): [] {
 ZK circuits are deterministic. There is no source of randomness inside a circuit. Provide randomness from the prover via a witness:
 
 ```compact
-// Wrong -- does not exist
+// Wrong -- unbound identifier random
 const r = random();
 
 // Correct -- randomness comes from the prover
@@ -66,41 +66,42 @@ Table mapping error messages to their cause and fix. Errors are grouped by categ
 | Error Message | Cause | Fix |
 |---|---|---|
 | `parse error: found "{" looking for an identifier` | Using deprecated `ledger { }` block syntax | Use individual `export ledger` declarations |
-| `parse error: found "{" looking for ";"` | Using `Void` as a return type | Use empty tuple `[]` for circuits that return nothing |
-| `parse error: found ":" looking for ")"` | Using Rust-style `Enum::variant` double-colon syntax | Use dot notation: `Enum.variant` |
-| `parse error: found "{" after witness declaration` | Adding an implementation body to a witness | Witnesses are declarations only -- end with `;` and implement in TypeScript |
-| `version mismatch or parse error` | Pragma uses patch version (`0.22.0`) or wrong operator format | Use `pragma language_version 0.23;` |
+| `parse error: found ":" looking for ")", …` (or `looking for ";", …`) | Using Rust-style `Enum::variant` double-colon syntax | Use dot notation: `Enum.variant` |
+| `parse error: found "{" looking for ";"` | Adding an implementation body to a witness (`witness w(): T { ... }`) | Witnesses are declarations only -- end with `;` and implement in TypeScript |
+| `parse error: found keyword "function" (which is reserved for future use) looking for "circuit"` | Writing `pure function` instead of `pure circuit` | Compact uses `pure circuit` for helper functions |
+| `parse error: found ">=" looking for an identifier` | Pragma without the `language_version` keyword (`pragma >= 0.22;`) | Use `pragma language_version >= 0.22;`. Patch versions (`0.22.0`) and exact versions (`0.23`) also compile. |
 
 ### Unbound Identifier Errors
 
 | Error Message | Cause | Fix |
 |---|---|---|
-| `unbound identifier "public_key"` | Assuming `public_key()` is a built-in | Use the `persistentHash` derivation pattern (see above) |
-| `unbound identifier "Cell"` | Using deprecated `Cell<T>` wrapper removed in v0.15 | Use the type directly: `export ledger x: Field;` |
-| `unbound identifier "function"` | Writing `pure function` instead of `pure circuit` | Compact uses `pure circuit` for helper functions |
+| `unbound identifier public_key` | Assuming `public_key()` is a built-in | Use the `persistentHash` derivation pattern (see above) |
+| `unbound identifier Cell` | Using deprecated `Cell<T>` wrapper removed in v0.15 | Use the type directly: `export ledger x: Field;` |
+| `unbound identifier Void` | Using `Void` as a return type | Use empty tuple `[]` for circuits that return nothing |
+| `unbound identifier hash` | Using a generic `hash()` | Use `persistentHash<T>()` or `transientHash<T>()` |
 
 ### Type Errors
 
 | Error Message | Cause | Fix |
 |---|---|---|
-| `incompatible combination of types Field and Uint` | Comparing or operating on `Field` with `Uint` without casting | Cast the `Uint` operand: `(myUint as Field)` |
-| `expected ... Uint<64> but received Uint<0..N>` | Arithmetic result has expanded bounded type | Cast result back: `(a + b) as Uint<64>` |
+| `incompatible combination of types Field and Field for relational operator` | Using `<`, `<=`, `>` or `>=` on `Field` values | Cast both operands to `Uint<N>` first. |
+| `incompatible types Field and Uint<64> for equality operator` | `Field == Uint` on compiler 0.35.0 (0.31.1 accepts it) | Cast the `Uint` operand: `f == (u as Field)`, which compiles on both |
+| `expected second argument of insert to have type Uint<64> but received Uint<0..N>` | Arithmetic result has expanded bounded type | Cast result back: `(a + b) as Uint<64>` |
 | `cannot cast from type Uint<64> to type Bytes<32>` | Using an older compiler version that does not support direct `Uint` to `Bytes` cast | Upgrade compiler, or go through `Field`: `(amount as Field) as Bytes<32>` |
-| `member access requires struct type` | Accessing a field on a non-struct type | Verify the base value is a struct. `Map.lookup()` and `Set.member()` are separate operations, not field accesses. |
+| `expected structure type, received <type>` | Accessing a field on a non-struct type | Verify the base value is a struct. `Map.lookup()` and `Set.member()` are separate operations, not field accesses. |
 
 ### Disclosure Errors
 
 | Error Message | Cause | Fix |
 |---|---|---|
-| `implicit disclosure of witness value` | Using a witness-derived value in a conditional without `disclose()` | Wrap the comparison: `if (disclose(witness_val == expected))` |
-| `potential witness-value disclosure must be declared` | A circuit parameter flows to a ledger operation without acknowledgment | Disclose at the point of use: `const d = disclose(param); ledger.insert(d, v);` |
+| `potential witness-value disclosure must be declared but is not: …` | A witness-derived value or circuit parameter is used in a branch condition, written to the ledger, or returned from an exported circuit without `disclose()`. This is the compiler's only disclosure message. | Disclose at the point of use: `if (disclose(witness_val == expected))`, or `const d = disclose(param); ledger.insert(d, v);` |
 
 ### Runtime / Proof Errors
 
 | Error Message | Cause | Fix |
 |---|---|---|
 | `cannot prove assertion` | An `assert` condition evaluates to false during proof generation | Check witness return values, ensure range checks pass, and verify circuit logic. Common causes: (1) witness returns unexpected value, (2) bounded integer overflows range, (3) logic error in conditional chain |
-| `operation "value" undefined for ledger field type Counter` | Calling `.value()` on a `Counter` instead of `.read()` | Use `counter.read()` which returns `Uint<64>` |
+| `operation value undefined for ledger field type Counter` | Calling `.value()` on a `Counter` instead of `.read()` | Use `counter.read()` which returns `Uint<64>` |
 
 ## Disclosure Errors in Detail
 
@@ -113,7 +114,7 @@ Any branch condition that depends on a witness value must be wrapped in `disclos
 ```compact
 witness get_secret(): Field;
 
-// Wrong -- implicit disclosure of witness value
+// Wrong -- potential witness-value disclosure must be declared but is not: …
 export circuit check(guess: Field): Boolean {
   const secret = get_secret();
   if (guess == secret) {
@@ -175,11 +176,11 @@ Direct `Boolean as Field` is valid (false → 0, true → 1). The two-step route
 Arithmetic on `Uint` values produces an expanded bounded type. The result must be cast to the target type before assignment or use in a typed context:
 
 ```compact
-// Wrong -- expected Uint<64> but received Uint<0..N>
+// Wrong -- expected second argument of insert to have type Uint<64> but received Uint<0..N>
 balances.insert(key, a + b);
 
-// Correct -- cast arithmetic result
-balances.insert(key, (a + b) as Uint<64>);
+// Correct -- cast arithmetic result (and disclose parameters written to the ledger)
+balances.insert(disclose(key), disclose((a + b) as Uint<64>));
 ```
 
 This applies to all arithmetic operators. Subtraction can also fail at runtime if the result would be negative.
@@ -191,19 +192,21 @@ Complete table of common syntax mistakes with the error each one produces.
 | Wrong | Correct | Error |
 |---|---|---|
 | `ledger { field: Type; }` | `export ledger field: Type;` | `parse error: found "{" looking for an identifier` |
-| `circuit fn(): Void` | `circuit fn(): []` | `parse error: found "{" looking for ";"` |
-| `pragma language_version >= 0.22.0;` | `pragma language_version 0.23;` | version mismatch or parse error |
+| `circuit fn(): Void` | `circuit fn(): []` | `unbound identifier Void` |
+| `pragma >= 0.22;` | `pragma language_version >= 0.22;` | `parse error: found ">=" looking for an identifier` |
 | `enum State { a, b }` | `export enum State { a, b }` | enum not accessible from TypeScript |
-| `if (witness_val == x)` | `if (disclose(witness_val == x))` | `implicit disclosure of witness value` |
-| `Cell<Field>` | `Field` | `unbound identifier "Cell"` |
-| `public_key(sk)` | `persistentHash<Vector<2, Bytes<32>>>([pad(32, "myapp:pk:"), sk])` | `unbound identifier "public_key"` |
-| `counter.value()` | `counter.read()` | `operation "value" undefined for Counter` |
-| `Choice::rock` | `Choice.rock` | `parse error: found ":" looking for ")"` |
-| `witness fn(): T { ... }` | `witness fn(): T;` | `parse error: found "{" after witness declaration` |
-| `pure function helper(): T` | `pure circuit helper(): T` | `unbound identifier "function"` |
+| `if (witness_val == x)` | `if (disclose(witness_val == x))` | `potential witness-value disclosure must be declared but is not: …` |
+| `Cell<Field>` | `Field` | `unbound identifier Cell` |
+| `public_key(sk)` | `persistentHash<Vector<2, Bytes<32>>>([pad(32, "myapp:pk:"), sk])` | `unbound identifier public_key` |
+| `counter.value()` | `counter.read()` | `operation value undefined for ledger field type Counter` |
+| `Choice::rock` | `Choice.rock` | `parse error: found ":" looking for ")", …` |
+| `witness fn(): T { ... }` | `witness fn(): T;` | `parse error: found "{" looking for ";"` |
+| `pure function helper(): T` | `pure circuit helper(): T` | `parse error: found keyword "function" (which is reserved for future use) looking for "circuit"` |
 | `(amount as Field) as Bytes<32>` | `amount as Bytes<32>` (direct cast also works) | Both routes are valid |
-| `ledger.insert(key, a + b)` | `ledger.insert(key, (a + b) as Uint<64>)` | `expected type Uint<64> but received Uint<0..N>` |
-| `export circuit fn(p: T): [] { ledger.insert(p, v); }` | `export circuit fn(p: T): [] { const d = disclose(p); ledger.insert(d, v); }` | `potential witness-value disclosure must be declared` |
+| `ledger.insert(key, a + b)` | `ledger.insert(key, (a + b) as Uint<64>)` | `expected second argument of insert to have type Uint<64> but received Uint<0..N>` |
+| `export circuit fn(p: T): [] { ledger.insert(p, v); }` | `export circuit fn(p: T): [] { const d = disclose(p); ledger.insert(d, v); }` | `potential witness-value disclosure must be declared but is not: …` |
+
+> Messages verified 2026-10-09 by compiling each pattern with Compact compiler 0.31.1 (language 0.23.0), and re-checked on 0.35.0.
 
 ## Debugging Strategies
 

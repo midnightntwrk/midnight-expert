@@ -54,7 +54,7 @@ Check for private witness data escaping the zero-knowledge proof boundary.
 
 - [ ] **Witness-derived values written to public ledger without `disclose()`.** The compiler catches this as an error, but review the intent. If the developer added `disclose()` solely to silence the compiler without considering whether the value should actually be public, that is a privacy bug even though the code compiles.
 
-> **Tool:** `COMPILE_RESULT` shows `implicit disclosure of witness value` errors for these cases.
+> **Tool:** `COMPILE_RESULT` shows `potential witness-value disclosure must be declared but is not: …` errors for these cases.
 
 - [ ] **Conditional branches revealing private information.** Patterns like `if (disclose(secret == expected))` leak the boolean result of a private comparison. An observer learns whether the secret matched the expected value. Consider whether the branch outcome itself is sensitive.
 

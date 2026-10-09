@@ -69,26 +69,30 @@ const explicit = f + (u as Field);  // explicit cast also works
 The operators `/` and `%` do not exist in Compact. Workaround: compute the result off-chain in a witness and verify the relationship in the circuit:
 
 ```compact
-witness compute_quotient(a: Uint<64>, b: Uint<64>): Uint<64>;
+witness compute_divmod(a: Uint<64>, b: Uint<64>): [Uint<64>, Uint<64>];
 
 export circuit verified_divide(a: Uint<64>, b: Uint<64>): Uint<64> {
-  const q = compute_quotient(a, b);
-  assert(disclose((q * b) as Uint<64> <= a), "quotient too large");
+  const qr = compute_divmod(a, b);
+  const q = qr[0];
+  const r = qr[1];
+  assert(disclose(q * b + r == a), "q * b + r != a");
+  assert(disclose(r < b), "remainder must be less than the divisor");
   return disclose(q);
 }
 ```
+
+The witness is untrusted, so check both the quotient `q` and the remainder `r`. `q * b + r == a` with `r < b` has exactly one solution for `b > 0`, and no solution for `b == 0`, so division by zero is rejected too. Checking only `q * b <= a` is not enough: it accepts any quotient that is too small (for 100 / 9 it accepts 10 or 0), and any quotient at all when `b == 0`.
 
 ## Comparison Operators
 
 ### Equality: `==` and `!=`
 
-Equality and inequality work on any two values whose types are in a subtype relation: `Boolean`, `Uint`, `Field`, `Bytes<N>`, enums, structs, and tuples all support `==` and `!=` when both operands share a common type. Cross-type equality requires an explicit cast:
+Equality and inequality work on any two values whose types are in a subtype relation: `Boolean`, `Uint`, `Field`, `Bytes<N>`, enums, structs, and tuples all support `==` and `!=` when both operands share a common type. Cast a `Uint<N>` to `Field` before comparing it with a `Field`. Compiler 0.31.1 (the version the networks run) also accepts `f == u` without the cast, but 0.35.0 rejects it with `incompatible types Field and Uint<64> for equality operator`. The explicit cast compiles on both:
 
 ```compact
-const f: Field = 42;
-const u: Uint<64> = 42;
-// const bad = f == u;            // type error
-const ok = f == (u as Field);     // ok: Field == Field
+export circuit same(f: Field, u: Uint<64>): Boolean {
+  return f == (u as Field);       // compiles on 0.31.1 and 0.35.0
+}
 ```
 
 ### Relational: `<`, `<=`, `>`, `>=`
