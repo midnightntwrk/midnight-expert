@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `midnight-cast` plugin: live-network diagnosis through the read-only [midnight-cast](https://github.com/Kanasjnr/midnight-cast) MCP server (`npx -y midnight-cast@^0.2.0 mcp`), with 14 tools for network health and versions, error decoding, transactions, contracts, DUST, wallet readiness (`preflight`) and working code from midnightntwrk/midnight-examples. It adds the `midnight-cast:midnight-cast` skill, the `/midnight-cast:diagnose <network> [tx or error]` command, optional per-network Blockfrost project IDs for preprod and mainnet as sensitive plugin options, and five `claude plugin eval` cases. It is the marketplace's first plugin with its own MCP server.
+
 - `ci-compact-core-examples` workflow and `plugins/compact-core/scripts/compile-compact-core-examples.sh`, which compile the compact-core skill example contracts against the network-supported compiler (0.31.1) — previously only the `compact-examples` contracts had compile coverage.
 - README "Network & Component References" section documenting the `proof-server`, `midnight-indexer`, and `midnight-node` plugins.
 - `NOTICE` files at the repo root and in `compact-core` and `compact-examples`, crediting the project's original author (Aaron Bassett) and carrying the MIT notices for vendored OpenZeppelin and other MIT-licensed example code.
