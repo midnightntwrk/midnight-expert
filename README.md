@@ -10,8 +10,8 @@ This project extends the Midnight Network with additional developer tooling.
 
 ## At a glance
 
-- **16** Plugins
-- **102** Skills / Slash commands
+- **17** Plugins
+- **104** Skills / Slash commands
 - **17** Agents
 - **~37,700** Lines of reference documentation
 - **~21,800** Lines of example code
@@ -197,6 +197,11 @@ You can install any plugin from inside Claude Code with `/plugin`, or from the t
     <td><img src="plugins/midnight-node/assets/mascot.png" /></td>
     <td><strong><a href="plugins/midnight-node/">midnight-node</a></strong></td>
     <td>Reference for the Midnight Substrate node — pallets, RPC, and governance.<pre lang="bash">claude plugin install --scope user midnight-node@midnight-expert</pre></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td><strong><a href="plugins/midnight-cast/">midnight-cast</a></strong></td>
+    <td>Live-network diagnosis through the read-only midnight-cast MCP server — network health and versions, error decoding, transactions, contracts, DUST, wallet readiness, and working code from Midnight's official examples.<pre lang="bash">claude plugin install --scope user midnight-cast@midnight-expert</pre></td>
   </tr>
   </tbody>
 </table>

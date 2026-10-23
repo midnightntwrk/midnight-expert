@@ -72,6 +72,10 @@
     {
       "name": "midnight-node",
       "source": "./plugins/midnight-node"
+    },
+    {
+      "name": "midnight-cast",
+      "source": "./plugins/midnight-cast"
     }
   ]
 }
