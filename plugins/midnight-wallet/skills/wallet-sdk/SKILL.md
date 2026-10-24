@@ -8,7 +8,9 @@ description: >-
   state and sync progress, transaction balancing and signing, proving and
   submission services, connecting to infrastructure (indexer client, node client,
   prover client), or Bech32m address formatting. Also covers ProtocolVersion,
-  SyncProgress, FacadeState, and the wallet runtime
+  SyncProgress, FacadeState, and the wallet runtime. Also covers embedded
+  (email/social login) wallets on Midnight via Dynamic's WaaS connector, where
+  the user has no extension and no local proof server.
 ---
 
 # Wallet SDK Reference
@@ -23,13 +25,21 @@ Midnight Network ecosystem moves quickly, and there may be breaking
 changes between SDK versions. Run `midnight-wallet:sdk-regression-check`
 before trusting any pattern here.
 
-## Scope — browser wallets are out of scope
+## Scope — browser wallets are not this skill
 
 This skill is the package-level reference for the wallet SDK
 (`@midnightntwrk/wallet-sdk-*`), used in programmatic contexts where
 the script owns the keys directly. If the user is integrating their
 DApp with a browser extension wallet (Lace or other), load
 `midnight-dapp-dev:dapp-connector` instead.
+
+**Exception — hosted embedded wallets.** When the user wants onboarding with no
+extension at all (email or social login, wallet created for the user), the keys are
+MPC shares held by a provider and the prover runs in their wallet client. That is not
+this SDK; it is `references/embedded-wallets.md`. The model differs on three points
+that bite in production: no local proof server, no cross-pool (unshielded→shielded)
+transfers, and the connector detects the network from a **name substring**, which reads
+`Preview`/`Preprod` as mainnet. Read that page before writing any network gate.
 
 ## Quick Start: Wallet Construction
 
@@ -69,6 +79,7 @@ For configuration details, see `references/wallet-construction.md`.
 | Choose between Promise and Effect APIs | `references/effect-and-promise-apis.md` |
 | Customize wallet services (balancer, prover, etc.) | `references/capabilities-deep-dive.md` |
 | Resolve runtime errors and exceptions | `references/errors-and-troubleshooting.md` |
+| Onboard users with email/social login (embedded wallet, no extension) | `references/embedded-wallets.md` |
 
 ## Related Skills
 
