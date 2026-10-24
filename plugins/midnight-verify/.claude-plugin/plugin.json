@@ -1,6 +1,6 @@
 {
   "name": "midnight-verify",
-  "version": "0.14.0",
+  "version": "0.14.1",
   "description": "Verification framework for Midnight claims \u2014 verifies Compact code by compiling and executing test contracts, SDK/TypeScript claims by type-checking and devnet E2E testing, ZKIR circuits by running through the WASM checker and inspecting compiled structure, witness implementations by cross-domain type-checking and execution against compiled contracts, or by inspecting source code. Multi-agent pipeline with explicit /verify command.",
   "author": {
     "name": "Midnight Foundation"

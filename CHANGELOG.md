@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `midnight-verify` SubagentStop hooks no longer reject valid verification work on large transcripts. The evidence checks piped the transcript through `echo "$CONTENT" | grep -q` under `set -o pipefail`. When `grep -q` matched early and exited, `echo` was killed by SIGPIPE, and the hook read the failed pipeline as "evidence missing". The hooks now grep the transcript file directly. `midnight-verify` is bumped to 0.14.1. (#260)
 - Compact references now quote what the compiler actually prints. Each message was checked by compiling the pattern with compiler 0.31.1, and again with 0.35.0, across `compilation-review.md`, `troubleshooting.md`, `common-mistakes.md` and related files. Examples: `potential witness-value disclosure must be declared but is not: …` (not "implicit disclosure of witness value"), `unbound identifier Void`, `recursion involving <name>`, and `operation get undefined for ledger field type Map<…>`. The `found "{" looking for ";"` message comes from a witness with a body, not from `Void`. (#276)
 - Valid Compact is no longer listed as a mistake. `else if` compiles, and so do `pragma language_version >= 0.22.0` and a direct `Uint<N> as Bytes<M>` cast. `Field == Uint` compiles on 0.31.1 but not on 0.35.0, so the docs now recommend the explicit cast. (#276)
 - Fixes that were wrong when compiled or run:

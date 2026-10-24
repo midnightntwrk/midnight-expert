@@ -15,10 +15,9 @@ if [ -z "$TRANSCRIPT" ] || [ ! -f "$TRANSCRIPT" ]; then
   exit 0  # No transcript available, allow
 fi
 
-CONTENT=$(cat "$TRANSCRIPT")
 
 # Check 1: Verify workspace was created
-if ! echo "$CONTENT" | grep -qE '\.midnight-expert/verify/sdk-workspace|\.midnight-expert/verify/wallet-sdk-workspace'; then
+if ! grep -qE '\.midnight-expert/verify/sdk-workspace|\.midnight-expert/verify/wallet-sdk-workspace' "$TRANSCRIPT"; then
   cat >&2 <<'EOF'
 {"decision":"block","reason":"You must follow the process as described in the `midnight-verify:verify-by-devnet` skill. Do not attempt to take shortcuts. Only verifications which have followed the process will be accepted and not blocked."}
 EOF
@@ -26,7 +25,7 @@ EOF
 fi
 
 # Check 2: Verify devnet skill was loaded
-if ! echo "$CONTENT" | grep -qE 'midnight-tooling:devnet'; then
+if ! grep -qE 'midnight-tooling:devnet' "$TRANSCRIPT"; then
   cat >&2 <<'EOF'
 {"decision":"block","reason":"You must follow the process as described in the `midnight-verify:verify-by-devnet` skill. Do not attempt to take shortcuts. Only verifications which have followed the process will be accepted and not blocked."}
 EOF
