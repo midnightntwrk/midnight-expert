@@ -31,8 +31,9 @@ jobs:
       - name: Install the Compact toolchain
         run: |
           set -euxo pipefail
-          curl --proto '=https' --tlsv1.2 -LsSf \
-            https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
+          curl --proto '=https' --tlsv1.2 -LsSf -o "$RUNNER_TEMP/compact-installer.sh" \
+            https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh
+          sh "$RUNNER_TEMP/compact-installer.sh"
           # The installer updates the shell profile, but this job's later steps
           # don't reload it — expose the bin dir(s) where `compact` actually landed.
           found=0
