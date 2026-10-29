@@ -1,0 +1,2118 @@
+{
+  "tools": [
+    {
+      "name": "health",
+      "title": "midnight-cast health",
+      "description": "Full check of a Midnight network: RPC and indexer reachability, indexer sync against the node, and live versions against the support matrix. data.examples says whether Midnight's own examples pass on the node the network runs. Start here when something might be wrong with the network rather than the user's code.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "network": {
+            "type": "string",
+            "enum": [
+              "preview",
+              "preprod",
+              "mainnet",
+              "local"
+            ],
+            "description": "Midnight network to query: preview, preprod, mainnet, local"
+          },
+          "threshold": {
+            "description": "Indexer lag, in blocks, that counts as out of sync (default 100)",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "network"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "const": 1
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "network": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "data": {},
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "hint": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "message",
+                  "kind",
+                  "hint"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "tool": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "arguments": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "arguments"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "command",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "ok",
+          "command",
+          "network",
+          "data",
+          "warnings",
+          "error",
+          "next"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "preflight",
+      "title": "midnight-cast preflight",
+      "description": "Check that a network, its proof server and optionally a wallet are ready before the first transaction: the network answers and is in sync, the proof server answers at the expected version, and the wallet holds NIGHT registered for DUST generation. data.expectations quotes how long wallet sync and restore took in Midnight's examples run, so a long first sync isn't mistaken for a hang.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "network": {
+            "type": "string",
+            "enum": [
+              "preview",
+              "preprod",
+              "mainnet",
+              "local"
+            ],
+            "description": "Midnight network to query: preview, preprod, mainnet, local"
+          },
+          "address": {
+            "description": "The wallet's Midnight unshielded address (mn_addr_…) or a Cardano reward address (stake…)",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "network"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "const": 1
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "network": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "data": {},
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "hint": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "message",
+                  "kind",
+                  "hint"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "tool": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "arguments": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "arguments"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "command",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "ok",
+          "command",
+          "network",
+          "data",
+          "warnings",
+          "error",
+          "next"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "ping",
+      "title": "midnight-cast ping",
+      "description": "Check whether the network's RPC node, indexer and proof server answer, with latency and a classified error kind for each failure.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "network": {
+            "type": "string",
+            "enum": [
+              "preview",
+              "preprod",
+              "mainnet",
+              "local"
+            ],
+            "description": "Midnight network to query: preview, preprod, mainnet, local"
+          }
+        },
+        "required": [
+          "network"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "const": 1
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "network": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "data": {},
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "hint": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "message",
+                  "kind",
+                  "hint"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "tool": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "arguments": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "arguments"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "command",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "ok",
+          "command",
+          "network",
+          "data",
+          "warnings",
+          "error",
+          "next"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "tip",
+      "title": "midnight-cast tip",
+      "description": "Compare the node's latest block height with the indexer's, to see whether the indexer is behind.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "network": {
+            "type": "string",
+            "enum": [
+              "preview",
+              "preprod",
+              "mainnet",
+              "local"
+            ],
+            "description": "Midnight network to query: preview, preprod, mainnet, local"
+          },
+          "threshold": {
+            "description": "Lag in blocks that counts as out of sync (default 100)",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "network"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "const": 1
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "network": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "data": {},
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "hint": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "message",
+                  "kind",
+                  "hint"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "tool": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "arguments": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "arguments"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "command",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "ok",
+          "command",
+          "network",
+          "data",
+          "warnings",
+          "error",
+          "next"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "versions",
+      "title": "midnight-cast versions",
+      "description": "Compare the network's live node, runtime, indexer API and proof server with Midnight's support matrix, and a project's Midnight packages (package.json and package-lock.json) with the matrix pins. data.localProject says which directory was checked and whether it had a package.json, and data.examples whether Midnight's own examples pass on the node the network runs.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "network": {
+            "type": "string",
+            "enum": [
+              "preview",
+              "preprod",
+              "mainnet",
+              "local"
+            ],
+            "description": "Midnight network to query: preview, preprod, mainnet, local"
+          },
+          "projectDir": {
+            "description": "Absolute path of the user's project; defaults to the server's working directory, which may not be the project",
+            "type": "string",
+            "minLength": 1
+          },
+          "checkLocalPackages": {
+            "description": "Check the project's packages at all (default true)",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "network"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "const": 1
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "network": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "data": {},
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "hint": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "message",
+                  "kind",
+                  "hint"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "tool": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "arguments": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "arguments"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "command",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "ok",
+          "command",
+          "network",
+          "data",
+          "warnings",
+          "error",
+          "next"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "block",
+      "title": "midnight-cast block",
+      "description": "Read a block header: the latest one, or the block at a height.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "network": {
+            "type": "string",
+            "enum": [
+              "preview",
+              "preprod",
+              "mainnet",
+              "local"
+            ],
+            "description": "Midnight network to query: preview, preprod, mainnet, local"
+          },
+          "height": {
+            "description": "Block height; omit for the latest block",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "network"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "const": 1
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "network": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "data": {},
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "hint": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "message",
+                  "kind",
+                  "hint"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "tool": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "arguments": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "arguments"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "command",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "ok",
+          "command",
+          "network",
+          "data",
+          "warnings",
+          "error",
+          "next"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "tx",
+      "title": "midnight-cast tx",
+      "description": "Look up a transaction on the indexer: status, segments, fees, contract actions and the DUST and Zswap events it produced.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "network": {
+            "type": "string",
+            "enum": [
+              "preview",
+              "preprod",
+              "mainnet",
+              "local"
+            ],
+            "description": "Midnight network to query: preview, preprod, mainnet, local"
+          },
+          "hash": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Transaction hash, or an identifier when by is identifier"
+          },
+          "by": {
+            "description": "What hash is (default hash)",
+            "type": "string",
+            "enum": [
+              "hash",
+              "identifier"
+            ]
+          }
+        },
+        "required": [
+          "network",
+          "hash"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "const": 1
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "network": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "data": {},
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "hint": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "message",
+                  "kind",
+                  "hint"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "tool": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "arguments": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "arguments"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "command",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "ok",
+          "command",
+          "network",
+          "data",
+          "warnings",
+          "error",
+          "next"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "dust_event",
+      "title": "midnight-cast dust-event",
+      "description": "Read one DUST ledger event by id from the indexer subscription.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "network": {
+            "type": "string",
+            "enum": [
+              "preview",
+              "preprod",
+              "mainnet",
+              "local"
+            ],
+            "description": "Midnight network to query: preview, preprod, mainnet, local"
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "DUST ledger event id"
+          }
+        },
+        "required": [
+          "network",
+          "id"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "const": 1
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "network": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "data": {},
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "hint": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "message",
+                  "kind",
+                  "hint"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "tool": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "arguments": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "arguments"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "command",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "ok",
+          "command",
+          "network",
+          "data",
+          "warnings",
+          "error",
+          "next"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "dust_events",
+      "title": "midnight-cast dust-events",
+      "description": "Read DUST ledger events from the indexer: the latest ones, or a run starting at an id.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "network": {
+            "type": "string",
+            "enum": [
+              "preview",
+              "preprod",
+              "mainnet",
+              "local"
+            ],
+            "description": "Midnight network to query: preview, preprod, mainnet, local"
+          },
+          "from": {
+            "description": "First event id; omit for the latest events",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "limit": {
+            "description": "How many events to read (default 10, at most 50)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "required": [
+          "network"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "const": 1
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "network": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "data": {},
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "hint": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "message",
+                  "kind",
+                  "hint"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "tool": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "arguments": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "arguments"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "command",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "ok",
+          "command",
+          "network",
+          "data",
+          "warnings",
+          "error",
+          "next"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "contract",
+      "title": "midnight-cast contract",
+      "description": "Look up a deployed contract by address: whether it exists, its latest action (deploy, call or update) and the circuit a call ran, the deploy transaction and block (not reported after an update), unshielded balances, and the state's size and sha256.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "network": {
+            "type": "string",
+            "enum": [
+              "preview",
+              "preprod",
+              "mainnet",
+              "local"
+            ],
+            "description": "Midnight network to query: preview, preprod, mainnet, local"
+          },
+          "address": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Contract address, hex, optionally prefixed with 0x"
+          },
+          "includeState": {
+            "description": "Also return the full state hex, which can be hundreds of kilobytes (default false)",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "network",
+          "address"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "const": 1
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "network": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "data": {},
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "hint": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "message",
+                  "kind",
+                  "hint"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "tool": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "arguments": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "arguments"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "command",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "ok",
+          "command",
+          "network",
+          "data",
+          "warnings",
+          "error",
+          "next"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "dust_status",
+      "title": "midnight-cast dust-status",
+      "description": "DUST generation for Cardano reward addresses: whether each is registered, its NIGHT balance, generation rate, and current and maximum DUST capacity. Use when a wallet has no DUST.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "network": {
+            "type": "string",
+            "enum": [
+              "preview",
+              "preprod",
+              "mainnet",
+              "local"
+            ],
+            "description": "Midnight network to query: preview, preprod, mainnet, local"
+          },
+          "addresses": {
+            "minItems": 1,
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Cardano reward addresses (stake1… on mainnet, stake_test1… on test networks)"
+          }
+        },
+        "required": [
+          "network",
+          "addresses"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "const": 1
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "network": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "data": {},
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "hint": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "message",
+                  "kind",
+                  "hint"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "tool": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "arguments": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "arguments"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "command",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "ok",
+          "command",
+          "network",
+          "data",
+          "warnings",
+          "error",
+          "next"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "decode",
+      "title": "midnight-cast decode",
+      "description": "Explain a Midnight error. Paste the whole message from a wallet, node, toolkit or Blockfrost: 1010 rejections, Custom(N) ledger codes, pallet errors, JSON-RPC codes and known tooling messages are recognised. A bare code such as 170 works too.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "description": "The error message or code"
+          },
+          "network": {
+            "description": "Network the error came from, to check the ledger map matches it",
+            "type": "string",
+            "enum": [
+              "preview",
+              "preprod",
+              "mainnet",
+              "local"
+            ]
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "const": 1
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "network": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "data": {},
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "hint": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "message",
+                  "kind",
+                  "hint"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "tool": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "arguments": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "arguments"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "command",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "ok",
+          "command",
+          "network",
+          "data",
+          "warnings",
+          "error",
+          "next"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "explain",
+      "title": "midnight-cast explain",
+      "description": "Background on a Midnight topic: dust, 1010, versions, transcript, sync.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "string",
+            "enum": [
+              "1010",
+              "dust",
+              "versions",
+              "transcript",
+              "sync"
+            ],
+            "description": "Topic to explain"
+          }
+        },
+        "required": [
+          "topic"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "const": 1
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "network": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "data": {},
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "hint": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "message",
+                  "kind",
+                  "hint"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "tool": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "arguments": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "arguments"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "command",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "ok",
+          "command",
+          "network",
+          "data",
+          "warnings",
+          "error",
+          "next"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "examples",
+      "title": "midnight-cast examples",
+      "description": "Working code from Midnight's official examples (midnightntwrk/midnight-examples), each compiled and tested in CI. Give a topic such as \"DUST sponsorship\", \"send shielded tokens\" or \"verify a signature in a circuit\" to get the examples that show it, with file paths, line ranges, links pinned to a commit and the code itself. Without a topic, lists every example and what it covers. Prefer these over writing Midnight code from memory.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "topic": {
+            "description": "What the code should show; omit to list every example",
+            "type": "string"
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "const": 1
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "network": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "data": {},
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "hint": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "message",
+                  "kind",
+                  "hint"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "tool": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "arguments": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "arguments"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "command",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "ok",
+          "command",
+          "network",
+          "data",
+          "warnings",
+          "error",
+          "next"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    }
+  ]
+}
