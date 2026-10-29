@@ -36,6 +36,8 @@ jobs:
 
       - name: Check if version changed
         id: version-check
+        env:
+          FORCE: ${{ inputs.force }}
         run: |
           PACKAGE_NAME=$(node -p "require('./package.json').name")
           LOCAL_VERSION=$(node -p "require('./package.json').version")
@@ -44,7 +46,7 @@ jobs:
           echo "local=${LOCAL_VERSION}" >> "$GITHUB_OUTPUT"
           echo "published=${PUBLISHED_VERSION}" >> "$GITHUB_OUTPUT"
 
-          if [ "${{ inputs.force }}" = "true" ]; then
+          if [ "${FORCE}" = "true" ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "Force publish requested: ${LOCAL_VERSION}"
           elif [ "${LOCAL_VERSION}" != "${PUBLISHED_VERSION}" ]; then

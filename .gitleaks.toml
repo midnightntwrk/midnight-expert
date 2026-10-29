@@ -1,0 +1,6 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "redactor test fixtures (fake API keys)"
+paths = ['''^plugins/midnight-expert/skills/feedback/scripts/__tests__/redactor\.test\.js$''']
