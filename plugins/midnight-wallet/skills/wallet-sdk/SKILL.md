@@ -60,6 +60,7 @@ For configuration details, see `references/wallet-construction.md`.
 | Task | Reference |
 |------|-----------|
 | Look up a package name, import path, or key type | `references/quick-reference.md` |
+| Pick an onboarding route (hosted vs extension vs embedded) | `references/choosing-a-wallet.md` |
 | Generate keys from a seed or mnemonic | `references/key-derivation.md` |
 | Construct and configure a WalletFacade | `references/wallet-construction.md` |
 | Read wallet state, balances, or sync progress | `references/state-and-balances.md` |
