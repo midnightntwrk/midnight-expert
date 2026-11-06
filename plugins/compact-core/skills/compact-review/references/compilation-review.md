@@ -110,6 +110,18 @@ Check the contract for deprecated or invalid syntax that will cause compilation 
   const total = counter.read();
   ```
 
+- [ ] **A keyword used as a name.** Words like `from`, `as`, `of`, `type`, `map`, `slice`, `default` and `new` are Compact keywords and can't be used for constants, parameters or fields. `from` is the most common case, in transfer circuits. The full list is in `compact-language-ref` → `references/troubleshooting.md` → "Reserved Words".
+
+  ```compact
+  // BAD — from is a keyword
+  const from = ownPublicKey();
+
+  // GOOD
+  const sender = ownPublicKey();
+  ```
+
+  > **Tool:** `COMPILE_RESULT` will show `parse error: found keyword "from" looking for a const binding`.
+
 - [ ] **`while` loop instead of bounded `for` loop.** Compact does not support `while` loops because circuits must have compile-time-bounded execution. Only `for` loops with compile-time-known bounds are allowed. An unbounded loop would make proof generation impossible.
 
   ```compact
@@ -154,6 +166,18 @@ Check the contract for deprecated or invalid syntax that will cause compilation 
 ## Semantic Error Checklist
 
 Check the contract for code that is syntactically valid but semantically incorrect, causing compiler rejections or runtime failures.
+
+- [ ] **Ledger field the DApp or tests read, declared without `export`.** `ledger x: T;` compiles, but `x` is left out of the generated TypeScript `Ledger` type, so `ledger(state).x` doesn't exist and tests or the frontend can't read it. Leaving off `export` does **not** make the field private: ledger state is public on-chain either way. Export every field that off-chain code reads, including when a spec calls them "public ledger fields".
+
+  ```compact
+  // BAD — compiles, but `total` is missing from the TypeScript Ledger type
+  ledger total: Counter;
+
+  // GOOD
+  export ledger total: Counter;
+  ```
+
+  > **Tool:** no compiler error. Check `managed/<name>/contract/index.d.ts`: `export type Ledger = { … }` lists only exported fields (verified with compiler 0.36.0).
 
 - [ ] **Implicit disclosure of witness value at a public boundary.** When a witness-derived value flows to a public context (ledger write, return from exported circuit, public assertion) without an explicit `disclose()` call, the compiler rejects the code. This is the most common semantic error in Compact. The fix is to add `disclose()` at the point where the value crosses the public boundary.
 
@@ -487,6 +511,7 @@ Quick reference of common compiler error patterns, their likely causes, and fixe
 | `operation get undefined for ledger field type Map<…>` | Using `.get(key)` instead of `.lookup(key)` on a `Map` | Replace `.get()` with `.lookup()` |
 | `operation has undefined for ledger field type Map<…>` | Using `.has(key)` instead of `.member(key)` on a `Map` | Replace `.has()` with `.member()` |
 | `parse error: found keyword "delete" (which is reserved for future use) …` | Using `.delete(key)` on a `Map` (`delete` is a reserved word) | Replace `.delete()` with `.remove()` |
+| `parse error: found keyword "from" looking for a const binding` (or another keyword) | A keyword used as a variable name (`from`, `as`, `of`, `type`, `map`, …) | Rename the binding (e.g. `from` → `sender`) |
 | `recursion involving <circuit>` | A circuit calls itself directly or through mutual recursion | Rewrite with `fold` or `map` over a fixed-size vector, or restructure logic to avoid recursion |
 | `mismatch between actual number N and declared number M of ADT parameters for <ADT>` | Missing generic parameters on a data structure (e.g., `MerkleTree<Bytes<32>>` instead of `MerkleTree<16, Bytes<32>>`) | Add all required type parameters; check documentation for the type's full generic signature |
 | `mismatch between actual type Uint<0..N> and declared type Uint<M> of const binding` | Arithmetic widening — `Uint<8> + Uint<8>` produces `Uint<0..511>`, which cannot be bound as `Uint<8>` | Add explicit cast to narrow the result: `(a + b) as Uint<8>` |

@@ -69,6 +69,7 @@ Table mapping error messages to their cause and fix. Errors are grouped by categ
 | `parse error: found ":" looking for ")", …` (or `looking for ";", …`) | Using Rust-style `Enum::variant` double-colon syntax | Use dot notation: `Enum.variant` |
 | `parse error: found "{" looking for ";"` | Adding an implementation body to a witness (`witness w(): T { ... }`) | Witnesses are declarations only -- end with `;` and implement in TypeScript |
 | `parse error: found keyword "function" (which is reserved for future use) looking for "circuit"` | Writing `pure function` instead of `pure circuit` | Compact uses `pure circuit` for helper functions |
+| `parse error: found keyword "from" looking for a const binding` (or `"as"`, `"of"`, `"map"`, …) | Using a Compact keyword as a variable name, e.g. `const from = …` in a transfer circuit | Rename it (`sender`, `src`). See [Reserved Words](#reserved-words) |
 | `parse error: found ">=" looking for an identifier` | Pragma without the `language_version` keyword (`pragma >= 0.22;`) | Use `pragma language_version >= 0.22;`. Patch versions (`0.22.0`) and exact versions (`0.23`) also compile. |
 
 ### Unbound Identifier Errors
@@ -185,6 +186,19 @@ balances.insert(disclose(key), disclose((a + b) as Uint<64>));
 
 This applies to all arithmetic operators. Subtraction can also fail at runtime if the result would be negative.
 
+## Reserved Words
+
+These words can't be used as names for constants, parameters, circuits, fields or types. Using one gives `parse error: found keyword "<word>" …`. Words marked † are reserved for future use, and their error adds `(which is reserved for future use)`.
+
+- **Declarations and modules:** `circuit`, `const`, `constructor`, `contract`, `enum`, `export`, `from`, `import`, `include`, `ledger`, `module`, `pragma`, `pure`, `sealed`, `struct`, `type`, `witness`
+- **Expressions and control flow:** `as`, `assert`, `default`, `disclose`, `else`, `false`, `fold`, `for`, `if`, `map`, `new`, `of`, `pad`, `prefix`, `return`, `slice`, `true`
+- **Built-in types:** `Boolean`, `Bytes`, `Field`, `Opaque`, `Uint`, `Vector`
+- **Reserved for future use (†):** `await`, `break`, `case`, `catch`, `class`, `continue`, `debugger`, `delete`, `do`, `extends`, `finally`, `function`, `in`, `instanceof`, `interface`, `let`, `null`, `package`, `private`, `protected`, `public`, `static`, `super`, `switch`, `this`, `throw`, `try`, `typeof`, `var`, `void`, `while`, `with`, `yield`
+
+Common traps for agents and TypeScript developers: `from`/`to` in transfers (`to` is allowed, `from` isn't), `type` for a kind field, `map` or `slice` as a local name, and `default` or `new` in setters. Ledger type names (`Counter`, `Map`, `Set`, `MerkleTree`) and `async`/`undefined` are not keywords.
+
+> Verified 2026-11-05 with Compact compiler 0.36.0 (language 0.28.0) by compiling `const <word> = 1;` for each word. The list covers the words tested, not every keyword in the grammar.
+
 ## Wrong-to-Correct Syntax Quick Reference
 
 Complete table of common syntax mistakes with the error each one produces.
@@ -195,6 +209,8 @@ Complete table of common syntax mistakes with the error each one produces.
 | `circuit fn(): Void` | `circuit fn(): []` | `unbound identifier Void` |
 | `pragma >= 0.22;` | `pragma language_version >= 0.22;` | `parse error: found ">=" looking for an identifier` |
 | `enum State { a, b }` | `export enum State { a, b }` | enum not accessible from TypeScript |
+| `ledger total: Counter;` (when the DApp or tests read it) | `export ledger total: Counter;` | Compiles, but the field is missing from the generated TypeScript `Ledger` type. Its state is still public on-chain. |
+| `const from = …;` | `const sender = …;` | `parse error: found keyword "from" looking for a const binding` |
 | `if (witness_val == x)` | `if (disclose(witness_val == x))` | `potential witness-value disclosure must be declared but is not: …` |
 | `Cell<Field>` | `Field` | `unbound identifier Cell` |
 | `public_key(sk)` | `persistentHash<Vector<2, Bytes<32>>>([pad(32, "myapp:pk:"), sk])` | `unbound identifier public_key` |

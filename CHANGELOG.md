@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `compact-core` 0.12.1: a "Reserved Words" section in `compact-language-ref/references/troubleshooting.md` (verified with compiler 0.36.0), plus `compact-review` checks for keywords used as names (e.g. `const from = …`) and for ledger fields that off-chain code reads but that lack `export`.
 - `ci-compact-core-examples` workflow and `plugins/compact-core/scripts/compile-compact-core-examples.sh`, which compile the compact-core skill example contracts against the network-supported compiler (0.31.1) — previously only the `compact-examples` contracts had compile coverage.
 - README "Network & Component References" section documenting the `proof-server`, `midnight-indexer`, and `midnight-node` plugins.
 - `NOTICE` files at the repo root and in `compact-core` and `compact-examples`, crediting the project's original author (Aaron Bassett) and carrying the MIT notices for vendored OpenZeppelin and other MIT-licensed example code.
