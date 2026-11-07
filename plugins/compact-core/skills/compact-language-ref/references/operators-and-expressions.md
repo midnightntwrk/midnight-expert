@@ -87,7 +87,7 @@ The witness is untrusted, so check both the quotient `q` and the remainder `r`. 
 
 ### Equality: `==` and `!=`
 
-Equality and inequality work on any two values whose types are in a subtype relation: `Boolean`, `Uint`, `Field`, `Bytes<N>`, enums, structs, and tuples all support `==` and `!=` when both operands share a common type. Cast a `Uint<N>` to `Field` before comparing it with a `Field`. Compiler 0.31.1 (the version the networks run) also accepts `f == u` without the cast, but 0.35.0 rejects it with `incompatible types Field and Uint<64> for equality operator`. The explicit cast compiles on both:
+Equality and inequality work on any two values whose types are in a subtype relation: `Boolean`, `Uint`, `Field`, `Bytes<N>`, enums, structs, and tuples all support `==` and `!=` when both operands share a common type. Cast a `Uint<N>` to `Field` before comparing it with a `Field`. Compiler 0.31.1 (the compiler every live network has run; mainnet moved to ledger 9 on 2026-11-06, which is what 0.34.0+ targets) also accepts `f == u` without the cast, but 0.35.0 rejects it with `incompatible types Field and Uint<64> for equality operator`. The explicit cast compiles on both:
 
 ```compact
 export circuit same(f: Field, u: Uint<64>): Boolean {

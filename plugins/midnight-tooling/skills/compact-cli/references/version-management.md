@@ -19,7 +19,7 @@ Example output:
 compact: aarch64-darwin -- 0.31.1 -- already installed
 ```
 
-> ⚠️ **The newest *published* compiler can outpace live-network support.** `compact update` / `compact check` report the absolute latest (currently `0.34.0`), but **`0.34.0` is not yet supported on any live network**. Pin to the latest **network-supported** version (currently `0.31.1`) for anything you intend to deploy — "latest available" is not the same as "latest supported".
+> ⚠️ **The newest *published* compiler can outpace live-network support, and support now splits by network.** `compact update` / `compact check` report the absolute latest (currently `0.34.0`). Mainnet forked to **ledger 9** on 2026-11-06, which is the generation 0.34.0+ targets; preprod still runs **ledger 8.1.2** and rejects those contracts. Pin to the latest version **every** live network accepts (currently `0.31.1`) unless you are targeting mainnet only — "latest available" is not the same as "latest supported". Network ledger status, read from the public RPCs on 2026-11-07: `midnight_ledgerVersion` → mainnet `crate-ledger-9.1.0.1`, preprod `8.1.2`.
 
 ### Where the network-supported version is pinned
 

@@ -67,7 +67,7 @@ Use Glob, Grep, and Bash to detect what CQ tooling is present and what is missin
 | DApp Connector deps | `Grep @midnight-ntwrk/dapp-connector-api in package.json` | Determines if DApp Connector project |
 | Wallet test doubles | `Glob **/test/**/wallet-stub*.ts` | If wallet SDK or connector project |
 | Effect test patterns | `Grep Effect.runPromise in **/*.test.ts` | If wallet SDK project |
-| Ledger deps | `Grep @midnight-ntwrk/ledger-v8 in package.json` | Determines if Ledger project |
+| Ledger deps | `Grep ledger-v8 OR ledger-v9 in package.json` | Determines if Ledger project, and which ledger era its fixtures must match |
 | Onchain runtime deps | `Grep @midnight-ntwrk/onchain-runtime in package.json` | Determines if Onchain Runtime project |
 | Ledger sample fixtures | `Grep sampleCoinPublicKey in **/*.test.ts` | If ledger project — using proper fixtures |
 

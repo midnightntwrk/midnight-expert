@@ -15,7 +15,7 @@ version: 0.1.0
 
 # Ledger Testing
 
-> **Last verified:** 2026-09-18 — API surface checked against `@midnight-ntwrk/ledger-v8` 8.1.2 and `@midnight-ntwrk/onchain-runtime` 0.3.0 (current stable; `ledger-v9` is still pre-release `1.0.0-rc.3`, so `-v8` remains correct). All documented exports/members — `CostModel`, `UnprovenTransaction`, `sample*` fixtures, `LedgerParameters`, `SyntheticCost` dimensions, `ZswapLocalState`/`DustLocalState`, `eraseProofs`, `walletBalance`, `initialCostModel`/`initialParameters` — are present in the published type definitions.
+> **Last verified:** 2026-09-18 — API surface checked against `@midnight-ntwrk/ledger-v8` 8.1.2 and `@midnight-ntwrk/onchain-runtime` 0.3.0 (current stable; `ledger-v9` was pre-release `1.0.0-rc.3` on that date and is now stable `1.0.0`, running on mainnet since the ledger-9 fork on 2026-11-06 — the `-v8` guidance below stays correct for preprod and for projects that have not migrated, and fixtures must match the ledger era of the network under test). All documented exports/members — `CostModel`, `UnprovenTransaction`, `sample*` fixtures, `LedgerParameters`, `SyntheticCost` dimensions, `ZswapLocalState`/`DustLocalState`, `eraseProofs`, `walletBalance`, `initialCostModel`/`initialParameters` — are present in the published type definitions.
 
 Write tests for code that uses `@midnight-ntwrk/ledger-v8` and
 `@midnight-ntwrk/onchain-runtime` directly.

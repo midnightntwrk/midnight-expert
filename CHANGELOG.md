@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README "At a glance" now reflects all 16 marketplace plugins (was 13) and updated skill/command counts.
 - `install-cli` passes an explicit version to every `compact update` instead of downloading the latest published compiler; project-local installs use an absolute `--directory` path.
 - CI example-compile workflows read the compiler pin from `network-supported-compiler.txt` instead of a hardcoded `0.31.1`.
+- **Ledger 9 is live on mainnet and preprod is not.** Mainnet forked from ledger 8 at block 3,346,139 on 2026-11-06 (about 21:00 UTC), taking the upgrade directly rather than through a Preprod deployment and soak period; preprod still runs ledger 8.1.2. Three statements that were true until the fork are corrected: `midnight-sdk` `references/mainnet-deployment.md` no longer says ledger v9 "isn't deployed on Preview, Preprod or Mainnet"; `midnight-tooling:compact-cli` (SKILL and `references/version-management.md`) no longer says 0.34.0 is unsupported on every live network; and `compact-core:compact-language-ref` no longer calls 0.31.1 "the version the networks run". Compiler guidance is now per network — preprod rejects ledger-9 contracts, mainnet is the network they target — and `midnight-js` 5.0.0 is named as the dual-era SDK line, with the split npm scope spelled out.
 
 ### Fixed
 
