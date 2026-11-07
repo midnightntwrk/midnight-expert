@@ -64,7 +64,7 @@ The CLI and compiler update independently:
 | The compiler | `compact update` | `compact check` |
 | The CLI tool | `compact self update` | `compact self check` |
 
-> ⚠️ **"Latest available" is not "latest supported".** `compact check` may report a newer compiler (currently `0.34.0`) that **is not yet supported on any live network**. Pin to the latest **network-supported** compiler (currently `0.31.1`) for anything you intend to deploy. See [references/version-management.md](references/version-management.md) for details.
+> ⚠️ **"Latest available" is not "latest supported", and support now splits by network.** `compact check` may report a newer compiler (currently `0.34.0`). Mainnet forked to ledger 9 on 2026-11-06, which is what 0.34.0+ targets; preprod still runs ledger 8.1.2 and rejects those contracts. Pin to the latest compiler **every** live network accepts (currently `0.31.1`) unless you target mainnet only. See [references/version-management.md](references/version-management.md) for details.
 
 ## Quick Command Reference
 

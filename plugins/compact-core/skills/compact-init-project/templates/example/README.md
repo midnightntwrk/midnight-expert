@@ -6,6 +6,19 @@ A standalone Midnight project scaffolded from the `compact-core:compact-init-pro
 skill. Write your Compact contract, compile it, and exercise it with a test that
 runs against a local Midnight network.
 
+## Which ledger this template targets
+
+The pinned dependency set here is the **ledger-8 track**: `midnight-js` 4.1.1,
+`@midnight-ntwrk/ledger-v8`, `compact-runtime` 0.16.0, plus the `proof-server:8.1.0`
+image. That is still the right stack for preprod, and it is what toolchain 0.31.1 emits.
+
+Mainnet forked to **ledger 9** on 2026-11-06 (block 3,346,139) and preprod did not
+follow, so the two networks now differ. To target mainnet with ledger-9 contracts, move
+to toolchain 0.34.0+, `@midnight-ntwrk/midnight-js` 5.0.0 (dual-era), `@midnightntwrk/ledger-v9`
+1.0.0 and proof server 9.0.0. See
+`midnight-dapp-dev:midnight-sdk` → `references/mainnet-deployment.md` for the per-network
+status and the scope split.
+
 ## Set up
 
 Install dependencies (Node 22+; Yarn 4 via Corepack, or npm):

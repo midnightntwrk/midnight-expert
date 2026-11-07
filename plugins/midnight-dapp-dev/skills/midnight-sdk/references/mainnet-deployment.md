@@ -2,10 +2,11 @@
 
 How to move a contract and DApp that work on `preprod` to Midnight mainnet: the deployment policy, the compiler to use, endpoints and tokens, funding, and a readiness checklist.
 
-> **Last verified:** 2026-10-09. Sources:
+> **Last verified:** 2026-11-07. Sources:
 > - the Midnight blog post [State of the Network – September 2026](https://midnight.network/blog/state-of-the-network-september-2026), dated 2026-09-28
 > - `midnightntwrk/midnight-docs` at `72f101a`: `docs/relnotes/network.mdx`, `docs/guides/networks-and-environments.mdx` and `docs/relnotes/compact/toolchain-0.35.0.mdx`
 > - `midnightntwrk/midnight-ledger` `ledger/src/semantics.rs`, where a contract deploy is rejected only if the address is already deployed
+> - `midnightntwrk/midnight-ledger` `Ledger 9.1.0.0` release notes (2026-11-04), plus `midnight_ledgerVersion` and `state_getRuntimeVersion` read from the mainnet and preprod RPCs on 2026-11-07
 >
 > Endpoints and compiler versions change often. Re-fetch the docs pages before relying on the values here.
 
@@ -19,9 +20,13 @@ The ledger itself never restricted deployers. A node operator can still reject d
 
 ## Compile with the compiler that matches mainnet
 
-Mainnet runs **ledger v8**. Build contracts for it with **Compact toolchain 0.31.x**. The network-supported version is pinned in `midnight-tooling/network-supported-compiler.txt`, and `midnight-tooling:install-cli` installs it.
+**Mainnet runs ledger 9.** It forked from ledger 8 at block 3,346,139 on 2026-11-06 (about 21:00 UTC), taking the upgrade directly rather than through a Preprod deployment and soak period. **Preprod still runs ledger 8.1.2**, so it is one ledger generation behind mainnet and can no longer validate ledger-9 behaviour. Both values were read from `midnight_ledgerVersion` and `state_getRuntimeVersion` on 2026-11-07; re-check them before relying on this page.
 
-Toolchain 0.34.0 and later target ledger v9, which isn't deployed on Preview, Preprod or Mainnet. Contracts built with them compile and pass local tests, but fail when deployed. Check with `compact compile --version`, and switch with `compact update 0.31`. Pin `@midnight-ntwrk/compact-runtime` to the version that the [compatibility matrix](https://docs.midnight.network/relnotes/support-matrix) lists for that toolchain. npm's `latest` tag points to 0.20.0, which is for ledger v9.
+The compiler every live network has run is **Compact toolchain 0.31.x** (ledger-8 output). It is pinned in `midnight-tooling/network-supported-compiler.txt`, and `midnight-tooling:install-cli` installs it.
+
+Toolchain 0.34.0 and later target ledger 9. Preprod rejects those contracts, because ledger 8 cannot read their initial state; mainnet, now on ledger 9, is the network they are built for. Check with `compact compile --version`, and switch with `compact update 0.31`. Pin `@midnight-ntwrk/compact-runtime` to the version that the [compatibility matrix](https://docs.midnight.network/relnotes/support-matrix) lists for that toolchain.
+
+On the SDK side, `midnight-js` **5.0.0** is the dual-era line: it runs contract-scoped transactions on ledger 8 and on ledger 9 from one build, and 4.1.1 cannot handle a contract compiled for ledger 9. The npm scope is split as well — `@midnightntwrk/ledger-v9`, `@midnightntwrk/wallet-sdk-facade` and `@midnightntwrk/dapp-connector-api` publish under the new scope, while `midnight-js` and `compact-runtime` still publish under the legacy `@midnight-ntwrk` scope.
 
 ## Endpoints and the Blockfrost token
 
