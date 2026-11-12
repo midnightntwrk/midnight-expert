@@ -54,7 +54,7 @@ The compiler also reports two additional versions relevant to DApp developers:
 
 | What | Command | Example Output |
 |------|---------|----------------|
-| **Ledger version** | `compact compile -- --ledger-version` | `zkir-3.2.0-rc.2` (0.31.1 printed `ledger-8.0.2`) |
+| **Ledger version** | `compact compile -- --ledger-version` | `zkir-3.2.0-rc.2` on 0.36.0, which is the ZKIR backend version rather than a ledger version; 0.31.1 printed `ledger-8.0.2`. Take the ledger a compiler targets from the [support matrix](https://docs.midnight.network/relnotes/support-matrix) (0.36.x targets ledger 9) |
 | **Runtime JS package version** | `compact compile -- --runtime-version` | `0.21.0` |
 
 The CLI and compiler update independently:

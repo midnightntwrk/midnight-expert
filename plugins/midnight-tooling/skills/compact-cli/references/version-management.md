@@ -14,10 +14,13 @@ compact update
 
 Downloads the latest compiler version and sets it as default. If already installed, no download occurs.
 
-Example output:
+Example output (the newest published compiler is 0.36.1):
 ```
-compact: aarch64-darwin -- 0.36.0 -- already installed
+compact: x86_64-apple-darwin -- 0.36.1 -- installed
+compact: x86_64-apple-darwin -- 0.36.1 -- default.
 ```
+
+Running it again when that version is already installed skips the download and prints only the `default.` line.
 
 > ⚠️ **The newest *published* compiler can outpace live-network support.** `compact update` / `compact check` report the absolute latest (currently `0.36.1`), which can be ahead of what the networks accept. Pin to the **network-supported** version (currently `0.36.0`, on Mainnet, Preview and Preprod since ledger 9) for anything you intend to deploy — "latest available" is not the same as "latest supported". A later patch of the pinned version (`0.36.1` here) keeps the same language and runtime versions, so it's fine to use; a new minor version isn't until the matrix lists it.
 
@@ -57,9 +60,10 @@ Example output:
 ```
 compact: available versions
 
+  0.36.1 - x86_macos, aarch64_macos, x86_linux, aarch64_linux
 → 0.36.0 - x86_macos, aarch64_macos, x86_linux, aarch64_linux
-  0.30.0 - x86_macos, aarch64_macos, x86_linux, aarch64_linux
-  0.29.0 - x86_macos, aarch64_macos, x86_linux, aarch64_linux
+  0.35.0 - x86_macos, aarch64_macos, x86_linux, aarch64_linux
+  0.34.0 - x86_macos, aarch64_macos, x86_linux, aarch64_linux
 ```
 
 The arrow (`→`) indicates the current default. Each version lists available platform builds.
@@ -74,9 +78,8 @@ Example output:
 ```
 compact: installed versions
 
+  0.36.1
 → 0.36.0
-  0.30.0
-  0.29.0
 ```
 
 ## Checking for Updates
@@ -87,10 +90,13 @@ compact check
 
 Queries the remote server and reports whether a newer compiler version is available. Does not download anything.
 
-Example output:
+Example output, on the pinned 0.36.0 with 0.36.1 published:
 ```
-compact: aarch64-darwin -- Up to date -- 0.36.0
+compact: x86_64-apple-darwin -- Update Available -- 0.36.0
+compact: Latest version available: 0.36.1.
 ```
+
+On the newest version it prints `compact: x86_64-apple-darwin -- Up to date -- 0.36.1`.
 
 ## Cleaning Up
 

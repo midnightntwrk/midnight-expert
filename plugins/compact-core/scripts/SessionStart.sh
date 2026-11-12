@@ -152,7 +152,9 @@ if [[ "$lang_version" =~ $SEMVER_RE ]]; then
 fi
 
 newer_published=""
-if [ -n "$supported_version" ] && [ -n "$latest_version" ] && later_patch_of "$latest_version" "$supported_version"; then
+if [ -n "$supported_version" ] && [ -n "$latest_version" ] && [ "$latest_version" = "$current_version" ]; then
+  : # already on the newest published compiler, nothing newer to mention
+elif [ -n "$supported_version" ] && [ -n "$latest_version" ] && later_patch_of "$latest_version" "$supported_version"; then
   newer_published=" Patch release v${latest_version} is also published; it keeps the same language and runtime versions, so it is safe to use."
 elif [ -n "$supported_version" ] && [ -n "$latest_version" ] && version_lt "$supported_version" "$latest_version"; then
   newer_published=" A newer compiler (v${latest_version}) is published, but it is not network-supported yet — do not upgrade to it for anything you intend to deploy."
@@ -165,7 +167,7 @@ elif [ -n "$supported_version" ] && [ "$current_version" = "$supported_version" 
 
 ${COMMON_CONTEXT}"
 elif [ -n "$supported_version" ] && later_patch_of "$current_version" "$supported_version"; then
-  msg="You are using compact compiler v${current_version}, a patch release of the network-supported version v${supported_version} with the same language and runtime versions.${pragma_advice}
+  msg="You are using compact compiler v${current_version}, a patch release of the network-supported version v${supported_version} with the same language and runtime versions.${pragma_advice}${newer_published}
 
 ${COMMON_CONTEXT}"
 elif [ -n "$supported_version" ] && version_lt "$current_version" "$supported_version"; then

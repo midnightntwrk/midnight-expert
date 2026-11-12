@@ -23,7 +23,7 @@ The network-supported version is pinned in one place so it can be bumped without
 cat "${CLAUDE_PLUGIN_ROOT}/network-supported-compiler.txt"
 ```
 
-Store the result (a single semver string, e.g. `0.36.0`) as `NETWORK_COMPILER` and use it in every `compact update` below. Shell variables do not persist between tool calls, so substitute the literal value (e.g. `compact update 0.31.1`) when you run the commands; `"$NETWORK_COMPILER"` in this file is a placeholder for that value.
+Store the result (a single semver string, e.g. `0.36.0`) as `NETWORK_COMPILER` and use it in every `compact update` below. Shell variables do not persist between tool calls, so substitute the literal value (e.g. `compact update 0.36.0`) when you run the commands; `"$NETWORK_COMPILER"` in this file is a placeholder for that value.
 
 If `CLAUDE_PLUGIN_ROOT` is not set or the file is not found there, use the `midnight-plugin-utils:find-claude-plugin-root` skill to locate the `midnight-tooling` plugin root and read `network-supported-compiler.txt` from that path. If the file still cannot be read, stop and tell the user: do not fall back to a bare `compact update`.
 

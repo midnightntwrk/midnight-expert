@@ -136,6 +136,12 @@ chk_contains "treats the patch as supported" "$CTX" "v0.31.2, a patch release of
 chk_contains "still pins the pragma" "$CTX" "pragma language_version 0.23;"
 chk_not_contains "no switch-back advice" "$CTX" "compact update 0.31.1"
 
+echo "--- on a later patch, a newer minor is published"
+run_session_start "$SIBLING_ROOT" "0.31.2" "0.32.0" "0.23.0"
+chk_contains "still treats the patch as supported" "$CTX" "a patch release of the network-supported version v0.31.1"
+chk_contains "warns about the newer minor" "$CTX" "A newer compiler (v0.32.0) is published, but it is not network-supported yet"
+chk_not_contains "does not call the patch a newer release" "$CTX" "Patch release v0.31.2 is also published"
+
 echo "--- on the pinned version, a later patch is published"
 run_session_start "$SIBLING_ROOT" "0.31.1" "0.31.2" "0.23.0"
 chk_contains "says the patch is safe" "$CTX" "Patch release v0.31.2 is also published"

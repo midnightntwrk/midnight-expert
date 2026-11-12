@@ -1,6 +1,6 @@
 # Docker Setup
 
-> **Last verified:** 2026-09-17 — proof-server image `midnightntwrk/proof-server` tag `9.0.0`, port 6300 confirmed consistent across the tooling docs.
+> **Last verified:** 2026-11-12 — proof-server image `midnightntwrk/proof-server` tag `9.0.0`, port 6300 confirmed consistent across the tooling docs.
 
 For all Docker prerequisites, installation, resource requirements, and troubleshooting, see the devnet skill's Docker setup reference: `skills/devnet/references/docker-setup.md`.
 
