@@ -1,6 +1,6 @@
 # Compiling, Formatting, and Fixup
 
-> **Last verified:** 2026-09-17 against `compact` CLI 0.5.1 / compiler 0.31.1 — flags and output tree (`--skip-zk` emits `compiler/`, `contract/`, `zkir/`; `keys/` only on full build) verified against the installed toolchain.
+> **Last verified:** 2026-09-17 against `compact` CLI 0.5.1 / compiler 0.31.1 (version values re-checked 2026-11-12 on 0.36.0) — flags and output tree (`--skip-zk` emits `compiler/`, `contract/`, `zkir/`; `keys/` only on full build) verified against the installed toolchain.
 
 ## Compiling
 

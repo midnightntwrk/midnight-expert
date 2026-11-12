@@ -18,7 +18,7 @@ description: >-
 
 # Compact CLI Management
 
-> **Last verified:** 2026-09-17 against `compact` CLI 0.5.1 / compiler 0.31.1 — documented commands, flags, version outputs, and exit codes run against the installed toolchain.
+> **Last verified:** 2026-11-12 against `compact` CLI 0.5.1 / compiler 0.36.0 — version outputs below re-run on 0.36.0; other commands, flags and exit codes last run 2026-09-17 against 0.31.1.
 
 The Compact CLI (`compact`) is the command-line tool for managing the Midnight Network's smart contract development toolchain. It handles compiler version management, code formatting, fixup transformations, and compiler invocation.
 
@@ -47,15 +47,15 @@ The toolchain reports three independent version numbers. Confusing them is a com
 | What | Commands | Example Output |
 |------|----------|----------------|
 | **CLI tool version** | `compact --version` (or `compact self`) | `compact 0.5.1` |
-| **Compiler version** | `compact compile --version`, `compact format --version`, `compact fixup --version` | `0.31.1` |
-| **Language version** | `compact compile --language-version`, `compact format --language-version`, `compact fixup --language-version` | `0.23.0` |
+| **Compiler version** | `compact compile --version`, `compact format --version`, `compact fixup --version` | `0.36.0 (b5d9e4dfc 2026-11-03)` (0.36.0 and later add the commit and date; take the first field) |
+| **Language version** | `compact compile --language-version`, `compact format --language-version`, `compact fixup --language-version` | `0.28.0` |
 
 The compiler also reports two additional versions relevant to DApp developers:
 
 | What | Command | Example Output |
 |------|---------|----------------|
-| **Ledger version** | `compact compile -- --ledger-version` | `ledger-8.0.2` |
-| **Runtime JS package version** | `compact compile -- --runtime-version` | `0.16.0` |
+| **Ledger version** | `compact compile -- --ledger-version` | `zkir-3.2.0-rc.2` (0.31.1 printed `ledger-8.0.2`) |
+| **Runtime JS package version** | `compact compile -- --runtime-version` | `0.21.0` |
 
 The CLI and compiler update independently:
 
@@ -64,7 +64,7 @@ The CLI and compiler update independently:
 | The compiler | `compact update` | `compact check` |
 | The CLI tool | `compact self update` | `compact self check` |
 
-> ⚠️ **"Latest available" is not "latest supported".** `compact check` may report a newer compiler (currently `0.34.0`) that **is not yet supported on any live network**. Pin to the latest **network-supported** compiler (currently `0.31.1`) for anything you intend to deploy. See [references/version-management.md](references/version-management.md) for details.
+> ⚠️ **"Latest available" is not "latest supported".** `compact check` may report a newer compiler than the networks support. Pin to the **network-supported** compiler (currently `0.36.0`, on Mainnet, Preview and Preprod since they moved to ledger 9) for anything you intend to deploy. A later patch of it, such as `0.36.1`, keeps the same language and runtime versions. See [references/version-management.md](references/version-management.md) for details.
 
 ## Quick Command Reference
 
