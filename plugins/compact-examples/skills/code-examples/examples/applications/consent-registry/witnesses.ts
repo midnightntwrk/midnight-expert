@@ -5,7 +5,8 @@ import { WitnessContext } from '@midnight-ntwrk/compact-runtime';
 import { Ledger } from './managed/consent-registry/contract/index.js';
 
 // The controller's 32-byte secret. It never leaves the controller's machine; the contract
-// only stores deriveControllerKey(secret). Subject salts are kept off-chain alongside it.
+// only stores deriveControllerKey(secret). Each data subject has its own random salt, also kept
+// off-chain; subjectKey(identifierHash, salt) is computed off-chain and passed as subjectId.
 export type ConsentPrivateState = {
   readonly controllerSecret: Uint8Array;
 };

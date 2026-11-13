@@ -35,7 +35,7 @@ Complete multi-file DApps demonstrating how Compact modules compose into product
 | Attribute | Detail |
 |---|---|
 | Path | `applications/consent-registry/` |
-| Description | Purpose-specific consent records for data-protection law (LGPD, GDPR). Data subjects are keyed by a salted, domain-separated hash so no identifier reaches the ledger; the controller role is derived in-circuit from a witness secret. Revocation keeps the record so the withdrawal itself stays auditable. |
+| Description | Purpose-specific consent records for data-protection law (LGPD, GDPR). Data subjects are keyed by a hash salted per subject and domain-separated, so no identifier reaches the ledger; the controller role is derived in-circuit from a witness secret. Revocation keeps the record so the withdrawal itself stays auditable. |
 | Files | `consent-registry.compact`, `witnesses.ts` |
 | Witnesses | `witnesses.ts` — implements `controllerSecret(): Bytes<32>` |
 | Complexity | Beginner |
@@ -43,10 +43,10 @@ Complete multi-file DApps demonstrating how Compact modules compose into product
 **`consent-registry.compact`** defines:
 - Ledgers: `controller` (sealed, derived key), `consentStatus`, `consentPurposes`, `consentPolicyVersion` (all `Map<Bytes<32>, Uint<8>>`), `totalGrants` / `totalRevocations` counters
 - Pure circuits `deriveControllerKey(sk)` (`"consent:controller:v1"`) and `subjectKey(identifierHash, salt)` (`"consent:subject:v1"`), usable off-chain to derive the same keys
-- `grantConsent`, `updatePurposes`, `revokeConsent`: controller-only; purposes are a 5-bit mask (bits above 16 rejected), policy version cannot go back, a revoked record can only be reactivated through `grantConsent`, and revoking twice is rejected
+- `grantConsent`, `updatePurposes`, `revokeConsent`: controller-only; purposes are a 5-bit mask (values above 31 rejected), policy version cannot go back, `grantConsent` refuses an already active record (use `updatePurposes`), a revoked record can only be reactivated through `grantConsent`, and revoking twice is rejected
 - Guarded reads `getStatus`, `getPurposes`, `getPolicyVersion` (`member` before `lookup`)
 
-**Privacy model:** the consent history of a `subject_id` is public and permanent; the controller's salt is what links it to a person, so destroying the salt is the erasure path. Calling a `get*` circuit in a transaction discloses the subject being queried; read the ledger through the indexer when the lookup itself is sensitive.
+**Privacy model:** the consent history of a `subject_id` is public and permanent; each subject's own salt is what links it to a person, so deleting that salt unlinks only that subject, which is as close to erasure as a public registry gets. Calling a `get*` circuit in a transaction discloses the subject being queried; read the ledger through the indexer when the lookup itself is sensitive.
 
 ---
 

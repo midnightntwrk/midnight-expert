@@ -7,7 +7,7 @@
 // What it shows:
 //   - Controller authority derived in-circuit from a witness secret (no ownPublicKey()).
 //   - Data subjects keyed by a SALTED hash: a bare hash of an e-mail or national ID is
-//     low-entropy and can be reversed by guessing, so the salt stays with the controller.
+//     low-entropy and can be reversed by guessing, so each subject gets its own salt, kept off-chain.
 //   - Purpose-specific consent as a Uint<8> bitmask, plus the policy version consented to.
 //   - Revocation keeps the record (status 2): the withdrawal itself is auditable.
 //   - Every value that reaches public state goes through an explicit disclose().
@@ -17,14 +17,15 @@
 //
 // Privacy model (read before reusing):
 //   - The consent history of each subject_id is public and permanent. subject_id is a stable
-//     pseudonym: anyone holding the controller's salt can link it back to a person, so the salt is
-//     the real secret. Destroying the salt is how erasure works here; rotate it per policy.
+//     pseudonym: anyone holding that subject's salt can link it back to a person, so the salts are
+//     the real secret. Use a fresh random salt per subject, kept off-chain; deleting one subject's
+//     salt unlinks only that subject, which is as close to erasure as a public registry gets.
 //   - Consent is the controller's statement, not proven by the subject. To make it subject-signed,
 //     add a subject witness and verify it in grantConsent.
 //   - The get* circuits disclose the subject being queried. Read the ledger state off-chain
 //     (indexer) instead of calling them in a transaction when the lookup itself is sensitive.
 
-pragma language_version 0.23;
+pragma language_version 0.28;
 import CompactStandardLibrary;
 
 witness controllerSecret(): Bytes<32>;
@@ -59,6 +60,9 @@ export circuit grantConsent(subjectId: Bytes<32>, purposes: Uint<8>, policyVersi
   assert(purposes < 32, "Unknown purpose bit");
   assert(policyVersion > 0, "Policy version must be specified");
   const id = disclose(subjectId);
+  if (consentStatus.member(id)) {
+    assert(consentStatus.lookup(id) == 2, "Consent already active; use updatePurposes");
+  }
   if (consentPolicyVersion.member(id)) {
     assert(disclose(policyVersion) >= consentPolicyVersion.lookup(id), "Policy version cannot go back");
   }
@@ -68,7 +72,8 @@ export circuit grantConsent(subjectId: Bytes<32>, purposes: Uint<8>, policyVersi
   totalGrants.increment(1);
 }
 
-// Narrow consent without revoking it (e.g. drop marketing, keep essential).
+// Change the purposes of an active consent (e.g. drop marketing, keep essential).
+// Under GDPR, adding a purpose is a new consent: collect it from the subject before widening the mask.
 export circuit updatePurposes(subjectId: Bytes<32>, purposes: Uint<8>, policyVersion: Uint<8>): [] {
   assertController();
   const id = disclose(subjectId);
@@ -77,7 +82,6 @@ export circuit updatePurposes(subjectId: Bytes<32>, purposes: Uint<8>, policyVer
   assert(purposes > 0, "Use revokeConsent to remove every purpose");
   assert(purposes < 32, "Unknown purpose bit");
   assert(disclose(policyVersion) >= consentPolicyVersion.lookup(id), "Policy version cannot go back");
-  consentStatus.insert(id, 1);
   consentPurposes.insert(id, disclose(purposes));
   consentPolicyVersion.insert(id, disclose(policyVersion));
 }
