@@ -202,8 +202,8 @@ balances.insert(disclose(key), disclose((a + b) as Uint<64>));
 // Arithmetic compiles -- the Uint operand widens to Field
 const result = myField + myUint;      // result is Field
 
-// Equality: cast explicitly. 0.31.1 accepts myField == myUint, but 0.35.0
-// rejects it: incompatible types Field and Uint<64> for equality operator
+// Equality: cast explicitly. 0.31.1 accepts myField == myUint, but 0.35.0 and later
+// reject it: incompatible types Field and Uint<64> for equality operator
 if (myField == (myUint as Field)) { ... }
 
 // Relational operators are the exception: Field has no ordering
@@ -229,8 +229,8 @@ if ((myField as Uint<64>) < (otherField as Uint<64>)) { ... }
 | `operation value undefined for ledger field type Counter` | Wrong method name | Use `.read()` not `.value()` |
 | `potential witness-value disclosure must be declared but is not: …` | Witness value or parameter used in a branch, ledger write, or exported return | `disclose()` at the point of use |
 | `incompatible combination of types Field and Field for relational operator` | `<`, `<=`, `>`, `>=` on `Field` | Cast both operands to `Uint<N>` |
-| `incompatible types Field and Uint<64> for equality operator` | `Field == Uint` on compiler 0.35.0 (0.31.1 accepts it) | Cast: `f == (u as Field)` |
-| `cannot cast from type Uint<64> to type Bytes<32>` | Older compiler without direct Uint->Bytes casts | Cast directly on 0.31.1: `x as Bytes<32>`, or via Field: `(x as Field) as Bytes<32>` |
+| `incompatible types Field and Uint<64> for equality operator` | `Field == Uint` on compiler 0.35.0 and later, including 0.36.0 (0.31.1 accepts it) | Cast: `f == (u as Field)` |
+| `cannot cast from type Uint<64> to type Bytes<32>` | Older compiler without direct Uint->Bytes casts | Cast directly (0.31.1 and later, including 0.36.0): `x as Bytes<32>`, or via Field: `(x as Field) as Bytes<32>` |
 | `expected second argument of insert to have type Uint<64> but received Uint<0..N>` | Arithmetic result not cast | Cast: `(a + b) as Uint<64>` |
 | `cannot prove assertion` | Logic error or bad witness value | Check logic, range checks, witness returns |
 | `expected structure type, received <type>` | Accessing field on non-struct | Verify base type is a struct |

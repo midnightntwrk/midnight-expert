@@ -252,10 +252,10 @@ Check the contract for code that is syntactically valid but semantically incorre
 
 Check the contract for type mismatches, incorrect casts, and wrong method names that will cause compiler rejections.
 
-- [ ] **`Uint<N>` to `Bytes<M>` casts.** Do not flag a direct `Uint<N> as Bytes<M>` cast: it compiles on compiler 0.31.1. Casting through `Field` (`value as Field as Bytes<32>`) also compiles. Flag a cast only when `COMPILE_RESULT` reports one.
+- [ ] **`Uint<N>` to `Bytes<M>` casts.** Do not flag a direct `Uint<N> as Bytes<M>` cast: it compiles on compiler 0.31.1 and on 0.36.0. Casting through `Field` (`value as Field as Bytes<32>`) also compiles. Flag a cast only when `COMPILE_RESULT` reports one.
 
   ```compact
-  // Both compile on 0.31.1
+  // Both compile on 0.31.1 and 0.36.0
   const value: Uint<64> = 42;
   const direct = value as Bytes<32>;
   const viaField = value as Field as Bytes<32>;

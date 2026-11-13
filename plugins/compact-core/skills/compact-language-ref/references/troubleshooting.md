@@ -85,7 +85,7 @@ Table mapping error messages to their cause and fix. Errors are grouped by categ
 | Error Message | Cause | Fix |
 |---|---|---|
 | `incompatible combination of types Field and Field for relational operator` | Using `<`, `<=`, `>` or `>=` on `Field` values | Cast both operands to `Uint<N>` first. |
-| `incompatible types Field and Uint<64> for equality operator` | `Field == Uint` on compiler 0.35.0 (0.31.1 accepts it) | Cast the `Uint` operand: `f == (u as Field)`, which compiles on both |
+| `incompatible types Field and Uint<64> for equality operator` | `Field == Uint` on compiler 0.35.0 and later, including 0.36.0 (0.31.1 accepts it) | Cast the `Uint` operand: `f == (u as Field)`, which compiles on both |
 | `expected second argument of insert to have type Uint<64> but received Uint<0..N>` | Arithmetic result has expanded bounded type | Cast result back: `(a + b) as Uint<64>` |
 | `cannot cast from type Uint<64> to type Bytes<32>` | Using an older compiler version that does not support direct `Uint` to `Bytes` cast | Upgrade compiler, or go through `Field`: `(amount as Field) as Bytes<32>` |
 | `expected structure type, received <type>` | Accessing a field on a non-struct type | Verify the base value is a struct. `Map.lookup()` and `Set.member()` are separate operations, not field accesses. |

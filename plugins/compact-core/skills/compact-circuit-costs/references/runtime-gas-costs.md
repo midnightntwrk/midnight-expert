@@ -144,12 +144,14 @@ const costModel = CostModel.initialCostModel();
 Every ledger query during circuit execution is measured against the cost model:
 
 ```typescript
-const result = circuitContext.currentQueryContext.query(
+// compact-runtime 0.21.0, queryLedgerState
+const res = circuitContext.callContext.currentQueryContext.query(
   program,
   circuitContext.costModel,
   circuitContext.gasLimit,
 );
-circuitContext.gasCost = result.gasCost;
+circuitContext.callContext.currentQueryContext = res.context;
+circuitContext.callContext.currentGasCost = addRunningCost(circuitContext.callContext.currentGasCost, res.gasCost);
 ```
 
 The cost model is a protocol parameter that can change through governance. Contract developers should design for cost efficiency regardless of current pricing, as costs may change over time.
