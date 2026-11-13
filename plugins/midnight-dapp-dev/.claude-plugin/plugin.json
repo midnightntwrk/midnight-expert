@@ -1,6 +1,6 @@
 {
   "name": "midnight-dapp-dev",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Scaffold and build Midnight DApp frontends \u2014 Vite + React 19 + shadcn + Tailwind v4 templates, wallet integration, provider architecture, and a development agent for ongoing UI work.",
   "author": {
     "name": "Midnight Foundation"

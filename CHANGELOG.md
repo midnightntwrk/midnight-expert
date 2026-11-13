@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README "At a glance" now reflects all 16 marketplace plugins (was 13) and updated skill/command counts.
 - `install-cli` passes an explicit version to every `compact update` instead of downloading the latest published compiler; project-local installs use an absolute `--directory` path.
 - CI example-compile workflows read the compiler pin from `network-supported-compiler.txt` instead of a hardcoded `0.31.1`.
-- The network-supported compiler pin is now `0.36.0`. Mainnet, Preview and Preprod all run ledger 9 since Preprod's upgrade on 2026-11-09, and the support matrix lists 0.36.0 for all three. The `compact-cli` skill's version tables, `install-cli` and the `proof-server` skill (image `9.0.0`) are updated to match (#292). `midnight-tooling` is bumped to 0.5.0.
+- The network-supported compiler pin is now `0.36.0`. Mainnet, Preview and Preprod all run ledger 9 since Preprod's upgrade on 2026-11-09, and the support matrix lists 0.36.0 for all three. The `compact-cli` skill's version tables, `install-cli` and the `proof-server` skill (image `9.0.0`) are updated to match (#292). `midnight-tooling` is bumped to 0.5.0. `install-cli` applies the same later-patch rule and compares only the first field of `compact compile --version`, and the `midnight-dapp-dev` mainnet guide now says ledger 9 and toolchain 0.36.x; `midnight-dapp-dev` is bumped to 0.6.1.
 
 ### Fixed
 

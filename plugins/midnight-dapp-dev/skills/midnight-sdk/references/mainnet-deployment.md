@@ -19,9 +19,9 @@ The ledger itself never restricted deployers. A node operator can still reject d
 
 ## Compile with the compiler that matches mainnet
 
-Mainnet runs **ledger v8**. Build contracts for it with **Compact toolchain 0.31.x**. The network-supported version is pinned in `midnight-tooling/network-supported-compiler.txt`, and `midnight-tooling:install-cli` installs it.
+Mainnet runs **ledger 9**, like Preview and Preprod. Build contracts for it with **Compact toolchain 0.36.x** (language 0.28, runtime 0.21.0). The network-supported version is pinned in `midnight-tooling/network-supported-compiler.txt`, and `midnight-tooling:install-cli` installs it.
 
-Toolchain 0.34.0 and later target ledger v9, which isn't deployed on Preview, Preprod or Mainnet. Contracts built with them compile and pass local tests, but fail when deployed. Check with `compact compile --version`, and switch with `compact update 0.31`. Pin `@midnight-ntwrk/compact-runtime` to the version that the [compatibility matrix](https://docs.midnight.network/relnotes/support-matrix) lists for that toolchain. npm's `latest` tag points to 0.20.0, which is for ledger v9.
+Contracts built with 0.31.x target ledger 8, which no network runs since the ledger 9 upgrade. They compile and pass local tests, but Midnight.js 5 refuses to deploy them with `EraMismatchError`. Check with `compact compile --version` (0.36.0 and later print the commit after the version), and switch with `compact update 0.36.0`. Pin `@midnight-ntwrk/compact-runtime` to the version that the [compatibility matrix](https://docs.midnight.network/relnotes/support-matrix) lists for that toolchain, 0.21.0 for 0.36.x.
 
 ## Endpoints and the Blockfrost token
 
@@ -82,7 +82,7 @@ Every transaction pays its fee in DUST, and mainnet has no faucet. Most NIGHT is
 ## Mainnet readiness checklist
 
 - [ ] The full deploy-and-interact flow works end to end on `preprod`.
-- [ ] The contract was compiled with the network-supported toolchain (0.31.x for ledger v8), and `compact-runtime` is pinned to the matching version.
+- [ ] The contract was compiled with the network-supported toolchain (0.36.x for ledger 9), and `compact-runtime` is pinned to the matching version (0.21.0).
 - [ ] A security review is done. It isn't required for deployment any more, but mainnet holds real value. Use `/compact-core:audit-compact`, and the docs' [pre-deployment security checklist](https://docs.midnight.network/guides/security-best-practices#pre-deployment-security-checklist).
 - [ ] You have decided whether the contract can be upgraded, and who holds the maintenance authority. See the [updatability guide](https://docs.midnight.network/guides/deploy-and-operate#contract-updatability-and-the-maintenance-authority).
 - [ ] The deployer wallet shows a DUST balance, and the 12-hour cNIGHT registration delay has passed.
