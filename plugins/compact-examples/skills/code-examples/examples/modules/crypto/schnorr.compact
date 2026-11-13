@@ -10,7 +10,7 @@ module schnorr {
 
     export struct SchnorrSignature {
         announcement: JubjubPoint;
-        response: JubjubScalar; // typed, so a response at or above the order is rejected (no s + order malleability)
+        response: JubjubScalar; // typed, so a response at or above the order is rejected instead of reduced (no s + order malleability)
     }
 
     struct SchnorrHashInput<#n> {
@@ -23,8 +23,8 @@ module schnorr {
 
     // The witness provides the quotient and remainder of dividing the challenge hash
     // by 2^248, so we can truncate it to fit in Jubjub's scalar field. The quotient
-    // is Uint<7>, not Field, and schnorrVerify bounds it so q * 2^248 + r stays
-    // below the field prime and the check holds over the integers.
+    // is Uint<7>, not Field, so a prover can't choose the challenge, and
+    // schnorrVerify bounds it so the decomposition is unique.
     witness getSchnorrReduction(challengeHash: Field): [Uint<7>, Uint<248>];
 
     export circuit schnorrVerify<#n>(
@@ -49,20 +49,22 @@ module schnorr {
         const TWO_248: Field =
                 452312848583266388373324160190187140051835877600158453279131187530910662656 as Field;
         const [q, cTruncated] = getSchnorrReduction(cFull);
-        // Bound the quotient. Without this a prover could pick any cTruncated (any
-        // challenge) and solve for a matching Field q, forging the signature.
-        // floor(p / 2^248) == 115 for the BLS12-381 scalar prime p, and q == 115 is
-        // honest only while q * 2^248 + r < p, so r must stay below p - 115 * 2^248.
-        // That makes the decomposition unique.
-        assert(disclose(q) < 115 ||
-               (disclose(q) == 115 &&
-                disclose(cTruncated) < 419897588050555816515462086314444731729426576509415695503572133883854979073),
+        const qd = disclose(q);
+        const rd = disclose(cTruncated);
+        // The equation below only holds mod the field prime p. Typing q as Uint<7>
+        // is what stops a forgery: as a Field, a prover could pick any cTruncated
+        // (any challenge) and solve for a matching q. The bound then makes the
+        // decomposition unique. floor(p / 2^248) == 115, and q == 115 is honest
+        // only while q * 2^248 + r < p, so r must stay below p - 115 * 2^248.
+        const R_MAX_AT_Q115: Uint<248> = // p - 115 * 2^248
+                419897588050555816515462086314444731729426576509415695503572133883854979073;
+        assert(qd < 115 || (qd == 115 && rd < R_MAX_AT_Q115),
                "Schnorr quotient out of range");
-        assert(disclose(q) * TWO_248 + (disclose(cTruncated) as Field) == cFull,
+        assert(qd * TWO_248 + (rd as Field) == cFull,
                "Invalid challenge reduction"
                );
-        const c: JubjubScalar = disclose(cTruncated) as JubjubScalar;
         // c < 2^248 is below the Jubjub order, so the cast leaves it unchanged.
+        const c: JubjubScalar = rd as JubjubScalar;
         const lhs: JubjubPoint = ecMulGenerator(response);
         const rhs: JubjubPoint = ecAdd(announcement, ecMul(pk, c));
         assert(jubjubPointX(lhs) == jubjubPointX(rhs) && jubjubPointY(lhs) == jubjubPointY(rhs),
