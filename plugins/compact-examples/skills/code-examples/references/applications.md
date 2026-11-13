@@ -37,7 +37,7 @@ Complete multi-file DApps demonstrating how Compact modules compose into product
 | Path | `applications/zkloan/` |
 | Description | Privacy-preserving lending protocol. Applicants request loans without revealing their credit score, income, or tenure on-chain. Off-chain credit bureaus (providers) attest scores via Schnorr signatures. The contract verifies attestations in-circuit and makes loan decisions based on policy thresholds. |
 | Files | `zkloan-credit-scorer.compact`, `schnorr.compact`, `witnesses.ts` |
-| Witnesses | `witnesses.ts` — implements `getAttestedScoringWitness(): [Applicant, SchnorrSignature, providerId]`, `getSchnorrReduction(hash): [Field, Uint<248>]`, and `getUserSecret(): UserSecretKey` |
+| Witnesses | `witnesses.ts` — implements `getAttestedScoringWitness(): [Applicant, SchnorrSignature, providerId]`, `getSchnorrReduction(hash): [Uint<7>, Uint<248>]`, and `getUserSecret(): UserSecretKey` |
 | Complexity | Advanced |
 
 **`zkloan-credit-scorer.compact`** defines:
@@ -60,7 +60,7 @@ Complete multi-file DApps demonstrating how Compact modules compose into product
 | Path | `applications/midnight-rwa/` |
 | Description | Privacy-gated real-world asset contract. Users must prove passport identity, issuer authorization (via Merkle tree), user authorization (via second Merkle tree), legal age, and nationality — all in zero-knowledge. On success, the user receives shielded tBTC and tHF tokens as reward. **Authorization uses the secure witness-derived identity pattern**: the user's authorization key is a `UserPublicKey` derived in-circuit from a single private witness secret (`getUserSecret`), never `ownPublicKey()` (which is retained only as the safe recipient of token sends). |
 | Files | `midnight-rwa.compact`, `Crypto.compact`, `PassportIdentity.compact`, `witnesses.ts` |
-| Witnesses | `witnesses.ts` — implements `localSecretKey()`, `getUserSecret()`, `findIssuerPath(pk)`, `findAuthorizationPath(pk: UserPublicKey)`, `reduceChallenge(r)` |
+| Witnesses | `witnesses.ts` — implements `localSecretKey()`, `getUserSecret()`, `findIssuerPath(pk)`, `findAuthorizationPath(pk: UserPublicKey)` |
 | Complexity | Advanced |
 
 **`midnight-rwa.compact`** defines:

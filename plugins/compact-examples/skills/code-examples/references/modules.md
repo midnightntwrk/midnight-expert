@@ -2,7 +2,7 @@
 
 Standalone Compact modules from the OpenZeppelin Compact Contracts library and community contributors. These are building blocks — import them into your own contracts rather than deploying them directly.
 
-All modules use `pragma language_version 0.23`. Most include TypeScript witnesses and test suites. Note: `modules/crypto/schnorr.compact` is a Schnorr polyfill pending `jubjubSchnorrVerify` in CompactStandardLibrary.
+All modules use `pragma language_version 0.28`. Most include TypeScript witnesses and test suites. Note: `modules/crypto/schnorr.compact` is a Schnorr polyfill written before CompactStandardLibrary had `jubjubSchnorrVerify`.
 
 ---
 
@@ -70,8 +70,8 @@ All modules use `pragma language_version 0.23`. Most include TypeScript witnesse
 
 | Name | Path | Description | Witnesses | Tests | Complexity |
 |---|---|---|---|---|---|
-| schnorr | `modules/crypto/schnorr.compact` | Schnorr signature verification over the Jubjub curve (polyfill until `jubjubSchnorrVerify` is available in CompactStandardLibrary). Exports `SchnorrSignature` struct (`announcement: JubjubPoint`, `response: Field`). Key circuits: `schnorrVerify<#n>(msg, signature, pk: JubjubPoint)` — verifies using `jubjubPointX`/`jubjubPointY` accessors, `ecMulGenerator`, `ecAdd`, `ecMul`, coordinate-wise equality; `schnorrChallenge(...)` — computes the hash challenge. Uses `getSchnorrReduction` witness to truncate the 255-bit challenge hash to 248 bits (Jubjub scalar field constraint). Pragma capped at `<= 0.23` (polyfill pinned to current language version). | `getSchnorrReduction` witness (inline declaration) | — | Advanced |
-| crypto | `modules/crypto/crypto.compact` | Generic elliptic curve crypto primitives over the Jubjub curve (uses `JubjubPoint`). Exports structs: `Challenge`, `Nonce<T>`, `Signature`, `SignedCredential<T>`. Pure circuits: `derive_pk(sk)`, `computeChallenge<T>(r, pk, credential)`, `sign<T>(credential, sk)`, `deterministicK<T>(nonce)`, `verify<T>(credential, challenge)`. Used by `PassportIdentity` and `midnight-rwa` application. | — | — | Advanced |
+| schnorr | `modules/crypto/schnorr.compact` | Schnorr signature verification over the Jubjub curve (polyfill written before CompactStandardLibrary had `jubjubSchnorrVerify`; kept because zkloan's signer matches its challenge reduction). Exports `SchnorrSignature` struct (`announcement: JubjubPoint`, `response: JubjubScalar`). Key circuits: `schnorrVerify<#n>(msg, signature, pk: JubjubPoint)` — verifies using `jubjubPointX`/`jubjubPointY` accessors, `ecMulGenerator`, `ecAdd`, `ecMul`, coordinate-wise equality; `schnorrChallenge(...)` — computes the hash challenge. Uses `getSchnorrReduction` witness to truncate the 255-bit challenge hash to 248 bits (Jubjub scalar field constraint); the quotient is `Uint<7>` and bounded so the decomposition is unique, so a prover can't pick the challenge. | `getSchnorrReduction` witness (inline declaration) | — | Advanced |
+| crypto | `modules/crypto/crypto.compact` | Generic elliptic curve crypto primitives over the Jubjub curve (uses `JubjubPoint`). Exports structs: `Challenge`, `Nonce<T>`, `Signature` (`s: JubjubScalar`), `SignedCredential<T>`. Pure circuits: `derive_pk(sk: JubjubScalar)`, `computeChallenge<T>(r, pk, credential)`, `deterministicK<T>(nonce)`, `verify<T>(credential)`, which computes and reduces the challenge itself and rejects the identity point as `pk`. No in-circuit sign: signing is done off-chain modulo the Jubjub order. Used by `PassportIdentity` and `midnight-rwa` application. | — | — | Advanced |
 
 ---
 
