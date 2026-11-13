@@ -28,7 +28,7 @@ case "$*" in
       echo "compact: Latest version available: $FAKE_LATEST."
     fi
     ;;
-  "compile --version") echo "$FAKE_CURRENT" ;;
+  "compile --version") echo "${FAKE_CURRENT}${FAKE_VERSION_SUFFIX}" ;;
   "compile --language-version") echo "$FAKE_LANG" ;;
 esac
 EOF
@@ -124,6 +124,28 @@ chk_contains "resolves pin via installed_plugins.json" "$CTX" "v0.31.1, the netw
 echo "--- repo layout without CLAUDE_PLUGIN_ROOT: reads the real pin ($REPO_PIN)"
 run_session_start "" "$REPO_PIN" "99.0.0" "0.23.0"
 chk_contains "resolves the repo pin" "$CTX" "v${REPO_PIN}, the network-supported version"
+
+echo "--- compiler 0.36+ prints the commit after the version"
+FAKE_VERSION_SUFFIX=" (b5d9e4dfc 2026-11-03)" run_session_start "$SIBLING_ROOT" "0.31.1" "0.31.1" "0.23.0"
+chk_contains "reads the version before the commit" "$CTX" "v0.31.1, the network-supported version"
+chk_not_contains "does not print the commit" "$CTX" "b5d9e4dfc"
+
+echo "--- on a later patch of the pinned version"
+run_session_start "$SIBLING_ROOT" "0.31.2" "0.31.2" "0.23.0"
+chk_contains "treats the patch as supported" "$CTX" "v0.31.2, a patch release of the network-supported version v0.31.1"
+chk_contains "still pins the pragma" "$CTX" "pragma language_version 0.23;"
+chk_not_contains "no switch-back advice" "$CTX" "compact update 0.31.1"
+
+echo "--- on a later patch, a newer minor is published"
+run_session_start "$SIBLING_ROOT" "0.31.2" "0.32.0" "0.23.0"
+chk_contains "still treats the patch as supported" "$CTX" "a patch release of the network-supported version v0.31.1"
+chk_contains "warns about the newer minor" "$CTX" "A newer compiler (v0.32.0) is published, but it is not network-supported yet"
+chk_not_contains "does not call the patch a newer release" "$CTX" "Patch release v0.31.2 is also published"
+
+echo "--- on the pinned version, a later patch is published"
+run_session_start "$SIBLING_ROOT" "0.31.1" "0.31.2" "0.23.0"
+chk_contains "says the patch is safe" "$CTX" "Patch release v0.31.2 is also published"
+chk_not_contains "no do-not-upgrade warning for a patch" "$CTX" "not network-supported yet"
 
 echo "--- compact present but version unreadable"
 run_session_start "$SIBLING_ROOT" "" "0.35.0" ""

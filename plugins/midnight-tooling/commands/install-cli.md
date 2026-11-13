@@ -23,7 +23,7 @@ The network-supported version is pinned in one place so it can be bumped without
 cat "${CLAUDE_PLUGIN_ROOT}/network-supported-compiler.txt"
 ```
 
-Store the result (a single semver string, e.g. `0.31.1`) as `NETWORK_COMPILER` and use it in every `compact update` below. Shell variables do not persist between tool calls, so substitute the literal value (e.g. `compact update 0.31.1`) when you run the commands; `"$NETWORK_COMPILER"` in this file is a placeholder for that value.
+Store the result (a single semver string, e.g. `0.36.0`) as `NETWORK_COMPILER` and use it in every `compact update` below. Shell variables do not persist between tool calls, so substitute the literal value (e.g. `compact update 0.36.0`) when you run the commands; `"$NETWORK_COMPILER"` in this file is a placeholder for that value.
 
 If `CLAUDE_PLUGIN_ROOT` is not set or the file is not found there, use the `midnight-plugin-utils:find-claude-plugin-root` skill to locate the `midnight-tooling` plugin root and read `network-supported-compiler.txt` from that path. If the file still cannot be read, stop and tell the user: do not fall back to a bare `compact update`.
 
@@ -110,9 +110,12 @@ compact check 2>&1
 
 3. Report findings:
    - If CLI update available: offer to run `compact self update`
-   - If `compact check` reports a compiler newer than `$NETWORK_COMPILER`: tell the user it is published but **not yet network-supported**, and do not offer to install it. Link the [compatibility matrix](https://docs.midnight.network/relnotes/support-matrix).
-   - If the current default compiler (`compact compile --version`) differs from `$NETWORK_COMPILER`: offer to run `compact update "$NETWORK_COMPILER"`
-   - If the default compiler already equals `$NETWORK_COMPILER` and no CLI update is available: report that everything is current
+   - Compare only the first field of `compact compile --version`. Compiler 0.36.0 and later print the commit after the version, for example `0.36.0 (b5d9e4dfc 2026-11-03)`.
+   - A **later patch** of `$NETWORK_COMPILER` has the same major and minor version and a higher patch, for example `0.36.1` for `0.36.0`. It keeps the same language and runtime versions, so treat it as supported, the same way the compact-core `SessionStart` hook does.
+   - If `compact check` reports a later patch of `$NETWORK_COMPILER`: tell the user it is a patch release with the same language and runtime versions, safe to use, and offer to install it.
+   - If `compact check` reports any other compiler newer than `$NETWORK_COMPILER`: tell the user it is published but **not yet network-supported**, and do not offer to install it. Link the [compatibility matrix](https://docs.midnight.network/relnotes/support-matrix).
+   - If the current default compiler is neither `$NETWORK_COMPILER` nor a later patch of it: offer to run `compact update "$NETWORK_COMPILER"`
+   - If the default compiler is `$NETWORK_COMPILER` or a later patch of it, and no CLI update is available: report that everything is current
 
 4. If updates are applied, verify the new versions, then run the check in Step 3D.
 
@@ -230,10 +233,11 @@ compact compile --version
 compact --directory "$PWD/.compact" compile --version
 ```
 
-Compare the reported compiler version to `$NETWORK_COMPILER`.
+Compare the first field of the reported version (0.36.0 and later add the commit after it) to `$NETWORK_COMPILER`.
 
 - **Match:** report "compiler `<version>` is the current network-supported version".
-- **Mismatch:** warn clearly. The installed compiler may not be accepted by Preview, Preprod, or Mainnet, and contracts compiled with it can pass every local check yet fail at deploy. Offer to run `compact update "$NETWORK_COMPILER"` (with `--directory` for project-local installs) and link the [compatibility matrix](https://docs.midnight.network/relnotes/support-matrix).
+- **Later patch** (same major and minor, higher patch, for example `0.36.1` for `0.36.0`): report that it is a patch release of the network-supported version with the same language and runtime versions. No action needed.
+- **Mismatch** (anything else): warn clearly. The installed compiler may not be accepted by Preview, Preprod, or Mainnet, and contracts compiled with it can pass every local check yet fail at deploy. Offer to run `compact update "$NETWORK_COMPILER"` (with `--directory` for project-local installs) and link the [compatibility matrix](https://docs.midnight.network/relnotes/support-matrix).
 
 Do not skip this step because the install "succeeded"; a successful download of the wrong version is exactly the case it exists to catch.
 
