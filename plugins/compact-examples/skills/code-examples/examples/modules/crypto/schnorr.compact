@@ -1,17 +1,16 @@
 // Schnorr Signature Verification Polyfill for Jubjub Curve
-// Temporary: will be replaced by jubjubSchnorrVerify from CompactStandardLibrary
-// when it becomes available in a future Compact compiler release.
+// CompactStandardLibrary has jubjubSchnorrVerify since compiler 0.36. This polyfill
+// stays because zkloan's off-chain signer matches its 2^248 challenge reduction.
 // See: https://github.com/LFDT-Minokawa/compact/blob/25b22e3/compiler/standard-library.compact
 
-// <= 0.23 cap: polyfill pinned to current language version pending stdlib jubjubSchnorrVerify.
-pragma language_version 0.23;
+pragma language_version 0.28;
 
 module schnorr {
     import CompactStandardLibrary;
 
     export struct SchnorrSignature {
         announcement: JubjubPoint;
-        response: Field;
+        response: JubjubScalar; // typed, so a response at or above the order is rejected (no s + order malleability)
     }
 
     struct SchnorrHashInput<#n> {
@@ -23,8 +22,10 @@ module schnorr {
     }
 
     // The witness provides the quotient and remainder of dividing the challenge hash
-    // by 2^248, so we can truncate it to fit in Jubjub's scalar field.
-    witness getSchnorrReduction(challengeHash: Field): [Field, Uint<248>];
+    // by 2^248, so we can truncate it to fit in Jubjub's scalar field. The quotient
+    // is Uint<7>, not Field, and schnorrVerify bounds it so q * 2^248 + r stays
+    // below the field prime and the check holds over the integers.
+    witness getSchnorrReduction(challengeHash: Field): [Uint<7>, Uint<248>];
 
     export circuit schnorrVerify<#n>(
                      msg: Vector<n, Field>,
@@ -48,10 +49,20 @@ module schnorr {
         const TWO_248: Field =
                 452312848583266388373324160190187140051835877600158453279131187530910662656 as Field;
         const [q, cTruncated] = getSchnorrReduction(cFull);
+        // Bound the quotient. Without this a prover could pick any cTruncated (any
+        // challenge) and solve for a matching Field q, forging the signature.
+        // floor(p / 2^248) == 115 for the BLS12-381 scalar prime p, and q == 115 is
+        // honest only while q * 2^248 + r < p, so r must stay below p - 115 * 2^248.
+        // That makes the decomposition unique.
+        assert(disclose(q) < 115 ||
+               (disclose(q) == 115 &&
+                disclose(cTruncated) < 419897588050555816515462086314444731729426576509415695503572133883854979073),
+               "Schnorr quotient out of range");
         assert(disclose(q) * TWO_248 + (disclose(cTruncated) as Field) == cFull,
                "Invalid challenge reduction"
                );
-        const c: Field = disclose(cTruncated) as Field;
+        const c: JubjubScalar = disclose(cTruncated) as JubjubScalar;
+        // c < 2^248 is below the Jubjub order, so the cast leaves it unchanged.
         const lhs: JubjubPoint = ecMulGenerator(response);
         const rhs: JubjubPoint = ecAdd(announcement, ecMul(pk, c));
         assert(jubjubPointX(lhs) == jubjubPointX(rhs) && jubjubPointY(lhs) == jubjubPointY(rhs),
