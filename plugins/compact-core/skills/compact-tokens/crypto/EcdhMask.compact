@@ -1,19 +1,18 @@
 // =============================================================================
 // VENDORED DEPENDENCY — DO NOT EDIT BY HAND
 //
-// Copied verbatim from OpenZeppelin/compact-contracts at tag v0.3.0-alpha.2:
-//   https://github.com/OpenZeppelin/compact-contracts/blob/v0.3.0-alpha.2/contracts/src/crypto/EcdhMask.compact
+// Copied verbatim from OpenZeppelin/compact-contracts at tag v0.4.0:
+//   https://github.com/OpenZeppelin/compact-contracts/blob/v0.4.0/contracts/src/crypto/EcdhMask.compact
 //
 // Vendored into the compact-tokens skill so the neighbouring example contracts
 // resolve their imports and compile standalone under the network-supported
-// compiler (0.31.1). Status: ALPHA — NOT AUDITED, NOT PRODUCTION-READY.
+// compiler (0.36.0). Status: ALPHA — NOT AUDITED, NOT PRODUCTION-READY.
 // Refresh from upstream when the pinned compiler moves.
 // =============================================================================
-
 // SPDX-License-Identifier: MIT
-// OpenZeppelin Compact Contracts v0.3.0-alpha.2 (crypto/EcdhMask.compact)
+// OpenZeppelin Compact Contracts v0.4.0 (crypto/EcdhMask.compact)
 
-pragma language_version >= 0.23.0;
+pragma language_version >= 0.26.0;
 
 /**
  * @module EcdhMask
@@ -61,6 +60,8 @@ pragma language_version >= 0.23.0;
  * an out-of-range scalar: `g^e = identity` captures both `e = 0` and any
  * `e ≡ 0 (mod ℓ)`. (Guarding `e != 0` directly would instead lean on the runtime
  * faulting `ecMul` for scalars `≥ ℓ`; the point guard removes that dependency.)
+ * `decrypt` guards the same point, refusing an identity ephemeral rather than
+ * unmasking against that public constant.
  * These are the only weak inputs (for a subgroup key, `S = identity` iff the
  * ephemeral point is the identity).
  *
@@ -154,10 +155,10 @@ module EcdhMask {
   export pure circuit encrypt(
                         recipientPk: JubjubPoint,
                         value: Uint<128>,
-                        e: Field,
+                        e: JubjubScalar,
                         domain: Bytes<32>
                         ): Ciphertext {
-    const identity = ecMulGenerator(0 as Field);
+    const identity = ecMulGenerator(0 as JubjubScalar);
     assert(recipientPk != identity, "EcdhMask: identity pk");
     const ephemeralPk = ecMulGenerator(e);
     // Guard the ephemeral POINT, not the scalar: `ephemeralPk == identity`
@@ -174,6 +175,10 @@ module EcdhMask {
    * @description Recovers the value from a ciphertext using the recipient's
    * secret scalar. Pure and off-chain (no proof needed to read a received value).
    *
+   * Requirements:
+   *
+   * - `ciphertext.ephemeralPk` is not the identity point.
+   *
    * @param ciphertext - The ciphertext to decrypt.
    * @param ekScalar - The recipient's secret scalar (`crypto/ElGamal`'s
    *                   `secretToScalar(EK)`).
@@ -181,7 +186,11 @@ module EcdhMask {
    * @return The recovered value as a `Field` (equal to the original `value`,
    *         which is `< 2^128`).
    */
-  export pure circuit decrypt(ciphertext: Ciphertext, ekScalar: Field, domain: Bytes<32>): Field {
+  export pure circuit decrypt(ciphertext: Ciphertext, ekScalar: JubjubScalar, domain: Bytes<32>): Field {
+    // `encrypt` never emits an identity ephemeral; one here is a malformed
+    // ciphertext whose mask is a public constant, so refuse rather than decrypt.
+    assert(ciphertext.ephemeralPk != ecMulGenerator(0 as JubjubScalar),
+           "EcdhMask: identity ephemeral");
     const sShared = ecMul(ciphertext.ephemeralPk, ekScalar);
     const mask = kdf(sShared, domain);
     return ciphertext.ct - mask;

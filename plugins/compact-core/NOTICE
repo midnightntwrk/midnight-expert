@@ -10,7 +10,7 @@ Third-party and MIT-licensed code
 --------------------------------------------------------------------------------
 
 This plugin includes code vendored from OpenZeppelin Compact Contracts
-(https://github.com/OpenZeppelin/compact-contracts) at tag v0.3.0-alpha.2,
+(https://github.com/OpenZeppelin/compact-contracts) at tag v0.4.0,
 under skills/compact-tokens/.
 
 Files that carry an "SPDX-License-Identifier: MIT" header are licensed under
