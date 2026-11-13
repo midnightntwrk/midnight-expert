@@ -1,12 +1,16 @@
 // Copyright 2025 Brick Towers
-pragma language_version 0.23;
+pragma language_version 0.28;
 
 module Crypto {
   import CompactStandardLibrary;
 
+  // Coordinates, not JubjubPoint fields: compiler 0.36 can't build proving keys
+  // for a hash over a struct that holds JubjubPoints.
   export struct Challenge {
-    r: JubjubPoint;
-    pk: JubjubPoint;
+    r_x: Field;
+    r_y: Field;
+    pk_x: Field;
+    pk_y: Field;
     ch: Field;
   }
 
@@ -15,9 +19,12 @@ module Crypto {
     credential: T;
   }
 
+  // `s` is a JubjubScalar so a value at or above the subgroup order is rejected.
+  // A Field cast to JubjubScalar is reduced instead, which would let s + order
+  // verify as well (a malleable signature).
   export struct Signature {
     r: JubjubPoint;
-    s: Field;
+    s: JubjubScalar;
   }
 
   export struct SignedCredential<T> {
@@ -26,7 +33,7 @@ module Crypto {
     pk: JubjubPoint;
   }
 
-  export pure circuit derive_pk(sk: Field): JubjubPoint {
+  export pure circuit derive_pk(sk: JubjubScalar): JubjubPoint {
       const pk: JubjubPoint = ecMulGenerator(sk);
       return pk;
   }
@@ -34,32 +41,41 @@ module Crypto {
   export pure circuit computeChallenge<T>(r: JubjubPoint, pk: JubjubPoint, credential: T): Field {
     const ch: Field = transientHash<T>(credential);
     const c: Field = transientHash<Challenge>(Challenge {
-      r: r,
-      pk: pk,
+      r_x: jubjubPointX(r),
+      r_y: jubjubPointY(r),
+      pk_x: jubjubPointX(pk),
+      pk_y: jubjubPointY(pk),
       ch: ch
     });
     return c;
   }
 
-  export pure circuit sign<T>(credential: T, sk: Field): SignedCredential<T> {
-    const pk: JubjubPoint = ecMulGenerator(sk);
-    const k: Field = transientHash<Nonce<T>>(Nonce<T> { sk: sk, credential: credential });
-    const r: JubjubPoint = ecMulGenerator(k);
-    const c: Field = computeChallenge<T>(r, pk, credential);
-    const s: Field = k + (c * sk);
-    return SignedCredential<T> { credential: credential, signature: Signature { r: r, s: s }, pk: pk };
-  }
+  // There is no in-circuit sign. s = k + c * sk has to be computed modulo the
+  // Jubjub subgroup order, and JubjubScalar has no arithmetic, while Field
+  // arithmetic wraps at a different modulus and gives a signature that fails
+  // verify. Sign off-chain instead, with every scalar reduced mod order first
+  // (derive_pk rejects a value at or above it, and deterministicK returns a full
+  // Field): sk = sk mod order, k = deterministicK(...) mod order,
+  // pk = derive_pk(sk), r = derive_pk(k), c = computeChallenge(r, pk, credential)
+  // mod order, s = (k + c * sk) mod order, where order is
+  // 6554484396890773809930967563523245729705921265872317281365359162392183254199.
+  // If the contract doesn't export derive_pk, use ecMulGenerator from
+  // @midnight-ntwrk/compact-runtime.
 
   export pure circuit deterministicK<T>(nonce: Nonce<T>): Field {
     const k: Field = transientHash<Nonce<T>>(nonce);
     return k;
   }
 
-  export pure circuit verify<T>(credential: SignedCredential<T>, challenge: Field): Boolean {
-    const c: Field = challenge;
+  // verify computes the challenge itself, so a caller can't supply one. The cast
+  // reduces it modulo the subgroup order, which matches the off-chain signer.
+  export pure circuit verify<T>(credential: SignedCredential<T>): Boolean {
+    const c: JubjubScalar =
+      computeChallenge<T>(credential.signature.r, credential.pk, credential.credential) as JubjubScalar;
     const lhs: JubjubPoint = ecMulGenerator(credential.signature.s);
     const c_pk =  ecMul(credential.pk, c);
     const rhs: JubjubPoint = ecAdd(credential.signature.r, c_pk);
-    return lhs == rhs;
+    // The identity point as pk would make c_pk vanish, so any r = s*G would pass.
+    return credential.pk != ecMulGenerator(0 as JubjubScalar) && lhs == rhs;
   }
 }

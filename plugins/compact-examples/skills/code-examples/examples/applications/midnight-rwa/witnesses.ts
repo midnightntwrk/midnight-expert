@@ -70,18 +70,4 @@ export const witnesses = {
   ): [RwaPrivateState, Uint8Array] {
     return [context.privateState, context.privateState.secretKey];
   },
-
-  // Workarounds
-
-  reduceChallenge(
-    context: WitnessContext<Ledger, RwaPrivateState>,
-    challenge: bigint,
-  ): [RwaPrivateState, bigint] {
-    const FIELD_MODULO = BigInt(
-      "6554484396890773809930967563523245729705921265872317281365359162392183254199",
-    );
-    const reducedChallenge = challenge % FIELD_MODULO;
-
-    return [context.privateState, reducedChallenge];
-  },
 };

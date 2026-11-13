@@ -1,17 +1,16 @@
 // Schnorr Signature Verification Polyfill for Jubjub Curve
-// Temporary: will be replaced by jubjubSchnorrVerify from CompactStandardLibrary
-// when it becomes available in a future Compact compiler release.
+// CompactStandardLibrary has jubjubSchnorrVerify since compiler 0.36. This polyfill
+// stays because zkloan's off-chain signer matches its 2^248 challenge reduction.
 // See: https://github.com/LFDT-Minokawa/compact/blob/25b22e3/compiler/standard-library.compact
 
-// <= 0.23 cap: polyfill pinned to current language version pending stdlib jubjubSchnorrVerify.
-pragma language_version 0.23;
+pragma language_version 0.28;
 
 module schnorr {
     import CompactStandardLibrary;
 
     export struct SchnorrSignature {
         announcement: JubjubPoint;
-        response: Field;
+        response: JubjubScalar; // typed, so a response at or above the order is rejected instead of reduced (no s + order malleability)
     }
 
     struct SchnorrHashInput<#n> {
@@ -23,8 +22,10 @@ module schnorr {
     }
 
     // The witness provides the quotient and remainder of dividing the challenge hash
-    // by 2^248, so we can truncate it to fit in Jubjub's scalar field.
-    witness getSchnorrReduction(challengeHash: Field): [Field, Uint<248>];
+    // by 2^248, so we can truncate it to fit in Jubjub's scalar field. The quotient
+    // is Uint<7>, not Field, so a prover can't choose the challenge, and
+    // schnorrVerify bounds it so the decomposition is unique.
+    witness getSchnorrReduction(challengeHash: Field): [Uint<7>, Uint<248>];
 
     export circuit schnorrVerify<#n>(
                      msg: Vector<n, Field>,
@@ -48,10 +49,22 @@ module schnorr {
         const TWO_248: Field =
                 452312848583266388373324160190187140051835877600158453279131187530910662656 as Field;
         const [q, cTruncated] = getSchnorrReduction(cFull);
-        assert(disclose(q) * TWO_248 + (disclose(cTruncated) as Field) == cFull,
+        const qd = disclose(q);
+        const rd = disclose(cTruncated);
+        // The equation below only holds mod the field prime p. Typing q as Uint<7>
+        // is what stops a forgery: as a Field, a prover could pick any cTruncated
+        // (any challenge) and solve for a matching q. The bound then makes the
+        // decomposition unique. floor(p / 2^248) == 115, and q == 115 is honest
+        // only while q * 2^248 + r < p, so r must stay below p - 115 * 2^248.
+        const R_MAX_AT_Q115: Uint<248> = // p - 115 * 2^248
+                419897588050555816515462086314444731729426576509415695503572133883854979073;
+        assert(qd < 115 || (qd == 115 && rd < R_MAX_AT_Q115),
+               "Schnorr quotient out of range");
+        assert(qd * TWO_248 + (rd as Field) == cFull,
                "Invalid challenge reduction"
                );
-        const c: Field = disclose(cTruncated) as Field;
+        // c < 2^248 is below the Jubjub order, so the cast leaves it unchanged.
+        const c: JubjubScalar = rd as JubjubScalar;
         const lhs: JubjubPoint = ecMulGenerator(response);
         const rhs: JubjubPoint = ecAdd(announcement, ecMul(pk, c));
         assert(jubjubPointX(lhs) == jubjubPointX(rhs) && jubjubPointY(lhs) == jubjubPointY(rhs),
