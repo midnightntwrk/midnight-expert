@@ -69,7 +69,7 @@ Table mapping error messages to their cause and fix. Errors are grouped by categ
 | `parse error: found ":" looking for ")", …` (or `looking for ";", …`) | Using Rust-style `Enum::variant` double-colon syntax | Use dot notation: `Enum.variant` |
 | `parse error: found "{" looking for ";"` | Adding an implementation body to a witness (`witness w(): T { ... }`) | Witnesses are declarations only -- end with `;` and implement in TypeScript |
 | `parse error: found keyword "function" (which is reserved for future use) looking for "circuit"` | Writing `pure function` instead of `pure circuit` | Compact uses `pure circuit` for helper functions |
-| `parse error: found ">=" looking for an identifier` | Pragma without the `language_version` keyword (`pragma >= 0.22;`) | Use `pragma language_version 0.28;`. Patch versions (`0.22.0`) and exact versions (`0.23`) also compile. |
+| `parse error: found ">=" looking for an identifier` | Pragma without the `language_version` keyword (`pragma >= 0.22;`) | Use `pragma language_version 0.28;`. The version must be the compiler's language version: on compiler 0.36.0, `0.28` and `0.28.0` compile, and `0.23` fails with `language version 0.28.0 mismatch`. Check it with `compact compile --language-version`. |
 
 ### Unbound Identifier Errors
 

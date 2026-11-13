@@ -104,8 +104,8 @@ newer releases.
 
 | Component | Version | Notes |
 |-----------|---------|-------|
-| Compact language | 0.23 | `pragma language_version 0.23` in the contract stub |
-| Compact compiler | 0.31.1 | `compact update` to change |
+| Compact language | 0.28 | `pragma language_version 0.28` in the contract stub |
+| Compact compiler | 0.36.0 | `compact update 0.36.0` to change |
 | Node.js | 22+ required | https://nodejs.org/ |
 | Yarn | 4 (via Corepack) | `npm install` also works |
 

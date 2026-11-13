@@ -48,9 +48,9 @@ resolution prints nothing.
 **Symptom:** Compiler rejects the pragma directive.
 
 **Fixes:**
-1. Update compiler: `compact update`
+1. Install the network-supported compiler: `/midnight-tooling:install-cli`, or `compact update 0.36.0`
 2. Verify the pragma in the `.compact` file matches a supported version
-3. The scaffolded contract stub uses `pragma language_version 0.28;` — align it with your installed compiler (`compact --version`) if needed
+3. The scaffolded contract stub uses `pragma language_version 0.28;` — align it with your compiler's language version (`compact compile --language-version`) if needed
 
 ### ZK parameter download stalls or fails
 
