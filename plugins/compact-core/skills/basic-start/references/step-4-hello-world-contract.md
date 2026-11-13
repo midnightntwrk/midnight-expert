@@ -14,7 +14,7 @@ The full Compact smart contract lifecycle works — write, compile, deploy to de
 Create `contracts/hello-world.compact`:
 
 ```compact
-pragma language_version 0.23;
+pragma language_version 0.28;
 
 export ledger message: Opaque<"string">;
 

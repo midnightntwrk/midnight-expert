@@ -13,7 +13,7 @@ Every Compact program follows a consistent anatomy that maps directly to on-chai
 A Compact contract is organized in this order:
 
 ```compact
-pragma language_version 0.23;
+pragma language_version 0.28;
 
 import CompactStandardLibrary;
 
@@ -56,7 +56,7 @@ export circuit do_something(): [] {
 Every contract starts with a version pragma and standard library import:
 
 ```compact
-pragma language_version 0.23;
+pragma language_version 0.28;
 import CompactStandardLibrary;
 ```
 
@@ -167,7 +167,7 @@ export { Maybe, Either }   // Re-export stdlib types
 |---------|---------|
 | `ledger { field: Type; }` | `export ledger field: Type;` |
 | `circuit fn(): Void` | `circuit fn(): []` |
-| `pragma >= 0.20;` (no `language_version`) | `pragma language_version >= 0.20;` |
+| `pragma >= 0.20;` (no `language_version`) | `pragma language_version 0.28;` |
 | `enum State { ... }` (no export) | `export enum State { ... }` |
 | `if (witness_val == x)` | `if (disclose(witness_val == x))` |
 | `Cell<Field>` | `Field` (Cell implicit, cannot be written) |

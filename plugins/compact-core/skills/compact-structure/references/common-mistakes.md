@@ -39,7 +39,7 @@ export circuit doSomething(): [] {
 pragma >= 0.22;
 
 // Correct - include the language_version keyword
-pragma language_version >= 0.22;
+pragma language_version 0.28;
 ```
 
 A lower bound (`>= 0.22`), a patch version (`>= 0.22.0`), and an exact version (`0.23`) all compile. Pinning an exact version guards against future language changes, but it is a choice, not a compiler requirement.
@@ -222,7 +222,7 @@ if ((myField as Uint<64>) < (otherField as Uint<64>)) { ... }
 | `unbound identifier Void` | `Void` return type | Use `[]` return type |
 | `parse error: found "{" looking for ";"` | Witness declared with a body | End the declaration with `;`; implement it in TypeScript |
 | `parse error: found ":" looking for ")", …` | `Enum::variant` syntax | Use `Enum.variant` dot notation |
-| `parse error: found ">=" looking for an identifier` | `pragma >= …` without `language_version` | `pragma language_version >= 0.22;` |
+| `parse error: found ">=" looking for an identifier` | `pragma >= …` without `language_version` | `pragma language_version 0.28;` |
 | `unbound identifier public_key` | Assuming built-in function | Use `persistentHash` pattern |
 | `unbound identifier Cell` | Deprecated wrapper | Remove Cell, use type directly |
 | `parse error: found keyword "function" (which is reserved for future use) looking for "circuit"` | `pure function` keyword | Use `pure circuit` |

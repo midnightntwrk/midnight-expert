@@ -203,7 +203,7 @@ The Merkle membership proof involves coordinated on-chain and off-chain work:
 ### Full Flow: Anonymous Authentication with Nullifier
 
 ```compact
-pragma language_version 0.23;
+pragma language_version 0.28;
 import CompactStandardLibrary;
 
 export ledger members: HistoricMerkleTree<16, Bytes<32>>;

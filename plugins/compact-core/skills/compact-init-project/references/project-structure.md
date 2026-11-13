@@ -47,7 +47,7 @@ The scaffolded `contract/<name>.compact` is a TODO placeholder with a commented 
 replace it with your contract, for example:
 
 ```compact
-pragma language_version 0.23;
+pragma language_version 0.28;
 
 import CompactStandardLibrary;
 

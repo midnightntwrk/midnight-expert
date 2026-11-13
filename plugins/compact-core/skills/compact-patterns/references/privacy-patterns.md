@@ -19,7 +19,7 @@ Patterns for preserving user privacy in contract interactions.
 ### Implementation
 
 ```compact
-pragma language_version 0.23;
+pragma language_version 0.28;
 import CompactStandardLibrary;
 
 export ledger authority: Bytes<32>;
@@ -38,7 +38,7 @@ circuit publicKey(currentRound: Field, sk: Bytes<32>): Bytes<32> {
 
 constructor() {
   const sk = local_secret_key();
-  authority = disclose(publicKey(0, sk));
+  authority = disclose(publicKey(0 as Field, sk));
   round.increment(1);
 }
 
@@ -116,7 +116,7 @@ all transactions.
 ### Implementation
 
 ```compact
-pragma language_version 0.23;
+pragma language_version 0.28;
 import CompactStandardLibrary;
 
 export ledger credentialCommitment: Bytes<32>;

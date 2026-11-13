@@ -50,7 +50,7 @@ resolution prints nothing.
 **Fixes:**
 1. Update compiler: `compact update`
 2. Verify the pragma in the `.compact` file matches a supported version
-3. The scaffolded contract stub uses `pragma language_version 0.23;` — align it with your installed compiler (`compact --version`) if needed
+3. The scaffolded contract stub uses `pragma language_version 0.28;` — align it with your installed compiler (`compact --version`) if needed
 
 ### ZK parameter download stalls or fails
 
