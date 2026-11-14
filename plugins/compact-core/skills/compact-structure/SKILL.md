@@ -62,7 +62,7 @@ import CompactStandardLibrary;
 
 > **Tip:** Run `compact compile --language-version` to check which language version your compiler supports.
 
-The pragma needs the `language_version` keyword. A minimum version (`>= 0.22`), a patch version (`>= 0.22.0`), and an exact version (`0.23`) all compile. The standard library provides `persistentHash`, `persistentCommit` (takes `rand: Bytes<32>` parameter), `transientHash`, and `transientCommit`. Language built-ins include `pad`, `disclose`, `assert`, and `default`.
+The pragma needs the `language_version` keyword. A minimum version (`>= 0.22`), a patch version (`>= 0.22.0`), and an exact version (`0.28`) all compile on compiler 0.36.0; an exact version other than the compiler's language version (`0.23`) fails with `language version 0.28.0 mismatch`. The standard library provides `persistentHash`, `persistentCommit` (takes `rand: Bytes<32>` parameter), `transientHash`, and `transientCommit`. Language built-ins include `pad`, `disclose`, `assert`, and `default`.
 
 ## Data Types Quick Reference
 

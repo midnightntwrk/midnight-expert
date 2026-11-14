@@ -158,19 +158,27 @@ The cost model is a protocol parameter that can change through governance. Contr
 
 ## Gas Limits
 
-Circuits can have a `gasLimit` set to cap total gas consumption. If the limit is exceeded during execution, the transaction fails:
+Circuits can have a `gasLimit` set to cap total gas consumption. If the limit is exceeded during execution, the call fails with `ran out of gas budget`:
 
 ```typescript
-// Set a gas limit for the circuit context
-context.gasLimit = {
-  readTime: 1000n,
-  computeTime: 5000n,
-  bytesWritten: 2000n,
-  bytesDeleted: 500n,
-};
+// Set a gas limit when creating the circuit context (compact-runtime 0.21.0)
+const context = createCircuitContext({
+  circuitId: 'expensiveOperation',
+  contractAddress,
+  coinPublicKeyOrZswapState: coinPublicKey,
+  contractState,
+  privateState,
+  gasLimit: {
+    readTime: 1000n,
+    computeTime: 5000n,
+    bytesWritten: 2000n,
+    bytesDeleted: 500n,
+  },
+});
 
-// This will throw if gas exceeds the limit
-contract.circuits.expensiveOperation(context);
+// Circuits return a Promise since compact-runtime 0.21.0; this rejects with
+// "ran out of gas budget" if the call goes over the limit
+await contract.circuits.expensiveOperation(context);
 ```
 
 Gas limits protect against:

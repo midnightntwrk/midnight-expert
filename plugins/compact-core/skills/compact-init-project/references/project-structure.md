@@ -7,7 +7,7 @@ After running the scaffolder (`node <plugin>/skills/compact-init-project/scripts
 ```
 <name>/
 ├── contract/
-│   ├── <name>.compact                # Contract source stub (pragma language_version 0.23) — you write this
+│   ├── <name>.compact                # Contract source stub (pragma language_version 0.28) — you write this
 │   └── index.ts                      # Exports the compiled contract + zkConfigPath
 │   └── witnesses.ts                  # ONLY when scaffolded with --witnesses (private-state + witness stubs)
 ├── src/

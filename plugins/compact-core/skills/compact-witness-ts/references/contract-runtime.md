@@ -17,10 +17,13 @@ export interface Witnesses<PS> {
   myWitness(context: __compactRuntime.WitnessContext<Ledger, PS>): [PS, Uint8Array];
 }
 
-// 3. Circuits type
+// 3. Circuits type. Each circuit takes a CircuitContext first and, since
+// compact-runtime 0.21.0 (compiler 0.34+), returns a Promise.
 export type Circuits<PS> = {
-  myCircuit(arg: bigint): [];
-  pureCompute(x: bigint, y: bigint): bigint;
+  myCircuit(context: __compactRuntime.CircuitContext<PS>,
+            arg: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
+  pureCompute(context: __compactRuntime.CircuitContext<PS>,
+              x: bigint, y: bigint): Promise<__compactRuntime.CircuitResults<PS, bigint>>;
 };
 
 // 4. Contract class
@@ -29,7 +32,7 @@ export declare class Contract<PS = any, W extends Witnesses<PS> = Witnesses<PS>>
   circuits: Circuits<PS>;
   impureCircuits: ImpureCircuits<PS>;
   constructor(witnesses: W);
-  initialState(context: __compactRuntime.ConstructorContext<PS>): __compactRuntime.ConstructorResult<PS>;
+  initialState(context: __compactRuntime.ConstructorContext<PS>): Promise<__compactRuntime.ConstructorResult<PS>>;
 }
 
 // 5. Ledger type and function

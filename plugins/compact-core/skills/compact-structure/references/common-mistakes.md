@@ -42,7 +42,7 @@ pragma >= 0.22;
 pragma language_version 0.28;
 ```
 
-A lower bound (`>= 0.22`), a patch version (`>= 0.22.0`), and an exact version (`0.23`) all compile. Pinning an exact version guards against future language changes, but it is a choice, not a compiler requirement.
+A lower bound (`>= 0.22`), a patch version (`>= 0.22.0`), and an exact version (`0.28`) all compile on compiler 0.36.0; an exact version that isn't the compiler's language version (`0.23`) fails with `language version 0.28.0 mismatch`. Pinning an exact version guards against future language changes, but it is a choice, not a compiler requirement.
 
 > **Tip:** Run `compact compile --language-version` to check your compiler's supported version.
 

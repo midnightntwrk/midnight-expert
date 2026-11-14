@@ -9,7 +9,9 @@
 // ElGamal encryption over Jubjub (see ../crypto/ElGamal, ../crypto/EcdhMask,
 // vendored alongside it) rather than the Zswap shielded-coin model. It compiles
 // standalone with `compact compile --skip-zk` under the network-supported
-// compiler (0.36.0). Status: ALPHA — NOT AUDITED, NOT PRODUCTION-READY.
+// compiler (0.36.0). Proving keys need 0.36.1: on 0.36.0, key generation for a
+// contract that uses it fails with "ZkStdLibArch must enable jubjub"
+// (LFDT-Minokawa/compact#616). Status: ALPHA — NOT AUDITED, NOT PRODUCTION-READY.
 // Refresh from upstream when the pinned compiler moves.
 // =============================================================================
 // SPDX-License-Identifier: MIT
