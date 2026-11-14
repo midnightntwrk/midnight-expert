@@ -33,21 +33,17 @@ The highest version (by numeric semver comparison) is selected for each image, s
 
 ### Per-Image Upper Bounds
 
-Some published image tags are not usable for a self-contained local devnet, so the resolver caps each image below a known-bad version rather than blindly taking the newest tag:
+The resolver caps each image to the ledger 9 line that Mainnet, Preview and Preprod run, so a new minor or major tag on Docker Hub can't silently move the devnet onto a ledger the compiler pin and midnight-js don't match. Patch releases still come through:
 
-| Image | Cap | Why |
-|-------|-----|-----|
-| `midnight-node` | `< 1.0.0` (stays on the `0.22.x` line) | `1.0.0` is the mainnet GA node; this resolver keeps the shared devnet on the `0.22.x` line (`CFG_PRESET=dev`) for stability, with `0.22.5` as a known-good pin. |
-| `indexer-standalone` | `< 4.3.0` | From `4.3.0` the standalone indexer requires a Blockfrost API key and exits with code 1 without one; capping below it keeps the devnet runnable key-less, with `4.2.1` as a known-good pin. |
+| Image | Cap | Resolves to today |
+|-------|-----|-------------------|
+| `midnight-node` | `< 2.2.0` | `2.1.101` |
+| `indexer-standalone` | `< 4.5.0` | `4.4.101` |
+| `proof-server` | `< 9.1.0` | `9.0.1` |
 
-> Follow-up (not yet reconciled): the `compact-core:compact-init-project` scaffold's bundled
-> `compose.yml` runs `midnight-node:1.0.0` (`CFG_PRESET=dev`) and `indexer-standalone:4.3.3` locally —
-> the latter supplied a dummy `BLOCKFROST_ID` so it runs key-less. Those newer pins work for a
-> self-contained project network but sit above these resolver caps. Revisit whether this resolver
-> should raise its caps once `1.0.0` / `4.3.x` are validated for the shared devnet.
-| `proof-server` | none | The latest stable proof-server tag is usable for the local devnet. |
+The indexer needs a Blockfrost id since `4.3.0`; the generated compose file passes a placeholder plus the node's own URL for SPO data, so the devnet still runs key-less. Move a cap only together with the compiler pin (`plugins/midnight-tooling/network-supported-compiler.txt`), after checking the new set against midnightntwrk/midnight-examples, which runs the same images in CI.
 
-These caps live in `resolve-versions.sh` (the `max_exclusive` column of its `IMAGES` table). To run a capped image deliberately, pass it explicitly via `--node-version` / `--indexer-version` (which skips resolution for that image).
+These caps live in `resolve-versions.sh` (the `max_exclusive` column of its `IMAGES` table). To run another image deliberately, pass it explicitly via `--node-version` / `--indexer-version` / `--proof-server-version` (which skips resolution for that image).
 
 ### Verifying User-Specified Versions
 
