@@ -10,12 +10,19 @@ services:
     container_name: midnight-node
     ports:
       - '9944:9944'
+    # Healthy only once block 1 exists, not just once /health answers: the
+    # indexer exits with "block number 1 not found" if it starts at block 0.
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:9944/health']
+      test:
+        - 'CMD-SHELL'
+        - >-
+          curl -sf -H 'Content-Type: application/json'
+          -d '{"id":1,"jsonrpc":"2.0","method":"chain_getHeader","params":[]}'
+          http://localhost:9944 | grep -q '"number":"0x[1-9a-f]'
       interval: 2s
       timeout: 5s
-      retries: 20
-      start_period: 20s
+      retries: 30
+      start_period: 5s
     environment:
       CFG_PRESET: 'dev'
       SIDECHAIN_BLOCK_BENEFICIARY: '04bcf7ad3be7a5c790460be82a713af570f22e0f801f6659ab8e84a52be6969e'
@@ -23,6 +30,8 @@ services:
   indexer:
     image: midnightntwrk/indexer-standalone:{{INDEXER_VERSION}}
     container_name: midnight-indexer
+    # Retry a startup crash instead of failing `docker compose up --wait`.
+    restart: on-failure
     ports:
       - '8088:8088'
     environment:
@@ -33,6 +42,10 @@ services:
       APP__INFRA__PUB_SUB__PASSWORD: 'indexer'
       APP__INFRA__LEDGER_STATE_STORAGE__PASSWORD: 'indexer'
       APP__INFRA__SECRET: '303132333435363738393031323334353637383930313233343536373839303132'
+      # Since 4.3.0 the indexer also indexes SPO data and wants a Blockfrost id;
+      # on the local devnet it reads from the node and the id is a placeholder.
+      APP__INFRA__SPO_NODE__URL: 'ws://node:9944'
+      APP__INFRA__SPO_NODE__BLOCKFROST_ID: 'local-devnet-placeholder'
     healthcheck:
       test: ['CMD-SHELL', 'cat /var/run/indexer-standalone/running']
       interval: 10s

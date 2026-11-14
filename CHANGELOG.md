@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `midnight-tooling:devnet` generated a ledger 8-era devnet (node `0.22.x`, indexer `4.2.x`) that midnight-js 5 can't use, because its version caps predated the fork. The caps now keep each image on the ledger 9 line the networks run: node `< 2.2.0` (`2.1.101`), indexer `< 4.5.0` (`4.4.101`), proof server `< 9.1.0` (`9.0.1`). The template passes the indexer the node's URL for SPO data and a placeholder Blockfrost id, which it needs since `4.3.0`, and the node's healthcheck waits for block 1 so the indexer doesn't start at block 0 and exit. Same settings as midnightntwrk/midnight-examples. Checked by generating a devnet and running the `basic-start` step 1 checks against it. `midnight-tooling` is bumped to 0.5.1. (#294)
 - The compact-core `SessionStart` hook read compiler 0.36.0's version as unreadable, because 0.36.0 prints the commit after it (`0.36.0 (b5d9e4dfc 2026-11-03)`), so it gave no compiler advice at all. It now keeps only the first field.
 - The `SessionStart` hook told anyone on a later patch of the pinned compiler (for example 0.36.1 with a 0.36.0 pin) that no network accepts their contracts and to downgrade. A later patch keeps the same language and runtime versions, so it is now treated as supported. `compact-core` is bumped to 0.12.1.
 

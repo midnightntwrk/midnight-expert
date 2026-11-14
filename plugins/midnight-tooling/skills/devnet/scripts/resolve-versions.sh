@@ -22,18 +22,15 @@ done
 # given version. This keeps the local devnet on images that actually work as a
 # self-contained dev network, rather than blindly taking the highest tag on
 # Docker Hub:
-#   - midnight-node: capped below 1.0.0. The 1.0.0 GA tag is the mainnet node,
-#     not a local-devnet image; the local standalone devnet is built around the
-#     0.22.x line (CFG_PRESET=dev). The official create-mn-app scaffold pins
-#     0.22.5.
-#   - indexer-standalone: capped below 4.3.0. From 4.3.0 the standalone indexer
-#     requires a Blockfrost API key and exits 1 without one, so it cannot run in
-#     a key-less local devnet. The official create-mn-app scaffold pins 4.2.1.
-# proof-server has no cap (latest stable is usable for the local devnet).
+# The caps keep every image on the ledger 9 line the networks run (support
+# matrix: node 2.1.x, indexer 4.4.x, proof server 9.0.x) while still taking
+# patch releases. A new minor needs checking against the compiler pin
+# (plugins/midnight-tooling/network-supported-compiler.txt) before a cap moves.
+# midnightntwrk/midnight-examples runs the same set locally in CI.
 IMAGES=(
-  "node|midnightntwrk/midnight-node|1.0.0"
-  "indexer|midnightntwrk/indexer-standalone|4.3.0"
-  "proof-server|midnightntwrk/proof-server|"
+  "node|midnightntwrk/midnight-node|2.2.0"
+  "indexer|midnightntwrk/indexer-standalone|4.5.0"
+  "proof-server|midnightntwrk/proof-server|9.1.0"
 )
 
 # Fetch all tags for an image from Docker Hub, handling pagination.
