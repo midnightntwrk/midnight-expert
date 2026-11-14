@@ -27,7 +27,7 @@ Should report the CLI version and "Up to date".
 3. Set the default compiler to the latest supported version:
 
 ```bash
-compact update 0.36.0
+compact update 0.31.1
 ```
 
 Confirms the default compiler version is set.
