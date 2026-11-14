@@ -91,7 +91,7 @@ Equality and inequality work on any two values whose types are in a subtype rela
 
 ```compact
 export circuit same(f: Field, u: Uint<64>): Boolean {
-  return f == (u as Field);       // compiles on 0.31.1 and 0.35.0
+  return f == (u as Field);       // compiles on 0.31.1, 0.35.0 and 0.36.0
 }
 ```
 

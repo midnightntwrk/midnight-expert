@@ -1,19 +1,18 @@
 // =============================================================================
 // VENDORED DEPENDENCY — DO NOT EDIT BY HAND
 //
-// Copied verbatim from OpenZeppelin/compact-contracts at tag v0.3.0-alpha.2:
-//   https://github.com/OpenZeppelin/compact-contracts/blob/v0.3.0-alpha.2/contracts/src/security/Initializable.compact
+// Copied verbatim from OpenZeppelin/compact-contracts at tag v0.4.0:
+//   https://github.com/OpenZeppelin/compact-contracts/blob/v0.4.0/contracts/src/security/Initializable.compact
 //
 // Vendored into the compact-tokens skill so the neighbouring example contracts
 // resolve their imports and compile standalone under the network-supported
-// compiler (0.31.1). Status: ALPHA — NOT AUDITED, NOT PRODUCTION-READY.
+// compiler (0.36.0). Status: ALPHA — NOT AUDITED, NOT PRODUCTION-READY.
 // Refresh from upstream when the pinned compiler moves.
 // =============================================================================
-
 // SPDX-License-Identifier: MIT
-// OpenZeppelin Compact Contracts v0.3.0-alpha.2 (security/Initializable.compact)
+// OpenZeppelin Compact Contracts v0.4.0 (security/Initializable.compact)
 
-pragma language_version >= 0.23.0;
+pragma language_version >= 0.26.0;
 
 /**
  * @module Initializable
@@ -38,12 +37,14 @@ pragma language_version >= 0.23.0;
 module Initializable {
   import CompactStandardLibrary;
 
+  /**
+   * @description Whether `initialize` has run. Guards against re-initialization
+   * and against use before initialization.
+   */
   export ledger _isInitialized: Boolean;
 
   /**
    * @description Initializes the state thus ensuring the calling circuit can only be called once.
-   *
-   * @circuitInfo k=10, rows=38
    *
    * Requirements:
    *
@@ -59,7 +60,7 @@ module Initializable {
   /**
    * @description Asserts that the contract has been initialized, throwing an error if not.
    *
-   * @circuitInfo k=10, rows=31
+   * @constraints k=6, rows=25
    *
    * Requirements:
    *
@@ -74,7 +75,7 @@ module Initializable {
   /**
    * @description Asserts that the contract has not been initialized, throwing an error if it has.
    *
-   * @circuitInfo k=10, rows=35
+   * @constraints k=6, rows=28
    *
    * Requirements:
    *

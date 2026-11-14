@@ -69,7 +69,7 @@ Table mapping error messages to their cause and fix. Errors are grouped by categ
 | `parse error: found ":" looking for ")", …` (or `looking for ";", …`) | Using Rust-style `Enum::variant` double-colon syntax | Use dot notation: `Enum.variant` |
 | `parse error: found "{" looking for ";"` | Adding an implementation body to a witness (`witness w(): T { ... }`) | Witnesses are declarations only -- end with `;` and implement in TypeScript |
 | `parse error: found keyword "function" (which is reserved for future use) looking for "circuit"` | Writing `pure function` instead of `pure circuit` | Compact uses `pure circuit` for helper functions |
-| `parse error: found ">=" looking for an identifier` | Pragma without the `language_version` keyword (`pragma >= 0.22;`) | Use `pragma language_version >= 0.22;`. Patch versions (`0.22.0`) and exact versions (`0.23`) also compile. |
+| `parse error: found ">=" looking for an identifier` | Pragma without the `language_version` keyword (`pragma >= 0.22;`) | Use `pragma language_version 0.28;`. The version must be the compiler's language version: on compiler 0.36.0, `0.28` and `0.28.0` compile, and `0.23` fails with `language version 0.28.0 mismatch`. Check it with `compact compile --language-version`. |
 
 ### Unbound Identifier Errors
 
@@ -85,7 +85,7 @@ Table mapping error messages to their cause and fix. Errors are grouped by categ
 | Error Message | Cause | Fix |
 |---|---|---|
 | `incompatible combination of types Field and Field for relational operator` | Using `<`, `<=`, `>` or `>=` on `Field` values | Cast both operands to `Uint<N>` first. |
-| `incompatible types Field and Uint<64> for equality operator` | `Field == Uint` on compiler 0.35.0 (0.31.1 accepts it) | Cast the `Uint` operand: `f == (u as Field)`, which compiles on both |
+| `incompatible types Field and Uint<64> for equality operator` | `Field == Uint` on compiler 0.35.0 and later, including 0.36.0 (0.31.1 accepts it) | Cast the `Uint` operand: `f == (u as Field)`, which compiles on both |
 | `expected second argument of insert to have type Uint<64> but received Uint<0..N>` | Arithmetic result has expanded bounded type | Cast result back: `(a + b) as Uint<64>` |
 | `cannot cast from type Uint<64> to type Bytes<32>` | Using an older compiler version that does not support direct `Uint` to `Bytes` cast | Upgrade compiler, or go through `Field`: `(amount as Field) as Bytes<32>` |
 | `expected structure type, received <type>` | Accessing a field on a non-struct type | Verify the base value is a struct. `Map.lookup()` and `Set.member()` are separate operations, not field accesses. |
@@ -153,6 +153,27 @@ export circuit store(key: Bytes<32>, value: Uint<64>): [] {
 
 ## Type Cast Errors in Detail
 
+### Passing a `Uint` Where a `Field` Is Expected
+
+Since compiler 0.34.0 (the ledger 9 toolchains), a `Uint` argument is not accepted for a `Field` parameter, and a number literal is a `Uint` (`0` is `Uint<0..1>`). Compiler 0.31.1 accepted it. On 0.36.0:
+
+```text
+no compatible function named publicKey is in scope at this call
+  one function is incompatible with the supplied argument types
+    supplied argument types:
+      (Uint<0..1>, Bytes<32>)
+    declared argument types for function at line 10 char 1:
+      (Field, Bytes<32>)
+```
+
+Cast the argument explicitly:
+
+```compact
+circuit publicKey(currentRound: Field, sk: Bytes<32>): Bytes<32> { ... }
+
+authority = disclose(publicKey(0 as Field, sk));   // not publicKey(0, sk)
+```
+
 ### Uint to Bytes Casting
 
 Direct `Uint<N> as Bytes<M>` compiles and works. The two-step route through `Field` is also valid:
@@ -193,7 +214,7 @@ Complete table of common syntax mistakes with the error each one produces.
 |---|---|---|
 | `ledger { field: Type; }` | `export ledger field: Type;` | `parse error: found "{" looking for an identifier` |
 | `circuit fn(): Void` | `circuit fn(): []` | `unbound identifier Void` |
-| `pragma >= 0.22;` | `pragma language_version >= 0.22;` | `parse error: found ">=" looking for an identifier` |
+| `pragma >= 0.22;` | `pragma language_version 0.28;` | `parse error: found ">=" looking for an identifier` |
 | `enum State { a, b }` | `export enum State { a, b }` | enum not accessible from TypeScript |
 | `if (witness_val == x)` | `if (disclose(witness_val == x))` | `potential witness-value disclosure must be declared but is not: …` |
 | `Cell<Field>` | `Field` | `unbound identifier Cell` |

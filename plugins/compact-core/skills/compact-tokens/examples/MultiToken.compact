@@ -1,7 +1,7 @@
 // Illustrative teaching example. Its OpenZeppelin dependency
 // (../security/Initializable) is vendored alongside this file from
-// OpenZeppelin/compact-contracts v0.3.0-alpha.2, so it compiles standalone with
-// `compact compile --skip-zk` under the network-supported compiler (0.31.1).
+// OpenZeppelin/compact-contracts v0.4.0, so it compiles standalone with
+// `compact compile --skip-zk` under the network-supported compiler (0.36.0).
 // The vendored module is ALPHA — NOT AUDITED, NOT PRODUCTION-READY.
 //
 // OpenZeppelin MultiToken for Midnight Compact
@@ -29,7 +29,7 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Compact Contracts v0.0.1-alpha.1 (token/MultiToken.compact)
 
-pragma language_version 0.23;
+pragma language_version 0.28;
 
 // =============================================================================
 //  SECURE PATTERN — witness-derived identity
