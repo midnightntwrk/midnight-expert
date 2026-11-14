@@ -215,14 +215,15 @@ All EC operations use `JubjubPoint`, not the deprecated `NativePoint` or `CurveP
 | Function | Signature | Purpose |
 |----------|-----------|---------|
 | `ecAdd` | `(a: JubjubPoint, b: JubjubPoint): JubjubPoint` | Add two curve points |
-| `ecMul` | `(a: JubjubPoint, b: Field): JubjubPoint` | Scalar multiplication |
-| `ecMulGenerator` | `(b: Field): JubjubPoint` | Multiply generator by scalar |
+| `ecMul` | `(a: JubjubPoint, b: JubjubScalar): JubjubPoint` | Scalar multiplication |
+| `ecMulGenerator` | `(b: JubjubScalar): JubjubPoint` | Multiply generator by scalar |
+| `ecNeg` | `(a: JubjubPoint): JubjubPoint` | Negate a point (ledger 9 stdlib) |
 | `hashToCurve<T>` | `(value: T): JubjubPoint` | Map arbitrary value to curve point |
 | `jubjubPointX` | `(p: JubjubPoint): Field` | Get X coordinate |
 | `jubjubPointY` | `(p: JubjubPoint): Field` | Get Y coordinate |
 | `constructJubjubPoint` | `(x: Field, y: Field): JubjubPoint` | Construct point from coordinates |
 
-Use cases: Pedersen commitments, key derivation building blocks, custom signature schemes. For example, Pedersen blinding: `ecAdd(ecMulGenerator(rc), ecMul(colorBase, value))`.
+Use cases: Pedersen commitments, key derivation building blocks, custom signature schemes. Scalars are `JubjubScalar` since compiler 0.34; cast a `Field` or `Uint` with `as JubjubScalar`. For example, Pedersen blinding: `ecAdd(ecMulGenerator(rc as JubjubScalar), ecMul(colorBase, value as JubjubScalar))`.
 
 > **Verification:** EC functions operate on `JubjubPoint`, not the deprecated `NativePoint` or `CurvePoint`. The type was renamed from `CurvePoint` → `NativePoint` → `JubjubPoint`. Always verify with `compact compile --skip-zk` when using EC operations. See `references/cryptographic-functions.md` for full documentation and examples.
 

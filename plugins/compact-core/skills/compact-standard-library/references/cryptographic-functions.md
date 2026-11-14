@@ -1,10 +1,10 @@
 # Cryptographic Functions
 
-> **Last verified:** 2026-09-17 — EC and Merkle function signatures (`ecAdd`, `ecMul`, `ecMulGenerator`, `hashToCurve`, `jubjubPointX/Y`, `constructJubjubPoint`, `merkleTreePathRoot`, `merkleTreePathRootNoLeafHash`) compile-probed against Compact compiler `0.31.1` / language `0.23`.
+> **Last verified:** 2026-09-17 — EC and Merkle function signatures (`ecAdd`, `ecMul`, `ecMulGenerator`, `hashToCurve`, `jubjubPointX/Y`, `constructJubjubPoint`, `merkleTreePathRoot`, `merkleTreePathRootNoLeafHash`) compile-probed against Compact compiler `0.31.1` / language `0.23`. 2026-11-14: `ecMul` / `ecMulGenerator` scalars re-checked on compiler `0.36.0` (they take `JubjubScalar`), and `ecNeg` added.
 
 ## Elliptic Curve Functions
 
-These functions operate on the proof system's embedded elliptic curve (Jubjub). All inputs and outputs use the `JubjubPoint` type, which represents a point on the curve. Elliptic curve operations are the foundation for Pedersen commitments, public key derivation, and value blinding in the Zswap protocol.
+These functions operate on the proof system's embedded elliptic curve (Jubjub). Since compiler 0.34 (the ledger 9 toolchains) every scalar is a `JubjubScalar`, not a `Field`: a `Field` or `Uint` argument is rejected with `no compatible function named ecMul...`, so cast it (`r as JubjubScalar`). The cast reduces modulo the Jubjub group order. `JubjubScalar` has no arithmetic. All points use the `JubjubPoint` type, which represents a point on the curve. Elliptic curve operations are the foundation for Pedersen commitments, public key derivation, and value blinding in the Zswap protocol.
 
 ### ecAdd
 
@@ -16,37 +16,46 @@ Adds two elliptic curve points (described in multiplicative notation in the offi
 
 ```compact
 // Combine blinding and value components into a Pedersen commitment
-const blindingCommit = ecMulGenerator(randomness);
-const valueCommit = ecMul(hashToCurve<Bytes<32>>(color), value as Field);
+const blindingCommit = ecMulGenerator(randomness as JubjubScalar);
+const valueCommit = ecMul(hashToCurve<Bytes<32>>(color), value as JubjubScalar);
 const pedersenCommit = ecAdd(blindingCommit, valueCommit);
 ```
 
 ### ecMul
 
 ```compact
-circuit ecMul(a: JubjubPoint, b: Field): JubjubPoint;
+circuit ecMul(a: JubjubPoint, b: JubjubScalar): JubjubPoint;
 ```
 
-Multiplies an elliptic curve point by a scalar. The point is the first argument, the scalar (`Field`) is the second. Used for scaling independent generators in Pedersen commitments and key derivation.
+Multiplies an elliptic curve point by a scalar. The point is the first argument, the scalar (`JubjubScalar`) is the second. Used for scaling independent generators in Pedersen commitments and key derivation.
 
 ```compact
 // Scale a color-derived base point by a coin value
 const colorBase = hashToCurve<[Bytes<32>, Uint<16>]>([coin.color, segment]);
-const valueCommit = ecMul(colorBase, coin.value);
+const valueCommit = ecMul(colorBase, coin.value as JubjubScalar);
 ```
 
 ### ecMulGenerator
 
 ```compact
-circuit ecMulGenerator(b: Field): JubjubPoint;
+circuit ecMulGenerator(b: JubjubScalar): JubjubPoint;
 ```
 
 Multiplies the primary group generator of the embedded curve by a scalar. Equivalent to `ecMul(G, b)` where `G` is the generator, but more efficient because the generator is a known constant. Used for blinding factors and public key generation.
 
 ```compact
 // Create a blinding component for a Pedersen commitment
-const blinding = ecMulGenerator(randomness);
+const blinding = ecMulGenerator(randomness as JubjubScalar);
+const generator = ecMulGenerator(1 as JubjubScalar);
 ```
+
+### ecNeg
+
+```compact
+circuit ecNeg(a: JubjubPoint): JubjubPoint;
+```
+
+Negates a curve point, so `ecAdd(p, ecNeg(p))` is the identity. With no scalar arithmetic on `JubjubScalar`, this is how to subtract points (e.g. `ecAdd(a, ecNeg(b))`). New in the ledger 9 standard library.
 
 ### hashToCurve
 
@@ -96,9 +105,9 @@ witness get_randomness(): Field;
 
 circuit pedersenCommit(color: Bytes<32>, value: Field): JubjubPoint {
   const r = get_randomness();
-  const blinding = ecMulGenerator(r);
+  const blinding = ecMulGenerator(r as JubjubScalar);
   const colorBase = hashToCurve<Bytes<32>>(color);
-  const valueCommit = ecMul(colorBase, value);
+  const valueCommit = ecMul(colorBase, value as JubjubScalar);
   return ecAdd(blinding, valueCommit);
 }
 ```
@@ -108,8 +117,8 @@ This is the pattern used by the Zswap protocol (`zswap.compact`) for shielded co
 ```compact
 // From zswap.compact (simplified)
 const colorBase = hashToCurve<[Bytes<32>, Uint<16>]>([coin.color, segment]);
-const pedersenBlinding = ecMulGenerator(rc);
-const pedersenCommit = ecMul(colorBase, coin.value);
+const pedersenBlinding = ecMulGenerator(rc as JubjubScalar);
+const pedersenCommit = ecMul(colorBase, coin.value as JubjubScalar);
 valueCom = disclose(ecAdd(pedersenBlinding, pedersenCommit));
 ```
 

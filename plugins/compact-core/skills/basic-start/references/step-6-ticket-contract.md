@@ -241,7 +241,14 @@ async function main() {
     console.log("ERROR: the ticket was used twice");
     process.exitCode = 1;
   } catch (e) {
-    console.log(`Reuse rejected: ${String((e as Error).message).split("\n")[0].slice(0, 100)}`);
+    const message = String((e as Error).message);
+    if (message.includes("Ticket already used")) {
+      console.log("Reuse rejected: Ticket already used");
+    } else {
+      // Any other failure means the nullifier check never ran.
+      console.log(`ERROR: second use failed for another reason: ${message.split("\n")[0].slice(0, 120)}`);
+      process.exitCode = 1;
+    }
   }
 
   await wallet.stop();
@@ -270,7 +277,7 @@ node --import tsx src/ticket.ts
 Deployed at: <contract address>
 Issued. ticketsUsed = 0
 Used. ticketsUsed = 1, nullifiers = 1
-Reuse rejected: <error naming the failed "Ticket already used" assert>
+Reuse rejected: Ticket already used
 ```
 
 On-chain there is one commitment in `tickets`, one nullifier in `usedTickets` and `ticketsUsed` is 1. The nullifier can't be linked to the commitment: that is the privacy guarantee.

@@ -1423,7 +1423,7 @@
       "description": "The transaction is not in normal form. The most common cause on a local devnet is a zero fee: when feesWithMargin evaluates to 0 and no additionalFeeOverhead is set, the wallet builds an empty DustActions, which DustActions::well_formed rejects. A ContractDeploy is accepted but the first contract call fails; there is no special minimum-cost floor on ContractDeploy.",
       "fixes": [
         "Set a small positive additionalFeeOverhead (e.g. 1_000_000n) in the wallet's costParameters so a real DUST fee is spent",
-        "Any positive amount the wallet can cover in DUST works (the basic-start tutorial and compact-cli-dev template use 300_000_000_000_000n)",
+        "Any positive amount the wallet can cover in DUST works (the compact-cli-dev template uses 300_000_000_000_000n; compact-core's basic-start uses testkit's default of 0n, so it can hit this on a long-idle devnet)",
         "Build the transaction with the SDK so it is normalized"
       ],
       "aliases": [

@@ -31,6 +31,7 @@ export declare class Contract<PS = any, W extends Witnesses<PS> = Witnesses<PS>>
   witnesses: W;
   circuits: Circuits<PS>;
   impureCircuits: ImpureCircuits<PS>;
+  provableCircuits: ProvableCircuits<PS>;
   constructor(witnesses: W);
   initialState(context: __compactRuntime.ConstructorContext<PS>): Promise<__compactRuntime.ConstructorResult<PS>>;
 }
@@ -41,7 +42,7 @@ export type Ledger = {
   readonly owner: Uint8Array;
 };
 
-export declare function ledger(state: __compactRuntime.StateValue): Ledger;
+export declare function ledger(state: __compactRuntime.StateValue | __compactRuntime.ChargedState): Ledger;
 ```
 
 ## The Contract Class
@@ -78,12 +79,13 @@ When deploying through midnight-js, pass them as `args` instead (see below).
 
 ## Circuits vs ImpureCircuits vs PureCircuits
 
-The Contract class exposes three circuit interfaces:
+The Contract class exposes three circuit interfaces, and the module exports the pure ones:
 
 | Interface | Contains | Proof Generated? | Modifies State? |
 |-----------|----------|-------------------|-----------------|
 | `circuits` | All circuits | Yes (for impure) | Impure: yes, Pure: no |
 | `impureCircuits` | Only circuits that touch state/witnesses | Yes | Yes |
+| `provableCircuits` | The circuits that get proving keys (the exported impure ones) | Yes | Yes |
 | `pureCircuits` (module-level export) | Only `pure circuit` declarations | **No** | **No** |
 
 ### impureCircuits
@@ -132,7 +134,8 @@ The compiler generates a `ledger()` function that parses raw on-chain contract s
 ```typescript
 import { MyContract } from "@midnight-ntwrk/mycontract-contract";
 
-// Parse a runtime ContractState (or its StateValue) into a typed ledger object
+// Parse a contract's state into a typed ledger object. ledger() takes a
+// StateValue or a ChargedState, e.g. contractState.data, not the ContractState itself
 const state = MyContract.ledger(contractState.data);
 
 // Access typed fields

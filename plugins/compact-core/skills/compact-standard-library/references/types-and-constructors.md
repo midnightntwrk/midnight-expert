@@ -176,8 +176,8 @@ This type was previously named `CurvePoint` (oldest) and then `NativePoint`. Bot
 ### Code Example
 
 ```compact
-const g = ecMulGenerator(1);                          // generator point
-const pk = ecMul(g, secretKey);                        // public key derivation
+const g = ecMulGenerator(1 as JubjubScalar);           // generator point
+const pk = ecMul(g, secretKey as JubjubScalar);        // public key derivation (scalars are JubjubScalar)
 const combined = ecAdd(pk, hashToCurve<Bytes<32>>(data));
 const x = jubjubPointX(combined);                      // get X coordinate
 const y = jubjubPointY(combined);                      // get Y coordinate
