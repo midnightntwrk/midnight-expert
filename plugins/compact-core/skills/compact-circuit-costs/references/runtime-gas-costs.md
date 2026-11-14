@@ -168,15 +168,17 @@ const context = createCircuitContext({
   coinPublicKeyOrZswapState: coinPublicKey,
   contractState,
   privateState,
+  // For scale: one trivial ledger write costs about 85,000,000 readTime and
+  // 1,233,942,932 computeTime on compact-runtime 0.21.0.
   gasLimit: {
-    readTime: 1000n,
-    computeTime: 5000n,
-    bytesWritten: 2000n,
-    bytesDeleted: 500n,
+    readTime: 1_000_000_000n,
+    computeTime: 20_000_000_000n,
+    bytesWritten: 10_000n,
+    bytesDeleted: 10_000n,
   },
 });
 
-// Circuits return a Promise since compact-runtime 0.21.0; this rejects with
+// Circuits return a Promise on the ledger 9 runtimes; this rejects with
 // "ran out of gas budget" if the call goes over the limit
 await contract.circuits.expensiveOperation(context);
 ```

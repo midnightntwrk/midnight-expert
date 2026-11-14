@@ -14,7 +14,7 @@ A step-by-step procedural guide that takes you from zero to a working Midnight D
 
 Before starting, ensure:
 - **Docker** is running (`docker info` should succeed)
-- **Node.js 22+** is installed (`node --version`)
+- **Node.js 22.12+** is installed (`node --version`); midnight-js 5 and testkit-js 5 require it
 - **Compact CLI** is installed (`compact --version`) — if not, use `/midnight-tooling:install-cli`
 
 Run `/midnight-tooling:doctor` to check all prerequisites at once.
@@ -52,9 +52,9 @@ you what produced the error and how to fix it.
 /midnight-status-codes:lookup NotNormalized   # an error name
 ```
 
-Common early ones on a fresh devnet: **117** (NotNormalized — set a small
-`additionalFeeOverhead`, see step 4/5) and **1010** (the Substrate envelope that
-wraps the real `Custom(N)` cause). For environment problems, run
+Common early ones on a fresh devnet: **117** (NotNormalized, a fee that
+computed to zero) and **1010** (the Substrate envelope that wraps the real
+`Custom(N)` cause). The lookup gives the fix for each. For environment problems, run
 `/midnight-tooling:doctor`.
 
 ## When You're Done

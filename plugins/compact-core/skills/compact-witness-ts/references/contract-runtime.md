@@ -17,8 +17,8 @@ export interface Witnesses<PS> {
   myWitness(context: __compactRuntime.WitnessContext<Ledger, PS>): [PS, Uint8Array];
 }
 
-// 3. Circuits type. Each circuit takes a CircuitContext first and, since
-// compact-runtime 0.21.0 (compiler 0.34+), returns a Promise.
+// 3. Circuits type. Each circuit takes a CircuitContext first and, on the
+// ledger 9 runtimes (compiler 0.34+, compact-runtime 0.19+), returns a Promise.
 export type Circuits<PS> = {
   myCircuit(context: __compactRuntime.CircuitContext<PS>,
             arg: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
@@ -63,15 +63,18 @@ The `Witnesses` interface type-checks your implementations at compile time — i
 
 ### Constructor Arguments
 
-If the Compact contract has a `constructor(arg1: T1, arg2: T2)`, the generated Contract constructor takes witnesses first, then the constructor arguments:
+The generated `Contract` class only takes witnesses. If the Compact contract has a `constructor(arg1: T1, arg2: T2)`, its arguments go to `initialState`, after the context (checked on compiler 0.36.0):
 
 ```typescript
-// Compact: constructor(value: Field)
-const instance = new MyContract.Contract(witnesses, 42n);
+// Compact: constructor(value: Uint<64>)
+const instance = new MyContract.Contract(witnesses);
+const { currentContractState } = await instance.initialState(constructorContext, 42n);
 
 // Compact: constructor() — no args
-const instance = new MyContract.Contract(witnesses);
+const result = await instance.initialState(constructorContext);
 ```
+
+When deploying through midnight-js, pass them as `args` instead (see below).
 
 ## Circuits vs ImpureCircuits vs PureCircuits
 
@@ -129,7 +132,7 @@ The compiler generates a `ledger()` function that parses raw on-chain contract s
 ```typescript
 import { MyContract } from "@midnight-ntwrk/mycontract-contract";
 
-// Parse raw contract state into typed ledger object
+// Parse a runtime ContractState (or its StateValue) into a typed ledger object
 const state = MyContract.ledger(contractState.data);
 
 // Access typed fields
@@ -145,11 +148,13 @@ Only `export ledger` fields are accessible through the `ledger()` function. Non-
 In a DApp context, you typically query the indexer for contract state, then parse it:
 
 ```typescript
-const contractState = await providers.publicDataProvider
-  .queryContractState(contractAddress);
+// midnight-js 5: the result carries a serialized state tagged with its ledger era
+import { ContractState } from "@midnight-ntwrk/midnight-js-protocol/v9/compact-runtime";
 
-if (contractState != null) {
-  const ledgerState = MyContract.ledger(contractState.data);
+const read = await providers.publicDataProvider.queryContractState(contractAddress);
+
+if (read != null && read.contractState.era === "v9") {
+  const ledgerState = MyContract.ledger(read.contractState.deserialize({ v9: ContractState }).data);
   console.log(`Current round: ${ledgerState.round}`);
 }
 ```
@@ -159,8 +164,8 @@ if (contractState != null) {
 When deploying or joining a contract, you provide a string identifier for the private state store. This lets the runtime persist and retrieve private state across sessions:
 
 ```typescript
-// Build a CompiledContract with CompiledContract.make + .pipe (compact-js 2.5.x)
-import { CompiledContract } from "@midnight-ntwrk/compact-js";
+// Build a CompiledContract with CompiledContract.make + .pipe (midnight-js 5 / compact-js 3)
+import { CompiledContract } from "@midnight-ntwrk/midnight-js-protocol/v9/compact-js";
 import { MyContract } from "@midnight-ntwrk/mycontract-contract";
 
 const compiledContract = CompiledContract.make('mycontract', MyContract.Contract).pipe(
@@ -189,7 +194,7 @@ const found = await findDeployedContract(providers, {
 });
 ```
 
-> `CompiledContract` is a module exposing the factory `make(tag, Contract)` plus pipeable combinators (`withWitnesses` / `withVacantWitnesses`, `withCompiledFileAssets`). It is **not** a constructable class — `new CompiledContract(...)` is not valid in compact-js 2.5.x.
+> `CompiledContract` is a module exposing the factory `make(tag, Contract)` plus pipeable combinators (`withWitnesses` / `withVacantWitnesses`, `withCompiledFileAssets`). It is **not** a constructable class — `new CompiledContract(...)` is not valid.
 
 The `privateStateId` is a string key used by the private state provider to store and retrieve state. Use a descriptive, unique name per contract type.
 

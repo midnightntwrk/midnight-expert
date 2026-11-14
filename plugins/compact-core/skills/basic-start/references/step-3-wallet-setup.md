@@ -18,7 +18,11 @@ Wallet creation, NIGHT funding from the genesis wallet, and DUST registration al
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "dependencies": {
+    "@midnight-ntwrk/compact-runtime": "0.21.0",
     "@midnight-ntwrk/midnight-js-contracts": "5.0.0",
     "@midnight-ntwrk/midnight-js-http-client-proof-provider": "5.0.0",
     "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "5.0.0",
@@ -129,6 +133,7 @@ const FUND_AMOUNT = 10_000_000_000n; // 10,000 NIGHT in micro-NIGHT
 async function main() {
   // 1. A fresh deployer wallet
   const deployerSeed = randomBytes(32).toString("hex");
+  console.log(`Deployer seed (save this now): ${deployerSeed}`);
   const deployer = await openWallet(deployerSeed);
   console.log(`Deployer address: ${deployer.unshieldedKeystore.getBech32Address()}`);
 
@@ -184,7 +189,7 @@ main().catch((e) => {
    node --import tsx src/setup-deployer.ts
    ```
 
-6. **Save the printed `Deployer seed`.** Step 5 uses it. The funds live on-chain, so the same seed always reopens the same funded wallet.
+6. **Save the `Deployer seed`** (printed first, before anything else can fail). Step 5 uses it. The funds live on-chain, so the same seed always reopens the same funded wallet.
 
 > **Expected noise.** The wallet logs some `RPC-CORE: ... disconnected ... Normal Closure` lines, and occasionally `API/INIT: Error: FATAL: Unable to initialize the API: WebSocket is not connected`. Both come from testkit's node connection being opened and closed; the script carries on and finishes. A fresh wallet syncs from genesis each run, and loading the SDK takes a while, so expect a minute or more per script.
 

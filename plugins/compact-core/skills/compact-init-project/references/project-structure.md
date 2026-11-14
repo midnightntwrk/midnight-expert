@@ -117,10 +117,11 @@ newer releases.
 | Indexer | `midnightntwrk/indexer-standalone:4.3.3` | 8088 |
 | Node | `midnightntwrk/midnight-node:1.0.0` (`CFG_PRESET=dev`) | 9944 |
 
-> Note: this local network runs `midnight-node:1.0.0` and `indexer-standalone:4.3.3` (the indexer is
-> supplied a dummy `BLOCKFROST_ID` so it runs key-less). These are **newer** than the caps the
-> `midnight-tooling:devnet` version resolver applies for its shared devnet — see that skill's
-> `version-resolution.md`.
+> Note: this local network still runs the ledger 8-era images (`midnight-node:1.0.0`,
+> `indexer-standalone:4.3.3`), one ledger behind the `midnight-tooling:devnet` resolver (node
+> `2.1.x`, indexer `4.4.x`, proof server `9.0.x`; see that skill's `version-resolution.md`). The
+> template, including these images and its midnight-js 4.1.1 packages, moves to the ledger 9 stack
+> in a follow-up to #296.
 
 ## Network Endpoints
 
