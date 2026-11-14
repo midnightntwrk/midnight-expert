@@ -64,7 +64,7 @@ node:
 indexer:
   image: midnightntwrk/indexer-standalone:X.Y.Z
   container_name: midnight-indexer
-  restart: on-failure
+  restart: on-failure:5
   ports:
     - '8088:8088'
   environment:
@@ -99,7 +99,7 @@ indexer:
 | `APP__INFRA__STORAGE__PASSWORD`, `PUB_SUB__PASSWORD`, `LEDGER_STATE_STORAGE__PASSWORD` | Internal service passwords. These are dev defaults — all set to `indexer`. Only relevant inside the container. |
 | `APP__INFRA__SECRET` | Internal encryption secret for the indexer. Dev default — hex-encoded bytes. |
 | `APP__INFRA__SPO_NODE__URL`, `APP__INFRA__SPO_NODE__BLOCKFROST_ID` | Since `4.3.0` the indexer also indexes SPO data and exits without a Blockfrost id. On the local devnet it reads that data from the node, so the id is a placeholder. |
-| `restart` | `on-failure` retries a startup crash instead of failing `docker compose up --wait`. |
+| `restart` | `on-failure:5` retries a startup crash up to 5 times, so a race with the node recovers but a permanent misconfiguration still shows as stopped. |
 | `healthcheck` | Checks for the existence of `/var/run/indexer-standalone/running` — a process-presence sentinel file created by the entrypoint script before launching the indexer binary, and removed on container exit. Its presence indicates the container is alive and the indexer process has been started. Longer `interval` (10s) and `start_period` (10s) because the indexer takes longer to initialize than the node. |
 | `depends_on` | Waits for the node's healthcheck to pass before starting. This ensures the node's RPC endpoint is ready before the indexer tries to connect. |
 
@@ -160,4 +160,4 @@ Users can edit the generated `devnet.yml` freely. Common modifications:
 - **Change log levels**: Modify `RUST_LOG` for more or less verbose indexer output.
 - **Change project name**: Edit the top-level `name` field. Use `--name` flag with commands to match.
 
-When running `/midnight-tooling:devnet update`, the agent reads the file and edits only the image tags — all other bespoke modifications are preserved. The `# Generated:` timestamp is also refreshed. If the file lacks a `# Generated:` comment, the agent adds one.
+When running `/midnight-tooling:devnet update` on a file that's already on the ledger 9 template, the agent edits only the image tags, so other bespoke modifications are preserved. A generated file from before that template is regenerated (with a timestamped `.bak`), and a hand-written one that lacks the indexer's settings is left alone with a note on what's missing.

@@ -19,9 +19,7 @@ done
 
 # Each entry: key|image|max_exclusive
 # max_exclusive (optional) caps version resolution to tags strictly below the
-# given version. This keeps the local devnet on images that actually work as a
-# self-contained dev network, rather than blindly taking the highest tag on
-# Docker Hub:
+# given version, rather than blindly taking the highest tag on Docker Hub.
 # The caps keep every image on the ledger 9 line the networks run (support
 # matrix: node 2.1.x, indexer 4.4.x, proof server 9.0.x) while still taking
 # patch releases. A new minor needs checking against the compiler pin

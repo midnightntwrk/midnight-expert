@@ -30,8 +30,9 @@ services:
   indexer:
     image: midnightntwrk/indexer-standalone:{{INDEXER_VERSION}}
     container_name: midnight-indexer
-    # Retry a startup crash instead of failing `docker compose up --wait`.
-    restart: on-failure
+    # Retry a startup crash (e.g. a race with the node) up to 5 times, without
+    # hiding a permanent failure behind endless restarts.
+    restart: on-failure:5
     ports:
       - '8088:8088'
     environment:

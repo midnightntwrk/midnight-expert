@@ -35,7 +35,7 @@ The highest version (by numeric semver comparison) is selected for each image, s
 
 The resolver caps each image to the ledger 9 line that Mainnet, Preview and Preprod run, so a new minor or major tag on Docker Hub can't silently move the devnet onto a ledger the compiler pin and midnight-js don't match. Patch releases still come through:
 
-| Image | Cap | Resolves to today |
+| Image | Cap | Resolved to (2026-11-14) |
 |-------|-----|-------------------|
 | `midnight-node` | `< 2.2.0` | `2.1.101` |
 | `indexer-standalone` | `< 4.5.0` | `4.4.101` |
