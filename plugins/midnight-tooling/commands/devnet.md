@@ -46,7 +46,7 @@ If the subcommand is `generate`:
 
 1. **Resolve versions:**
    - If `--node-version`, `--indexer-version`, and `--proof-server-version` are ALL provided, use those values.
-   - If ANY explicit version is missing, run `${CLAUDE_SKILL_DIR}/scripts/resolve-versions.sh` to get the latest devnet-compatible stable versions from Docker Hub. Use the resolved values for any versions not explicitly provided. The resolver caps `midnight-node` below `1.0.0` (the GA mainnet node is not a local-devnet image) and `indexer-standalone` below `4.3.0` (which requires a Blockfrost key); to run a capped tag deliberately, pass it explicitly via `--node-version` / `--indexer-version`.
+   - If ANY explicit version is missing, run `${CLAUDE_SKILL_DIR}/scripts/resolve-versions.sh` to get the latest devnet-compatible stable versions from Docker Hub. Use the resolved values for any versions not explicitly provided. The resolver caps each image to the ledger 9 line the networks run: `midnight-node` below `2.2.0`, `indexer-standalone` below `4.5.0` and `proof-server` below `9.1.0` (see `references/version-resolution.md`). To run another tag deliberately, pass it explicitly via `--node-version` / `--indexer-version` / `--proof-server-version`.
 
 2. **Verify user-specified versions (if any explicit versions were provided and `--no-verify` is NOT set):**
    - For each user-specified version, check that the Docker Hub tag exists:
@@ -87,11 +87,10 @@ If the subcommand is `update`:
 
 3. **Check compatibility matrix** (same flow as generate step 3, unless `--skip-compatibility-matrix`).
 
-4. **Read and edit the file:**
-   - Use the Read tool to read the current compose file.
-   - Note the current image versions for each service.
-   - Use the Edit tool to update each `image:` line with the new versions.
-   - Update or add the `# Generated:` timestamp comment with the current UTC time.
+4. **Read and update the file:**
+   - Use the Read tool to read the current compose file and note the current image versions for each service.
+   - If the file has no `APP__INFRA__SPO_NODE__BLOCKFROST_ID` line, it was generated before the ledger 9 template (midnight-tooling 0.5.0 or earlier). Changing only its `image:` lines would start indexer `4.3.0`+ without the settings it needs, and it exits on startup. Instead, copy the file to `devnet.yml.bak` next to it and regenerate it with `generate-devnet.sh` (same flow as generate step 4) in the same directory, using the new versions. Tell the user the old file was replaced and where the backup is.
+   - Otherwise, use the Edit tool to update each `image:` line with the new versions, and update or add the `# Generated:` timestamp comment with the current UTC time.
 
 5. **Report:** Show old version -> new version for each changed service. If no versions changed, say so.
 

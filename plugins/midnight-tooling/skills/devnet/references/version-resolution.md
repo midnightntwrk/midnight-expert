@@ -43,7 +43,7 @@ The resolver caps each image to the ledger 9 line that Mainnet, Preview and Prep
 
 The indexer needs a Blockfrost id since `4.3.0`; the generated compose file passes a placeholder plus the node's own URL for SPO data, so the devnet still runs key-less. Move a cap only together with the compiler pin (`plugins/midnight-tooling/network-supported-compiler.txt`), after checking the new set against midnightntwrk/midnight-examples, which runs the same images in CI.
 
-These caps live in `resolve-versions.sh` (the `max_exclusive` column of its `IMAGES` table). To run a capped image deliberately, pass it explicitly via `--node-version` / `--indexer-version` (which skips resolution for that image).
+These caps live in `resolve-versions.sh` (the `max_exclusive` column of its `IMAGES` table). To run another image deliberately, pass it explicitly via `--node-version` / `--indexer-version` / `--proof-server-version` (which skips resolution for that image).
 
 ### Verifying User-Specified Versions
 

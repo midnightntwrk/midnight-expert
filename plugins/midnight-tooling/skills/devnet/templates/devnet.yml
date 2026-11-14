@@ -21,8 +21,8 @@ services:
           http://localhost:9944 | grep -q '"number":"0x[1-9a-f]'
       interval: 2s
       timeout: 5s
-      retries: 30
-      start_period: 5s
+      retries: 60
+      start_period: 20s
     environment:
       CFG_PRESET: 'dev'
       SIDECHAIN_BLOCK_BENEFICIARY: '04bcf7ad3be7a5c790460be82a713af570f22e0f801f6659ab8e84a52be6969e'
