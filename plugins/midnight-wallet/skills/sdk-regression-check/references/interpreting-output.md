@@ -29,7 +29,9 @@ The failure is environmental, not SDK drift. Check:
 
 1. Is the devnet reachable? Run `curl -f http://localhost:9944/health`.
 2. Is the proof server reachable? Run `curl -f http://localhost:6300`.
-3. Is the indexer reachable? Run `curl -f http://localhost:8088/api/v3/graphql`.
+3. Is the indexer reachable? Run
+   `curl -f -X POST -H 'content-type: application/json' -d '{"query":"{__typename}"}' http://localhost:8088/api/v4/graphql`
+   (a plain GET returns `405`).
 
 Use `midnight-tooling:devnet health` for a structured check.
 

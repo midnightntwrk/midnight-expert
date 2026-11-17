@@ -22,6 +22,10 @@ Every pattern here was verified against the package versions pinned in
 Network ecosystem moves quickly, and there may be breaking changes
 between SDK versions.
 
+The patterns target wallet SDK 2.0.0 (ledger 9): wallets start from
+`WalletSeeds.fromMasterSeed(...)` seeds, and transactions are built only
+once the wallet is synced and its protocol phase is `Settled`.
+
 Before using any pattern from this skill, run
 `midnight-wallet:sdk-regression-check` (drift check). If a major
 version has shifted, run the smoke test before trusting the patterns.
@@ -68,7 +72,7 @@ address only. See `references/addresses-and-tokens.md`.
 | Reference | Topic |
 |-----------|-------|
 | `references/addresses-and-tokens.md` | Three-address model |
-| `references/wallet-creation.md` | Seed sources, HD derivation, construction |
+| `references/wallet-creation.md` | Seed sources, `WalletSeeds` derivation, construction |
 | `references/funding.md` | Per-network funding strategy |
 | `references/dust-registration.md` | DUST mechanics + registration |
 | `references/balance-monitoring.md` | State subscription patterns |

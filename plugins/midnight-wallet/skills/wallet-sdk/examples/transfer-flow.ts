@@ -1,16 +1,21 @@
 /**
- * Transfer NIGHT tokens between wallets.
+ * Transfer NIGHT and shielded tokens between wallets (wallet SDK 2.0.0).
  * Assumes wallet is already constructed and synced (see basic-wallet-setup.ts).
  *
- * Demonstrates: transferTransaction, signRecipe (synchronous callback),
+ * Demonstrates: transferTransaction, signRecipe (async signing callback),
  * finalizeRecipe, and submitTransaction for both unshielded and shielded transfers.
  */
 import WebSocket from "ws";
 (globalThis as any).WebSocket = WebSocket;
 
-import { HDWallet, Roles, generateRandomSeed } from "@midnightntwrk/wallet-sdk-hd";
-import { WalletFacade, WalletEntrySchema } from "@midnightntwrk/wallet-sdk-facade";
-import type { DefaultConfiguration } from "@midnightntwrk/wallet-sdk-facade";
+import { WalletSeeds, generateRandomSeed } from "@midnightntwrk/wallet-sdk-hd";
+import {
+  WalletFacade,
+  WalletEntrySchema,
+  mergeWalletEntries,
+  type DefaultConfiguration,
+  type FacadeState,
+} from "@midnightntwrk/wallet-sdk-facade";
 import { ShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
 import {
   UnshieldedWallet,
@@ -19,7 +24,7 @@ import {
 } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
 import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
 import { InMemoryTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
-import * as ledger from "@midnight-ntwrk/ledger-v8";
+import * as ledger from "@midnightntwrk/ledger-v9";
 import { Buffer } from "buffer";
 import * as rx from "rxjs";
 
@@ -42,36 +47,32 @@ const configuration: DefaultConfiguration = {
     indexerHttpUrl: `http://localhost:${INDEXER_PORT}/api/v4/graphql`,
     indexerWsUrl: `ws://localhost:${INDEXER_PORT}/api/v4/graphql/ws`,
   },
-  txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
+  txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema, mergeWalletEntries),
 };
 
-async function initWallet(seed: Buffer) {
-  const hdWallet = HDWallet.fromSeed(seed);
-  if (hdWallet.type !== "seedOk") throw new Error("Failed to initialize HDWallet");
-
-  const derivationResult = hdWallet.hdWallet
-    .selectAccount(0)
-    .selectRoles([Roles.Zswap, Roles.NightExternal, Roles.Dust])
-    .deriveKeysAt(0);
-  if (derivationResult.type !== "keysDerived") throw new Error("Failed to derive keys");
-  hdWallet.hdWallet.clear();
-
-  const shieldedSecretKeys = ledger.ZswapSecretKeys.fromSeed(derivationResult.keys[Roles.Zswap]);
-  const dustSecretKey = ledger.DustSecretKey.fromSeed(derivationResult.keys[Roles.Dust]);
-  const unshieldedKeystore = createKeystore(derivationResult.keys[Roles.NightExternal], configuration.networkId);
-
+async function initWallet(masterSeed: Buffer) {
+  const seeds = WalletSeeds.fromMasterSeed(masterSeed);
+  const unshieldedKeystore = createKeystore(
+    { kind: "schnorr", secret: seeds.unshielded },
+    configuration.networkId,
+  );
   const wallet = await WalletFacade.init({
     configuration,
-    shielded: (config) => ShieldedWallet(config).startWithSecretKeys(shieldedSecretKeys),
+    shielded: (config) => ShieldedWallet(config).startWithSeed(seeds.shielded),
     unshielded: (config) =>
       UnshieldedWallet(config).startWithPublicKey(PublicKey.fromKeyStore(unshieldedKeystore)),
-    dust: (config) =>
-      DustWallet(config).startWithSecretKey(dustSecretKey, ledger.LedgerParameters.initialParameters().dust),
+    dust: (config) => DustWallet(config).startWithSeed(seeds.dust),
   });
-
-  await wallet.start(shieldedSecretKeys, dustSecretKey);
-  return { wallet, shieldedSecretKeys, dustSecretKey, unshieldedKeystore };
+  await wallet.start(seeds);
+  return { wallet, unshieldedKeystore };
 }
+
+// Synced, and all three sub-wallets on the same protocol version. Build
+// transactions only from a state like this (see basic-wallet-setup.ts).
+const settled = (wallet: WalletFacade): Promise<FacadeState> =>
+  rx.firstValueFrom(
+    wallet.state().pipe(rx.filter((s) => s.isSynced && s.protocol._tag === "Settled")),
+  );
 
 // ---------------------------------------------------------------------------
 // Set up sender (pre-funded) and receiver wallets
@@ -81,14 +82,14 @@ const sender = await initWallet(
 );
 const receiver = await initWallet(Buffer.from(generateRandomSeed()));
 
-await sender.wallet.waitForSyncedState();
+await settled(sender.wallet);
 
 // ---------------------------------------------------------------------------
 // Unshielded transfer: NIGHT tokens (requires signRecipe)
 // ---------------------------------------------------------------------------
-// NOTE: signRecipe takes a *synchronous* callback — the keystore.signData
-// call must return the signature directly, not a Promise.
-
+// In 2.0.0 transferTransaction takes no secret keys: the wallet holds its own,
+// derived from the seeds it was started with. The signing callback returns a
+// Promise; the keystore's signDataAsync has exactly that shape.
 await sender.wallet
   .transferTransaction(
     [
@@ -104,17 +105,11 @@ await sender.wallet
       },
     ],
     {
-      shieldedSecretKeys: sender.shieldedSecretKeys,
-      dustSecretKey: sender.dustSecretKey,
-    },
-    {
       ttl: new Date(Date.now() + 30 * 60 * 1000),
     },
   )
   // signRecipe is required for unshielded transfers (NIGHT moves on-chain)
-  .then((recipe) =>
-    sender.wallet.signRecipe(recipe, (payload) => sender.unshieldedKeystore.signData(payload)),
-  )
+  .then((recipe) => sender.wallet.signRecipe(recipe, sender.unshieldedKeystore.signDataAsync))
   .then((recipe) => sender.wallet.finalizeRecipe(recipe))
   .then((finalizedTransaction) => sender.wallet.submitTransaction(finalizedTransaction));
 
@@ -152,14 +147,10 @@ await sender.wallet
       },
     ],
     {
-      shieldedSecretKeys: sender.shieldedSecretKeys,
-      dustSecretKey: sender.dustSecretKey,
-    },
-    {
       ttl: new Date(Date.now() + 30 * 60 * 1000),
     },
   )
-  // Shielded transfers skip signRecipe — go straight to finalize
+  // Shielded transfers skip signRecipe - go straight to finalize
   .then((recipe) => sender.wallet.finalizeRecipe(recipe))
   .then((finalizedTransaction) => sender.wallet.submitTransaction(finalizedTransaction));
 

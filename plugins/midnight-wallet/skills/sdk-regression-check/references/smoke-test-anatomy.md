@@ -6,29 +6,32 @@ NIGHT to the genesis seed.
 
 ## Steps the fixture performs
 
-1. **HD derivation (`hd-derive`).** Build an HD wallet from the local-devnet
-   genesis seed (`0x000…001`). Select account 0 and roles `Zswap`,
-   `NightExternal`, `Dust`. Derive keys at index 0. Clear the HD wallet
-   from memory.
+1. **Seed derivation (`seed-derive`).** Derive the three per-wallet seeds
+   from the local-devnet genesis seed (`0x000…001`) with
+   `WalletSeeds.fromMasterSeed(...)`. This walks the same HD path as wallet
+   SDK 1.x (account 0, roles `Zswap` / `NightExternal` / `Dust`, index 0),
+   so the genesis seed still lands on the pre-funded wallet.
 
-2. **Key conversion (`key-convert`).** Convert the three derived byte
-   arrays into typed keys:
-   - `ZswapSecretKeys.fromSeed(...)` for shielded
-   - `createKeystore(...)` for unshielded
-   - `DustSecretKey.fromSeed(...)` for dust
+2. **Keystore (`keystore`).** Create the unshielded keystore with
+   `createKeystore({ kind: "schnorr", secret: seeds.unshielded }, "undeployed")`.
+   The shielded and DUST wallets take their seeds directly.
 
 3. **Facade init (`facade-init`).** Call `WalletFacade.init({ ... })`
    with a `DefaultConfiguration` pointing at the local devnet
-   (`ws://localhost:9944`, `http://localhost:8088/api/v3/graphql`,
-   `http://localhost:6300`) and factory functions for each sub-wallet.
+   (`ws://localhost:9944`, `http://localhost:8088/api/v4/graphql`,
+   `http://localhost:6300`, plus an in-memory `txHistoryStorage`) and
+   factory functions for each sub-wallet (`startWithSeed` for shielded and
+   DUST, `startWithPublicKey` for unshielded).
 
-4. **Wallet start (`wallet-start`).** Call `wallet.start(shieldedSecretKeys, dustSecretKey)`.
+4. **Wallet start (`wallet-start`).** Call `wallet.start(seeds)`.
 
-5. **Wait for sync (`wait-sync`).** Call `wallet.waitForSyncedState()`.
+5. **Wait for sync (`wait-sync`).** Wait for the first state where
+   `isSynced` is true and `protocol._tag` is `"Settled"` (the fixture's
+   `waitForSettled` helper).
 
 6. **Balance assertion (`balance-read`).** Read
-   `state.unshielded.balances[ledger.nativeToken().raw]` and assert it
-   is greater than `0n`. The native token key is the token's raw bytes
+   `state.unshielded.balances[ledger.unshieldedToken().raw]` and assert it
+   is greater than `0n`. The NIGHT key is the token's raw bytes
    (64 hex zeros), NOT the empty string.
 
 ## What success means

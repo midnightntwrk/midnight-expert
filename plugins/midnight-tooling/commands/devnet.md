@@ -46,7 +46,7 @@ If the subcommand is `generate`:
 
 1. **Resolve versions:**
    - If `--node-version`, `--indexer-version`, and `--proof-server-version` are ALL provided, use those values.
-   - If ANY explicit version is missing, run `${CLAUDE_SKILL_DIR}/scripts/resolve-versions.sh` to get the latest devnet-compatible stable versions from Docker Hub. Use the resolved values for any versions not explicitly provided. The resolver caps `midnight-node` below `1.0.0` (the GA mainnet node is not a local-devnet image) and `indexer-standalone` below `4.3.0` (which requires a Blockfrost key); to run a capped tag deliberately, pass it explicitly via `--node-version` / `--indexer-version`.
+   - If ANY explicit version is missing, run `${CLAUDE_SKILL_DIR}/scripts/resolve-versions.sh` to get the latest devnet-compatible stable versions from Docker Hub. Use the resolved values for any versions not explicitly provided. The resolver caps each image to the ledger 9 line the networks run: `midnight-node` below `2.2.0`, `indexer-standalone` below `4.5.0` and `proof-server` below `9.1.0` (see `references/version-resolution.md`). To run another tag deliberately, pass it explicitly via `--node-version` / `--indexer-version` / `--proof-server-version`.
 
 2. **Verify user-specified versions (if any explicit versions were provided and `--no-verify` is NOT set):**
    - For each user-specified version, check that the Docker Hub tag exists:
@@ -87,11 +87,12 @@ If the subcommand is `update`:
 
 3. **Check compatibility matrix** (same flow as generate step 3, unless `--skip-compatibility-matrix`).
 
-4. **Read and edit the file:**
-   - Use the Read tool to read the current compose file.
-   - Note the current image versions for each service.
-   - Use the Edit tool to update each `image:` line with the new versions.
-   - Update or add the `# Generated:` timestamp comment with the current UTC time.
+4. **Read and update the file:**
+   - Use the Read tool to read the current compose file and note the current image versions for each service.
+   - **Is it on the ledger 9 template?** It is only if it has all three of: an `APP__INFRA__SPO_NODE__BLOCKFROST_ID` line, a node healthcheck that calls `chain_getHeader`, and a `restart:` policy on the indexer. Indexer `4.3.0`+ needs the first, and starting at block 0 without the other two makes it exit.
+   - **If it is:** use the Edit tool to update each `image:` line with the new versions, and update or add the `# Generated:` timestamp comment with the current UTC time. If a current version is above its cap (the user pinned it with an explicit `--*-version`), keep it and say so instead of moving it down.
+   - **If it isn't, and it has the `# Generator: midnight-tooling plugin` line:** it was generated before the ledger 9 template. Copy it to `<file>.<UTC timestamp>.bak` next to it, run `generate-devnet.sh` (same flow as generate step 4) with `--directory` set to a temporary directory and the new versions, then move the generated `devnet.yml` over the original path (whatever its file name). Tell the user the file was replaced, where the backup is, and that the new images start a fresh chain, so wallets and contracts from the old devnet are gone.
+   - **If it isn't, and it has no generator line** (hand-written or heavily edited): don't rewrite it. Tell the user which of the three settings are missing (see `compose-structure.md`) and offer to regenerate it instead.
 
 5. **Report:** Show old version -> new version for each changed service. If no versions changed, say so.
 
@@ -111,6 +112,7 @@ If the subcommand is `start`:
      ```
 
 3. **Check staleness (if no `--pull`):**
+   - Read the file. If it isn't on the ledger 9 template (the three-setting check in update step 4), warn the user that it starts a ledger 8-era devnet midnight-js 5 can't use, and offer the update flow, however recent the file is.
    - Run `${CLAUDE_SKILL_DIR}/scripts/check-staleness.sh <path>`.
    - If `stale=true`: inform the user that the compose file is N days old and offer to update. If they accept, run the update flow. If they decline, continue.
 

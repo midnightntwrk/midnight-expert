@@ -1,5 +1,5 @@
 // Verified against the package versions pinned in
-// midnight-wallet:sdk-regression-check/versions.lock.json on 2026-06-02.
+// midnight-wallet:sdk-regression-check/versions.lock.json on 2026-11-17.
 // If your installed @midnightntwrk/wallet-sdk-* versions differ,
 // run scripts/drift-check.sh in that skill before trusting this template.
 
@@ -8,13 +8,14 @@ import WebSocket from "ws";
 
 import { Buffer } from "buffer";
 import {
-  HDWallet,
-  Roles,
+  WalletSeeds,
   generateRandomSeed,
 } from "@midnightntwrk/wallet-sdk-hd";
 import {
   WalletFacade,
+  type FacadeState,
   WalletEntrySchema,
+  mergeWalletEntries,
   type DefaultConfiguration,
   type CombinedTokenTransfer,
   type UtxoWithMeta,
@@ -25,15 +26,25 @@ import {
   createKeystore,
   PublicKey,
 } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
-import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
+import { DustWallet, isInsufficientDustForFeeError } from "@midnightntwrk/wallet-sdk-dust-wallet";
 import { InMemoryTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
-import * as ledger from "@midnight-ntwrk/ledger-v8";
+import * as ledger from "@midnightntwrk/ledger-v9";
 import {
   MidnightBech32m,
   UnshieldedAddress,
 } from "@midnightntwrk/wallet-sdk-address-format";
 import { firstValueFrom } from "rxjs";
 import { filter, timeout } from "rxjs/operators";
+
+// Synced, and all three sub-wallets on the same protocol version. A wallet that
+// synced across the ledger 9 fork reports protocol "Crossing" until the last
+// sub-wallet catches up, and a transaction built then can fail with
+// ProtocolVersionMismatchError, so wait for "Settled" before building one.
+function waitForSettled(wallet: WalletFacade): Promise<FacadeState> {
+  return firstValueFrom(
+    wallet.state().pipe(filter((s) => s.isSynced && s.protocol._tag === "Settled"))
+  );
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -42,7 +53,10 @@ import { filter, timeout } from "rxjs/operators";
 const GENESIS_SEED_HEX =
   "0000000000000000000000000000000000000000000000000000000000000001";
 
-const DEFAULT_FUND_AMOUNT = 5_000_000n; // 5 NIGHT (6 decimal places)
+// 1000 NIGHT (6 decimal places). A first DUST registration waits until the
+// new UTXO has generated its own fee; a few NIGHT take over an hour to get
+// there, 1000 gets there in seconds.
+const DEFAULT_FUND_AMOUNT = 1_000_000_000n;
 const BALANCE_WAIT_MS = 60_000; // 60 seconds
 const FAUCET_WAIT_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -80,15 +94,15 @@ const NETWORK_CONFIG: Record<
     get indexerWsUrl() {
       return withBlockfrostKey("wss://midnight-preprod.blockfrost.io/api/v0/ws");
     },
-    faucetUrl: "https://faucet.preprod.midnight.network/",
+    faucetUrl: "https://midnight-tmnight-preprod.nethermind.dev/",
   },
   preview: {
     relayURL: new URL("wss://rpc.preview.midnight.network"),
     indexerHttpUrl:
-      "https://indexer.preview.midnight.network/api/v3/graphql",
+      "https://indexer.preview.midnight.network/api/v4/graphql",
     indexerWsUrl:
-      "wss://indexer.preview.midnight.network/api/v3/graphql/ws",
-    faucetUrl: "https://faucet.preview.midnight.network/",
+      "wss://indexer.preview.midnight.network/api/v4/graphql/ws",
+    faucetUrl: "https://midnight-tmnight-preview.nethermind.dev/",
   },
 };
 
@@ -118,30 +132,16 @@ function parseArgs(): Network {
 // ─── Helper: build wallet keys from seed ─────────────────────────────────────
 
 function buildKeysFromSeed(seed: Uint8Array, networkId: Network) {
-  const hd = HDWallet.fromSeed(seed);
-  if (hd.type !== "seedOk") {
-    throw new Error(`HDWallet.fromSeed failed: ${hd.type}`);
-  }
-  const derived = hd.hdWallet
-    .selectAccount(0)
-    .selectRoles([Roles.Zswap, Roles.NightExternal, Roles.Dust] as const)
-    .deriveKeysAt(0);
-  if (derived.type !== "keysDerived") {
-    throw new Error(`deriveKeysAt failed: ${derived.type}`);
-  }
-  hd.hdWallet.clear();
-  const derivedKeys = derived.keys as Record<number, Uint8Array>;
-
-  const shieldedSecretKeys = ledger.ZswapSecretKeys.fromSeed(
-    derivedKeys[Roles.Zswap]
-  );
-  const dustSecretKey = ledger.DustSecretKey.fromSeed(derivedKeys[Roles.Dust]);
+  // WalletSeeds.fromMasterSeed walks the same HD path the 1.x HDWallet code
+  // did (account 0, roles Zswap / NightExternal / Dust, index 0), so the
+  // same master seed gives the same wallet and addresses.
+  const seeds = WalletSeeds.fromMasterSeed(seed);
   const unshieldedKeystore = createKeystore(
-    derivedKeys[Roles.NightExternal],
+    { kind: "schnorr", secret: seeds.unshielded },
     networkId
   );
 
-  return { shieldedSecretKeys, dustSecretKey, unshieldedKeystore };
+  return { seeds, unshieldedKeystore };
 }
 
 // ─── Helper: build configuration ─────────────────────────────────────────────
@@ -165,10 +165,10 @@ function buildConfiguration(network: Network, feeOverhead?: bigint): DefaultConf
       relayURL: new URL("ws://localhost:9944"),
       provingServerUrl: new URL("http://localhost:6300"),
       indexerClientConnection: {
-        indexerHttpUrl: "http://localhost:8088/api/v3/graphql",
-        indexerWsUrl: "ws://localhost:8088/api/v3/graphql/ws",
+        indexerHttpUrl: "http://localhost:8088/api/v4/graphql",
+        indexerWsUrl: "ws://localhost:8088/api/v4/graphql/ws",
       },
-      txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
+      txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema, mergeWalletEntries),
     };
   }
 
@@ -183,7 +183,7 @@ function buildConfiguration(network: Network, feeOverhead?: bigint): DefaultConf
       indexerHttpUrl: netCfg.indexerHttpUrl,
       indexerWsUrl: netCfg.indexerWsUrl,
     },
-    txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
+    txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema, mergeWalletEntries),
   };
 }
 
@@ -191,25 +191,21 @@ function buildConfiguration(network: Network, feeOverhead?: bigint): DefaultConf
 
 async function initWallet(
   configuration: DefaultConfiguration,
-  shieldedSecretKeys: ledger.ZswapSecretKeys,
-  dustSecretKey: ledger.DustSecretKey,
+  seeds: WalletSeeds,
   unshieldedKeystore: ReturnType<typeof createKeystore>
 ): Promise<WalletFacade> {
   const wallet = await WalletFacade.init({
     configuration,
     shielded: (cfg) =>
-      ShieldedWallet(cfg).startWithSecretKeys(shieldedSecretKeys),
+      ShieldedWallet(cfg).startWithSeed(seeds.shielded),
     unshielded: (cfg) =>
       UnshieldedWallet(cfg).startWithPublicKey(
         PublicKey.fromKeyStore(unshieldedKeystore)
       ),
     dust: (cfg) =>
-      DustWallet(cfg).startWithSecretKey(
-        dustSecretKey,
-        ledger.LedgerParameters.initialParameters().dust
-      ),
+      DustWallet(cfg).startWithSeed(seeds.dust),
   });
-  await wallet.start(shieldedSecretKeys, dustSecretKey);
+  await wallet.start(seeds);
   return wallet;
 }
 
@@ -217,7 +213,7 @@ async function initWallet(
 
 async function registerDust(
   wallet: WalletFacade,
-  state: Awaited<ReturnType<typeof wallet.waitForSyncedState>>,
+  state: FacadeState,
   unshieldedKeystore: ReturnType<typeof createKeystore>,
   NIGHT_TOKEN_TYPE: string
 ): Promise<string> {
@@ -236,12 +232,25 @@ async function registerDust(
     );
   }
 
-  const registrationRecipe =
-    await wallet.registerNightUtxosForDustGeneration(
+  // A first registration pays its own fee from the DUST the NIGHT has
+  // generated since it arrived. NIGHT that just arrived (from genesis or a
+  // faucet, in whatever amount) may not cover it yet, and the call throws
+  // InsufficientDustForFeeError with an estimate of when it will. Wait that
+  // long plus a margin and retry; an unreachable fee is a real error.
+  const register = () =>
+    wallet.registerNightUtxosForDustGeneration(
       nightUtxos,
       unshieldedKeystore.getPublicKey(),
-      (payload) => unshieldedKeystore.signData(payload)
+      unshieldedKeystore.signDataAsync
     );
+
+  const registrationRecipe = await register().catch(async (error: unknown) => {
+    if (!isInsufficientDustForFeeError(error) || error.estimate._tag !== "Reachable") throw error;
+    const timeoutMs = Number(error.estimate.seconds) * 1000 + 60_000;
+    console.log(`Waiting ~${Math.ceil(timeoutMs / 1000)}s for the NIGHT to generate the fee...`);
+    await wallet.waitForGeneratedDust(nightUtxos, error.fee, { timeoutMs });
+    return register();
+  });
 
   const finalizedTx = await wallet.finalizeRecipe(registrationRecipe);
   const txId = await wallet.submitTransaction(finalizedTx);
@@ -252,7 +261,7 @@ async function registerDust(
 
 async function main() {
   const network = parseArgs();
-  const NIGHT_TOKEN_TYPE = ledger.nativeToken().raw;
+  const NIGHT_TOKEN_TYPE = ledger.unshieldedToken().raw;
 
   // ─── Step 1: Generate a random seed ──────────────────────────────────────
 
@@ -265,28 +274,19 @@ async function main() {
 
   // ─── Step 2: Build new wallet keys and facade ─────────────────────────────
 
-  const {
-    shieldedSecretKeys,
-    dustSecretKey,
-    unshieldedKeystore,
-  } = buildKeysFromSeed(seed, network);
+  const { seeds, unshieldedKeystore } = buildKeysFromSeed(seed, network);
 
   // No fee overhead: this wallet only registers DUST below (Step 7), which is
   // self-funding (paid by the DUST the registered NIGHT UTXOs generate), so it
   // needs no overhead even at a 0 DUST balance.
   const configuration = buildConfiguration(network);
 
-  const wallet = await initWallet(
-    configuration,
-    shieldedSecretKeys,
-    dustSecretKey,
-    unshieldedKeystore
-  );
+  const wallet = await initWallet(configuration, seeds, unshieldedKeystore);
 
   // ─── Step 3: Wait for initial sync ───────────────────────────────────────
 
   console.log(`Waiting for initial sync (network: ${network})...`);
-  const syncedState = await wallet.waitForSyncedState();
+  const syncedState = await waitForSettled(wallet);
 
   const unshieldedAddr = MidnightBech32m.encode(
     network,
@@ -308,24 +308,18 @@ async function main() {
   if (network === "undeployed") {
     // Step 4: Build a sender facade from the genesis seed
     const genesisSeed = Buffer.from(GENESIS_SEED_HEX, "hex");
-    const {
-      shieldedSecretKeys: genShielded,
-      dustSecretKey: genDust,
-      unshieldedKeystore: genKeystore,
-    } = buildKeysFromSeed(genesisSeed, "undeployed");
+    const { seeds: genSeeds, unshieldedKeystore: genKeystore } = buildKeysFromSeed(
+      genesisSeed,
+      "undeployed"
+    );
 
     // The genesis sender spends (transfers NIGHT) and already holds DUST, so it
     // gets a fee overhead to keep the fee non-zero on the idle devnet (error 117).
     const senderConfiguration = buildConfiguration("undeployed", 1_000_000n);
-    const sender = await initWallet(
-      senderConfiguration,
-      genShielded,
-      genDust,
-      genKeystore
-    );
+    const sender = await initWallet(senderConfiguration, genSeeds, genKeystore);
 
     console.log("Waiting for genesis wallet sync...");
-    await sender.waitForSyncedState();
+    await waitForSettled(sender);
 
     // Step 5: Transfer NIGHT from genesis to new wallet
     let recipientUnshielded: UnshieldedAddress;
@@ -364,7 +358,6 @@ async function main() {
     try {
       recipe = await sender.transferTransaction(
         outputs,
-        { shieldedSecretKeys: genShielded, dustSecretKey: genDust },
         { ttl }
       );
     } catch (err) {
@@ -376,9 +369,7 @@ async function main() {
 
     let signedRecipe;
     try {
-      signedRecipe = await sender.signRecipe(recipe, (payload) =>
-        genKeystore.signData(payload)
-      );
+      signedRecipe = await sender.signRecipe(recipe, genKeystore.signDataAsync);
     } catch (err) {
       console.error(`Error: signRecipe failed: ${err}`);
       await sender.stop();
@@ -430,7 +421,7 @@ async function main() {
         "Note: NIGHT balance not yet visible after 60s — proceeding anyway."
       );
       // Re-read from a fresh synced state
-      const freshState = await wallet.waitForSyncedState();
+      const freshState = await waitForSettled(wallet);
       nightBalance = freshState.unshielded.balances[NIGHT_TOKEN_TYPE] ?? 0n;
     }
     console.log(`NIGHT balance:          ${nightBalance}`);
@@ -438,7 +429,7 @@ async function main() {
     // Step 7: Register DUST
     console.log("Registering NIGHT UTXOs for DUST generation...");
     // Re-sync to pick up the funded UTXOs
-    const freshState = await wallet.waitForSyncedState();
+    const freshState = await waitForSettled(wallet);
     let dustTxId: string;
     try {
       dustTxId = await registerDust(
@@ -529,7 +520,7 @@ async function main() {
 
   // Register DUST
   console.log("Registering NIGHT UTXOs for DUST generation...");
-  const freshState = await wallet.waitForSyncedState();
+  const freshState = await waitForSettled(wallet);
   let dustTxId: string;
   try {
     dustTxId = await registerDust(

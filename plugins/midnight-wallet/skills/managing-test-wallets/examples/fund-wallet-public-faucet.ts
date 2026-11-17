@@ -1,5 +1,5 @@
 // Verified against the package versions pinned in
-// midnight-wallet:sdk-regression-check/versions.lock.json on 2026-06-02.
+// midnight-wallet:sdk-regression-check/versions.lock.json on 2026-11-17.
 // If your installed @midnightntwrk/wallet-sdk-* versions differ,
 // run scripts/drift-check.sh in that skill before trusting this template.
 
@@ -11,10 +11,12 @@ import WebSocket from "ws";
 (globalThis as any).WebSocket = WebSocket;
 
 import { Buffer } from "buffer";
-import { HDWallet, Roles } from "@midnightntwrk/wallet-sdk-hd";
+import { WalletSeeds } from "@midnightntwrk/wallet-sdk-hd";
 import {
   WalletFacade,
+  type FacadeState,
   WalletEntrySchema,
+  mergeWalletEntries,
   type DefaultConfiguration,
 } from "@midnightntwrk/wallet-sdk-facade";
 import { ShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
@@ -25,10 +27,20 @@ import {
 } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
 import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
 import { InMemoryTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
-import * as ledger from "@midnight-ntwrk/ledger-v8";
+import * as ledger from "@midnightntwrk/ledger-v9";
 import { MidnightBech32m } from "@midnightntwrk/wallet-sdk-address-format";
 import { firstValueFrom } from "rxjs";
 import { filter, timeout } from "rxjs/operators";
+
+// Synced, and all three sub-wallets on the same protocol version. A wallet that
+// synced across the ledger 9 fork reports protocol "Crossing" until the last
+// sub-wallet catches up, and a transaction built then can fail with
+// ProtocolVersionMismatchError, so wait for "Settled" before building one.
+function waitForSettled(wallet: WalletFacade): Promise<FacadeState> {
+  return firstValueFrom(
+    wallet.state().pipe(filter((s) => s.isSynced && s.protocol._tag === "Settled"))
+  );
+}
 
 // ─── Network config ───────────────────────────────────────────────────────────
 
@@ -66,16 +78,16 @@ const NETWORK_CONFIG: Record<
     get indexerWsUrl() {
       return withBlockfrostKey("wss://midnight-preprod.blockfrost.io/api/v0/ws");
     },
-    faucetUrl: "https://faucet.preprod.midnight.network/",
+    faucetUrl: "https://midnight-tmnight-preprod.nethermind.dev/",
     networkId: "preprod",
   },
   preview: {
     relayURL: new URL("wss://rpc.preview.midnight.network"),
     indexerHttpUrl:
-      "https://indexer.preview.midnight.network/api/v3/graphql",
+      "https://indexer.preview.midnight.network/api/v4/graphql",
     indexerWsUrl:
-      "wss://indexer.preview.midnight.network/api/v3/graphql/ws",
-    faucetUrl: "https://faucet.preview.midnight.network/",
+      "wss://indexer.preview.midnight.network/api/v4/graphql/ws",
+    faucetUrl: "https://midnight-tmnight-preview.nethermind.dev/",
     networkId: "preview",
   },
 };
@@ -126,30 +138,12 @@ async function main() {
 
   // ─── Step 1: HD derivation ────────────────────────────────────────────────
 
-  const hd = HDWallet.fromSeed(seed);
-  if (hd.type !== "seedOk") {
-    console.error(`HDWallet.fromSeed failed: ${hd.type}`);
-    process.exit(1);
-  }
-  const derived = hd.hdWallet
-    .selectAccount(0)
-    .selectRoles([Roles.Zswap, Roles.NightExternal, Roles.Dust] as const)
-    .deriveKeysAt(0);
-  if (derived.type !== "keysDerived") {
-    console.error(`deriveKeysAt failed: ${derived.type}`);
-    process.exit(1);
-  }
-  hd.hdWallet.clear();
-  const derivedKeys = derived.keys as Record<number, Uint8Array>;
-
-  // ─── Step 2: Key conversion ───────────────────────────────────────────────
-
-  const shieldedSecretKeys = ledger.ZswapSecretKeys.fromSeed(
-    derivedKeys[Roles.Zswap]
-  );
-  const dustSecretKey = ledger.DustSecretKey.fromSeed(derivedKeys[Roles.Dust]);
+  // WalletSeeds.fromMasterSeed walks the same HD path the 1.x HDWallet code
+  // did (account 0, roles Zswap / NightExternal / Dust, index 0), so the
+  // same master seed gives the same wallet and addresses.
+  const seeds = WalletSeeds.fromMasterSeed(seed);
   const unshieldedKeystore = createKeystore(
-    derivedKeys[Roles.NightExternal],
+    { kind: "schnorr", secret: seeds.unshielded },
     netCfg.networkId
   );
 
@@ -165,7 +159,7 @@ async function main() {
       indexerHttpUrl: netCfg.indexerHttpUrl,
       indexerWsUrl: netCfg.indexerWsUrl,
     },
-    txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
+    txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema, mergeWalletEntries),
   };
 
   // ─── Step 4: Wallet facade init ───────────────────────────────────────────
@@ -173,16 +167,13 @@ async function main() {
   const wallet = await WalletFacade.init({
     configuration,
     shielded: (cfg) =>
-      ShieldedWallet(cfg).startWithSecretKeys(shieldedSecretKeys),
+      ShieldedWallet(cfg).startWithSeed(seeds.shielded),
     unshielded: (cfg) =>
       UnshieldedWallet(cfg).startWithPublicKey(
         PublicKey.fromKeyStore(unshieldedKeystore)
       ),
     dust: (cfg) =>
-      DustWallet(cfg).startWithSecretKey(
-        dustSecretKey,
-        ledger.LedgerParameters.initialParameters().dust
-      ),
+      DustWallet(cfg).startWithSeed(seeds.dust),
   });
 
   // ─── Step 5: Start wallet and derive unshielded address ──────────────────
@@ -191,9 +182,9 @@ async function main() {
   // before sync completes — so we can print the address right away and let the
   // user paste it into the faucet while the sync runs in the background.
 
-  const NIGHT_TOKEN_TYPE = ledger.nativeToken().raw;
+  const NIGHT_TOKEN_TYPE = ledger.unshieldedToken().raw;
 
-  await wallet.start(shieldedSecretKeys, dustSecretKey);
+  await wallet.start(seeds);
 
   // Grab the address from the very first state emission (before sync completes).
   const initialState = await firstValueFrom(wallet.state());
@@ -221,7 +212,7 @@ async function main() {
   // funds. We wait for sync before starting the balance watch.
 
   try {
-    const syncPromise = wallet.waitForSyncedState();
+    const syncPromise = waitForSettled(wallet);
     const syncTimeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(
         () => reject(new Error("Timed out waiting for initial sync")),

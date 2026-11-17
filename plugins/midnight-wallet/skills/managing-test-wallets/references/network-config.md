@@ -10,21 +10,21 @@ URLs and the `networkId` change.
 
 ```typescript
 import { InMemoryTransactionHistoryStorage } from '@midnightntwrk/wallet-sdk-abstractions';
-import { WalletEntrySchema, type DefaultConfiguration } from '@midnightntwrk/wallet-sdk-facade';
+import { WalletEntrySchema, mergeWalletEntries, type DefaultConfiguration } from '@midnightntwrk/wallet-sdk-facade';
 
 const configuration: DefaultConfiguration = {
   networkId: 'undeployed',
   // additionalFeeOverhead keeps the fee non-zero on an idle devnet for transfers
-  // and contract calls (else error 117). DUST registration is self-funding and
+  // and contract calls (else error 117). DUST registration pays its own fee and
   // doesn't need it. Full explanation in wallet-sdk/references/wallet-construction.md.
   costParameters: { feeBlocksMargin: 5, additionalFeeOverhead: 1_000_000n },
   relayURL: new URL('ws://localhost:9944'),
   provingServerUrl: new URL('http://localhost:6300'),
   indexerClientConnection: {
-    indexerHttpUrl: 'http://localhost:8088/api/v3/graphql',
-    indexerWsUrl: 'ws://localhost:8088/api/v3/graphql/ws',
+    indexerHttpUrl: 'http://localhost:8088/api/v4/graphql',
+    indexerWsUrl: 'ws://localhost:8088/api/v4/graphql/ws',
   },
-  txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
+  txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema, mergeWalletEntries),
 };
 ```
 
@@ -50,7 +50,7 @@ const configuration: DefaultConfiguration = {
     indexerHttpUrl: withKey('https://midnight-preprod.blockfrost.io/api/v0'),
     indexerWsUrl: withKey('wss://midnight-preprod.blockfrost.io/api/v0/ws'),
   },
-  txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
+  txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema, mergeWalletEntries),
 };
 ```
 
@@ -63,10 +63,10 @@ const configuration: DefaultConfiguration = {
   relayURL: new URL('wss://rpc.preview.midnight.network'),
   provingServerUrl: new URL('http://localhost:6300'),
   indexerClientConnection: {
-    indexerHttpUrl: 'https://indexer.preview.midnight.network/api/v3/graphql',
-    indexerWsUrl: 'wss://indexer.preview.midnight.network/api/v3/graphql/ws',
+    indexerHttpUrl: 'https://indexer.preview.midnight.network/api/v4/graphql',
+    indexerWsUrl: 'wss://indexer.preview.midnight.network/api/v4/graphql/ws',
   },
-  txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
+  txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema, mergeWalletEntries),
 };
 ```
 
@@ -76,9 +76,9 @@ The `preprod`/`preview` examples above omit `additionalFeeOverhead` because publ
 networks have a real, non-zero fee rate. It is the **local devnet** that needs it:
 there the per-block fee rate is ~0, so without an overhead a transfer's or contract
 call's fee is 0 and the node rejects it as `NotNormalized` (error 117). DUST
-registration is the one operation that does not need it on any network — it is
-self-funding (paid by the DUST the registered NIGHT UTXOs generate), so it works
-even at a 0 DUST balance. See
+registration is the one operation that does not need it on any network — it
+pays its own fee from the DUST the registered NIGHT UTXOs have generated, not
+from the wallet's DUST balance (see `dust-registration.md`). See
 [wallet-sdk/references/wallet-construction.md](../../wallet-sdk/references/wallet-construction.md)
 for the full mechanism.
 

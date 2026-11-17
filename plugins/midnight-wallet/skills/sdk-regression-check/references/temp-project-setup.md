@@ -31,7 +31,7 @@ npm install \
   @midnightntwrk/wallet-sdk-indexer-client \
   @midnightntwrk/wallet-sdk-node-client \
   @midnightntwrk/wallet-sdk-prover-client \
-  @midnight-ntwrk/ledger-v8 \
+  @midnightntwrk/ledger-v9 \
   ws \
   rxjs
 npm install -D tsx typescript @types/node @types/ws
@@ -57,9 +57,9 @@ and exits 1. The `step` value tells you where to look:
 
 | step | What it means |
 |------|--------------|
-| `hd-derive` | `HDWallet.fromSeed` or `deriveKeysAt` failed |
-| `key-convert` | `ZswapSecretKeys.fromSeed`, `DustSecretKey.fromSeed`, or `createKeystore` failed |
+| `seed-derive` | `WalletSeeds.fromMasterSeed` failed |
+| `keystore` | `createKeystore` failed |
 | `facade-init` | `WalletFacade.init` failed (factory function or configuration issue) |
-| `wallet-start` | `wallet.start()` failed |
-| `wait-sync` | `wallet.waitForSyncedState()` failed (devnet, indexer, or proof-server unreachable) |
+| `wallet-start` | `wallet.start(seeds)` failed |
+| `wait-sync` | Waiting for a synced, `Settled` state failed (devnet, indexer, or proof-server unreachable) |
 | `balance-read` | Wallet synced but unshielded NIGHT balance was 0 — usually a `dev`-preset or genesis-seed issue |

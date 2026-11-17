@@ -1,6 +1,6 @@
 {
   "name": "midnight-wallet",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Wallet SDK reference, test-wallet management patterns, and SDK regression checking for Midnight Network development.",
   "author": {
     "name": "Midnight Foundation"
