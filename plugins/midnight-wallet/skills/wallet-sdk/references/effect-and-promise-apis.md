@@ -28,9 +28,10 @@ The pattern is consistent across the three infrastructure clients:
 ### Promise API (main export)
 
 ```typescript
-import { PolkadotNodeClient } from "@midnightntwrk/wallet-sdk-node-client";
+import { PolkadotNodeClient, makeConfig } from "@midnightntwrk/wallet-sdk-node-client";
 
-const client = await PolkadotNodeClient.init({ nodeURL: new URL("ws://localhost:9944") });
+// Config also needs reconnectionTimeout / reconnectionDelay; makeConfig fills the defaults.
+const client = await PolkadotNodeClient.init(makeConfig({ nodeURL: new URL("ws://localhost:9944") }));
 
 // Returns an RxJS Observable
 const stream = client.sendMidnightTransaction(serializedTx);
@@ -65,6 +66,9 @@ interface Service {
     serializedTx: SerializedTransaction,
   ): Stream.Stream<SubmissionEvent.SubmissionEvent, NodeClientError.NodeClientError>;
   getGenesis(): Effect.Effect<Genesis, NodeClientError.NodeClientError>;
+  getFinalizedBlock(): Effect.Effect<FinalizedBlock, NodeClientError.NodeClientError>;
+  getBlockHashAt(height: bigint): Effect.Effect<Option.Option<string>, NodeClientError.NodeClientError>;
+  getGenesisHash(): Effect.Effect<string, NodeClientError.NodeClientError>;
 }
 ```
 
@@ -88,7 +92,7 @@ interface Service {
 
 ### Main export
 
-The main entry exports GraphQL query documents, subscription documents, and generated types — it does not expose a Promise-based client class directly. Applications consuming the indexer typically either use the `./effect` sub-export or rely on the indexer integration inside the pending-transactions service.
+The main entry exports GraphQL query documents, subscription documents, and generated types — it does not expose a Promise-based client class directly. Applications consuming the indexer typically either use the `./effect` sub-export or rely on the indexer integration inside the wallets and the transaction-lifecycle service.
 
 ```typescript
 import { TransactionStatus, type TransactionStatusQuery } from "@midnightntwrk/wallet-sdk-indexer-client";
@@ -145,7 +149,7 @@ import {
 } from "@midnightntwrk/wallet-sdk-prover-client/effect";
 ```
 
-`ProverClient` is a `Context.Tag`. Its `Service` proves transactions and can expose a `ledger.ProvingProvider`:
+`ProverClient` is a `Context.Tag`. Its `Service` proves transactions and can expose a `ledger.ProvingProvider`. In 2.0.0 the prover client is typed against `@midnightntwrk/ledger-v9`:
 
 ```typescript
 interface Service {
@@ -172,7 +176,7 @@ The `@midnightntwrk/wallet-sdk-capabilities` package exposes `*Effect` factory f
 import {
   makeDefaultSubmissionService,       // Promise-based
   makeDefaultSubmissionServiceEffect, // Effect-based
-  makeSimulatorSubmissionService,     // In-memory, for testing
+  makeV9SimulatorSubmissionService,   // In-memory (ledger 9 simulator), for testing
   SubmissionError,
   SubmissionEvent,
 } from "@midnightntwrk/wallet-sdk-capabilities/submission";
@@ -182,26 +186,28 @@ import {
 
 ### Proving service
 
+In 2.0.0 provers are per ledger version, and the facade uses a versioned service that routes by the transaction's protocol version:
+
 ```typescript
 import {
-  makeDefaultProvingService,           // Promise-based (delegates to HTTP proof server)
-  makeDefaultProvingServiceEffect,     // Effect-based
-  makeServerProvingService,            // Promise-based, HTTP
-  makeServerProvingServiceEffect,
-  makeWasmProvingService,              // Promise-based, Wasm
-  makeWasmProvingServiceEffect,
-  makeSimulatorProvingService,         // In-memory proof erasure for testing
-  makeSimulatorProvingServiceEffect,
-  fromProvingProvider,                 // Wrap an existing ledger.ProvingProvider
-  fromProvingProviderEffect,
+  makeDefaultVersionedProvingService,       // Promise-based, what the facade uses
+  makeDefaultVersionedProvingServiceEffect, // Effect-based
+  makeV9ServerProvingService,               // ledger 9, HTTP proof server
+  makeV9ServerProvingServiceEffect,
+  makeV9WasmProvingService,                 // ledger 9, in-process Wasm
+  makeV9WasmProvingServiceEffect,
+  makeV9SimulatorProvingService,            // proof erasure for testing
+  makeV9SimulatorProvingServiceEffect,
+  fromV9ProvingProvider,                    // wrap an existing ledger-v9 ProvingProvider
+  fromV9ProvingProviderEffect,
   ProvingError,
   type ProvingService,
   type ProvingServiceEffect,
-  type UnboundTransaction,
+  type VersionedProvingService,
 } from "@midnightntwrk/wallet-sdk-capabilities/proving";
 ```
 
-`ProvingError` (`_tag: 'Wallet.Proving'`) is the typed failure for the Effect variants.
+`ProvingError` (`_tag: 'Wallet.Proving'`) is the typed failure for the Effect variants. Ledger 8 counterparts (`makeV8…`, `fromV8ProvingProvider…`) exist alongside; see `capabilities-deep-dive.md`.
 
 ---
 
@@ -231,4 +237,4 @@ Use the Promise API by default. Reach for the Effect API when:
 1. **You are building an Effect-based service** and want to compose layers and typed errors without manually wrapping Promises.
 2. **You need exhaustive error handling** — the Effect API surfaces every error class in the return type, making it impossible to accidentally swallow errors.
 3. **You need fine-grained resource management** — Effect `Scope` and `Layer` ensure WebSocket connections and Wasm workers are closed deterministically.
-4. **You are writing tests** — the `makeSimulatorProvingServiceEffect` and `makeSimulatorSubmissionService` factories produce in-memory implementations that slot directly into the same Effect service interfaces.
+4. **You are writing tests** — the `makeV9SimulatorProvingServiceEffect` and `makeV9SimulatorSubmissionService` factories produce in-memory implementations that slot directly into the same Effect service interfaces.

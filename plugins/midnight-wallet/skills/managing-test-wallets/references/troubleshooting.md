@@ -12,6 +12,10 @@
 | `state.unshielded.balances[""]` returns `undefined` | Wrong key — empty string is not the native NIGHT key | Use `state.unshielded.balances[ledger.nativeToken().raw]` |
 | Transaction submission rejected | Major SDK version drift, or ledger/protocol mismatch | Run `midnight-wallet:sdk-regression-check` (smoke test); see release notes |
 | Type errors after `npm install` | Major SDK version bump | Run `midnight-wallet:sdk-regression-check` (drift check) |
+| `Insufficient generated dust to cover registration fee` | First registration ran before the new NIGHT generated its own fee | Call `estimateRegistration` then `waitForGeneratedDust(utxos, fee)` before registering; fund more NIGHT (1000 on devnet) so the wait is short |
+| `waitForGeneratedDust` times out | Too little NIGHT, so DUST generation can't reach the fee within the timeout (default 5 min) | Fund more NIGHT, or pass a longer `{ timeoutMs }` |
+| `No guaranteedUnshieldedOffer found in intent` / empty-list error on registration | Registering an empty UTXO list (e.g. the devnet genesis wallet, already registered) | Filter on `!coin.meta.registeredForDustGeneration` and skip when the list is empty |
+| `ProtocolVersionMismatchError` when building a transaction | Built while the facade was `Crossing` the ledger 9 boundary | Wait for `state.isSynced && state.protocol._tag === 'Settled'` first |
 | Recipient never observes incoming NIGHT | Wrong recipient address; or wallet still syncing | Confirm address is unshielded; allow 30-90 seconds on devnet |
 
 ## When in doubt

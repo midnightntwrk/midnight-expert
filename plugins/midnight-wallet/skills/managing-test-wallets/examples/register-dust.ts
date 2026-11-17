@@ -67,7 +67,7 @@ function parseArgs(): Uint8Array {
 async function main() {
   const seed = parseArgs();
 
-  // ─── Step 1: HD derivation ────────────────────────────────────────────────
+  // ─── Step 1: Seed derivation ──────────────────────────────────────────────
 
   // WalletSeeds.fromMasterSeed walks the same HD path the 1.x HDWallet code
   // did (account 0, roles Zswap / NightExternal / Dust, index 0), so the
@@ -164,13 +164,13 @@ async function main() {
 
   // ─── Step 9: Build registration recipe ───────────────────────────────────
   // registerNightUtxosForDustGeneration handles signing internally; we pass the
-  // verifying key and a synchronous sign callback. No separate signRecipe step.
+  // verifying key and a sign callback that returns a Promise (signDataAsync).
+  // No separate signRecipe step.
 
   // A first registration pays its own fee from the DUST the NIGHT would have
   // generated since it arrived. Registering NIGHT that hasn't generated it yet
   // throws "Insufficient generated dust to cover registration fee", so wait.
-  const { fee } = await wallet.estimateRegistration(nightUtxos);
-  await wallet.waitForGeneratedDust(nightUtxos, fee);
+  await wallet.waitForGeneratedDust(nightUtxos, estimateResult.fee);
 
   let registrationRecipe;
   try {

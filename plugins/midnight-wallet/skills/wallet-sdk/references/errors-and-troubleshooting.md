@@ -2,14 +2,17 @@
 
 ## Overview
 
-This reference covers the typed error classes emitted by the Wallet SDK at the Effect-API level. All errors extend `Data.TaggedError` from the `effect` library, giving each class a `_tag: string` discriminant for exhaustive pattern matching. The wallet-layer errors are internal to the variant implementations; they propagate to callers through `WalletFacade` method rejections or through the `rawState` stream.
+This reference covers the typed error classes emitted by the Wallet SDK (2.0.0) at the Effect-API level. All errors extend `Data.TaggedError` from the `effect` library, giving each class a `_tag: string` discriminant for exhaustive pattern matching. The wallet-layer errors are internal to the variant implementations; they propagate to callers through `WalletFacade` method rejections or through the `rawState` stream.
 
 For symptom-to-fix guidance for end-users and test script authors, see [managing-test-wallets: references/troubleshooting.md](../../managing-test-wallets/references/troubleshooting.md).
 
+Each wallet package has two variants with their own `WalletError.ts`: `v1` (ledger 8) and `v2` (ledger 9). The tags are the same across both except where noted below.
+
 Source of truth:
-- `/tmp/midnight-wallet/packages/shielded-wallet/src/v1/WalletError.ts`
-- `/tmp/midnight-wallet/packages/unshielded-wallet/src/v1/WalletError.ts`
-- `/tmp/midnight-wallet/packages/dust-wallet/src/v1/WalletError.ts`
+- `/tmp/midnight-wallet/packages/shielded-wallet/src/v{1,2}/WalletError.ts`
+- `/tmp/midnight-wallet/packages/unshielded-wallet/src/v{1,2}/WalletError.ts`
+- `/tmp/midnight-wallet/packages/dust-wallet/src/v{1,2}/WalletError.ts`
+- `/tmp/midnight-wallet/packages/abstractions/src/WalletTransaction.ts`
 - `/tmp/midnight-wallet/packages/runtime/src/abstractions/WalletRuntimeError.ts`
 - `/tmp/midnight-wallet/packages/utilities/src/networking/`
 - `/tmp/midnight-wallet/packages/node-client/src/effect/NodeClientError.ts`
@@ -41,7 +44,7 @@ Effect.catchTags(someEffect, {
 
 ### Shielded Wallet (`@midnightntwrk/wallet-sdk-shielded`)
 
-Source: `/tmp/midnight-wallet/packages/shielded-wallet/src/v1/WalletError.ts`
+Source: `/tmp/midnight-wallet/packages/shielded-wallet/src/v{1,2}/WalletError.ts`
 
 `type WalletError` is a union of:
 
@@ -55,13 +58,15 @@ Source: `/tmp/midnight-wallet/packages/shielded-wallet/src/v1/WalletError.ts`
 | `InvalidCoinHashesError` | `'Wallet.InvalidCoinHashes'` | `message`, `missingNonces: Set<Nonce>` | Some expected coin nonces are absent from the state |
 | `TransactingError` | `'Wallet.Transacting'` | `message`, `cause?` | Error during transaction construction |
 | `TransactionHistoryError` | `'Wallet.TransactionHistory'` | `message`, `cause?` | Error accessing or writing transaction history |
-| `LedgerOps.LedgerError` | `'LedgerError'` | `message`, `cause?` | Error returned by the `@midnight-ntwrk/ledger-v8` library |
+| `BlocklessFinalizedEntryError` | `'Wallet.BlocklessFinalizedEntry'` | `message`, `hash`, … | A finalized history entry with no recorded block, met where a block is needed (only entries restored from pre-lifecycle history) |
+| `OutOfOrderSyncUpdateError` | `'Wallet.OutOfOrderSyncUpdate'` | `message`, `expected`, `received` | The source delivered a sync event out of order |
+| `LedgerOps.LedgerError` | `'LedgerError'` | `message`, `cause?` | Error returned by the ledger library (`@midnightntwrk/ledger-v8` / `-v9`) |
 
 Note: `SubmissionError` here is a *wallet-level* error (tag `'Wallet.SubmissionWalletError'`), distinct from `SubmissionError` in `@midnightntwrk/wallet-sdk-capabilities/submission` (tag `'SubmissionError'`).
 
 ### Unshielded Wallet (`@midnightntwrk/wallet-sdk-unshielded-wallet`)
 
-Source: `/tmp/midnight-wallet/packages/unshielded-wallet/src/v1/WalletError.ts`
+Source: `/tmp/midnight-wallet/packages/unshielded-wallet/src/v{1,2}/WalletError.ts`
 
 `type WalletError` is a union of:
 
@@ -73,6 +78,8 @@ Source: `/tmp/midnight-wallet/packages/unshielded-wallet/src/v1/WalletError.ts`
 | `AddressError` | `'Wallet.Address'` | `message`, `originalAddress: string`, `cause?` | Invalid unshielded address |
 | `TransactingError` | `'Wallet.Transacting'` | `message`, `cause?` | Transaction construction error |
 | `SignError` | `'Wallet.Sign'` | `message`, `cause?` | Failed to sign a transaction segment |
+| `SchemeMismatchError` (v2 only) | `'Wallet.SchemeMismatch'` | `at`, … | A signature scheme (`schnorr` vs `ecdsa`) is mixed across an unshielded key, address or signature; caught at construction or signing |
+| `OutOfOrderSyncUpdateError` | `'Wallet.OutOfOrderSyncUpdate'` | `expected`, `received` | The source delivered a sync event out of order |
 | `ApplyTransactionError` | `'Wallet.ApplyTransaction'` | `message`, `cause?` | Error applying a confirmed transaction to wallet state |
 | `RollbackUtxoError` | `'Wallet.RollbackUtxo'` | `message`, `utxo: Utxo`, `cause?` | Error rolling back a UTXO (e.g. stale UTXO handling) |
 | `SpendUtxoError` | `'Wallet.SpendUtxo'` | `message`, `utxo: Utxo`, `cause?` | Error spending a UTXO |
@@ -82,7 +89,7 @@ Also exported (not in the union): `UtxoNotFoundError` (`_tag: 'UtxoNotFoundError
 
 ### Dust Wallet (`@midnightntwrk/wallet-sdk-dust-wallet`)
 
-Source: `/tmp/midnight-wallet/packages/dust-wallet/src/v1/WalletError.ts`
+Source: `/tmp/midnight-wallet/packages/dust-wallet/src/v{1,2}/WalletError.ts`
 
 `type WalletError` is a union of:
 
@@ -93,9 +100,50 @@ Source: `/tmp/midnight-wallet/packages/dust-wallet/src/v1/WalletError.ts`
 | `TransactingError` | `'Wallet.Transacting'` | `message`, `cause?` | Transaction construction |
 | `InsufficientFundsError` | `'Wallet.InsufficientFunds'` | `message`, `tokenType: string` | Cannot cover DUST amount (note: no `amount` field — lighter version) |
 | `TransactionHistoryError` | `'Wallet.TransactionHistory'` | `message`, `cause?` | Transaction history error |
+| | `'Wallet.BlocklessFinalizedEntry'`, `'Wallet.OutOfOrderSyncUpdate'` | | As for the shielded wallet |
+| (v2 only) | `'Wallet.SnapshotSyncMismatch'` | | A snapshot saved by a projections (eventless) sync restored into a wallet that replays dust events; refused at restore |
 | `LedgerOps.LedgerError` | `'LedgerError'` | `message`, `cause?` | Ledger library error |
 
 The dust wallet has a narrower error surface than shielded or unshielded — it does not handle address errors, coin-hash errors, or UTXO rollback directly.
+
+#### `InsufficientDustForFeeError` (`'Wallet.InsufficientDustForFee'`)
+
+Exported from the package root, raised by both variants. A **first** DUST registration pays its fee from the DUST the NIGHT being registered has generated; if that isn't enough yet, registration fails with this error. Fields (amounts in Specks):
+
+| Field | Meaning |
+|---|---|
+| `fee` | The fee the registration needs |
+| `claimableFeePayment` | What the UTXOs can pay right now |
+| `shortfall` | `fee - claimableFeePayment` |
+| `estimate` | `{ _tag: 'Reachable', seconds, at }` (when it will be covered) or `{ _tag: 'Unreachable', reason: 'NoGeneration' \| 'ExceedsCap' }` |
+
+```typescript
+import { isInsufficientDustForFeeError } from '@midnightntwrk/wallet-sdk-dust-wallet';
+
+try {
+  await wallet.registerNightUtxosForDustGeneration(utxos, keystore.getPublicKey(), keystore.signDataAsync);
+} catch (err) {
+  if (isInsufficientDustForFeeError(err) && err.estimate._tag === 'Reachable') {
+    console.warn(`short by ${err.shortfall}, covered at ${err.estimate.at.toISOString()}`);
+  } else throw err;
+}
+```
+
+Avoid it by calling `estimateRegistration` then `waitForGeneratedDust(utxos, fee)` before registering (see [transactions.md](transactions.md#dust-registration)).
+
+---
+
+## Protocol-Boundary Errors
+
+From `@midnightntwrk/wallet-sdk-abstractions` (`WalletTransaction`):
+
+| Class | `_tag` | Fields | When raised |
+|-------|--------|--------|-------------|
+| `ProtocolVersionMismatchError` | `'@midnightntwrk/wallet-sdk-abstractions/WalletTransaction/ProtocolVersionMismatchError'` | `authoredFor`, `accepted`, `stage` | A transaction is used at a protocol version other than the one it was built for. Typical cause: building while `state.protocol._tag === 'Crossing'` around the ledger 9 fork, or holding a recipe across the fork |
+| `ForeignTransactionHandleError` | `'…/WalletTransaction/ForeignTransactionHandleError'` | | A transaction handle that this SDK instance didn't produce |
+| `WireFormatError` | `'…/WalletTransaction/WireFormatError'` | `message`, `cause?` | Bytes can't be read as a transaction of a known version |
+
+Fix for `ProtocolVersionMismatchError`: wait for `isSynced && protocol._tag === 'Settled'` before building, and rebuild (don't resubmit) a transaction authored before the fork. The lifecycle marks such a submitted transaction `Orphaned`.
 
 ---
 
@@ -168,7 +216,7 @@ Source: `/tmp/midnight-wallet/packages/utilities/src/LedgerOps.ts`
 class LedgerError extends Data.TaggedError('LedgerError')<{ message: string; cause?: unknown }>
 ```
 
-Wraps errors thrown by `@midnight-ntwrk/ledger-v8` operations. It is included in the `WalletError` union for shielded and dust wallets. The `cause` field holds the original ledger exception.
+Wraps errors thrown by ledger (`@midnightntwrk/ledger-v8` / `@midnightntwrk/ledger-v9`) operations. It is included in the `WalletError` union for shielded and dust wallets. The `cause` field holds the original ledger exception.
 
 ---
 
@@ -181,6 +229,10 @@ Wraps errors thrown by `@midnight-ntwrk/ledger-v8` operations. It is included in
 | Transaction submit throws or rejects | `SubmissionError` (capability-level), `TransactionInvalidError` (node-level) | Inspect rejection reason; check ledger version compatibility |
 | Transfer fails with insufficient funds | `InsufficientFundsError` (`_tag: 'Wallet.InsufficientFunds'`) | Check `tokenType` and `amount` fields for which token is short |
 | DUST-related failure | `InsufficientFundsError` from the dust wallet (`tokenType` will be the DUST token type) | Ensure DUST has been registered and accrued |
+| First DUST registration throws "Insufficient generated dust…" | `InsufficientDustForFeeError` (`'Wallet.InsufficientDustForFee'`) | Call `estimateRegistration` + `waitForGeneratedDust` first; register more NIGHT if `estimate` is `Unreachable` |
+| Registration fails with "No guaranteedUnshieldedOffer found in intent" | `TransactingError` (`'Wallet.Transacting'`) | The UTXO list was empty (e.g. everything is already registered); skip registration |
+| Transaction fails around the ledger 9 fork, or right after a fresh sync | `ProtocolVersionMismatchError` | Wait for `protocol._tag === 'Settled'`; rebuild the transaction |
+| Unshielded sign fails with a scheme error | `'Wallet.SchemeMismatch'` (v2) | Keystore scheme (`kind`) doesn't match the key the wallet was started with |
 | Stale UTXO / UTXO not found | `SpendUtxoError`, `RollbackUtxoError`, `UtxoNotFoundError` (unshielded) | A concurrent spend or sync gap consumed the UTXO; wait for sync and retry |
 | Address parsing failure | `AddressError` | Verify address format; check `networkId` matches the address prefix |
 | Proof server unreachable | `ClientError` or `ServerError` (networking), `ProvingError` (capabilities) | Check `provingServerUrl`; ensure proof server is running |
@@ -196,7 +248,8 @@ When using the Promise API, check `error.constructor.name` or `error._tag` (if t
 
 ```typescript
 try {
-  await facade.shielded.transferNight({ ... });
+  const recipe = await wallet.transferTransaction(outputs, { ttl });
+  // ...
 } catch (err) {
   if (err && typeof err === 'object' && '_tag' in err) {
     switch ((err as { _tag: string })._tag) {

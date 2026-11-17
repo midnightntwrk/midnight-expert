@@ -2,7 +2,7 @@
 
 ## Overview
 
-The variant system is the mechanism by which the Midnight Wallet SDK handles protocol upgrades. Each wallet type (shielded, unshielded, dust) is versioned: a `v1` implementation is registered against a specific `ProtocolVersion`, and if the network hard-forks the runtime automatically migrates state to the next registered variant. Most application code never touches this layer directly — `WalletFacade` handles dispatch internally.
+The variant system is the mechanism by which the Midnight Wallet SDK handles protocol upgrades. Each wallet type (shielded, unshielded, dust) is versioned: each implementation is registered against the `ProtocolVersion` it starts at, and when the network hard-forks the runtime migrates state to the next registered variant. Wallet SDK 2.0.0 is the first release where this matters in practice: every default wallet registers **two** variants, `v1` (ledger 8) and `v2` (ledger 9, from the `forks.v9` version in the configuration), so a wallet syncing from genesis crosses the fork on its own. Most application code never touches this layer directly — `WalletFacade` handles dispatch internally; what you see of it is `FacadeState.protocol` (`Settled` / `Crossing`).
 
 Source of truth: `/tmp/midnight-wallet/packages/runtime/src/`
 
@@ -12,11 +12,13 @@ Source of truth: `/tmp/midnight-wallet/packages/runtime/src/`
 
 Each concrete wallet package exposes a variant builder for its current protocol version. The pattern is:
 
-- `@midnightntwrk/wallet-sdk-shielded` — `V1Builder` (produces a `V1Variant` tagged with `V1Tag`)
-- `@midnightntwrk/wallet-sdk-unshielded-wallet` — analogous `V1Builder`
-- `@midnightntwrk/wallet-sdk-dust-wallet` — analogous `V1Builder`
+- `@midnightntwrk/wallet-sdk-shielded/v1` — `V1Builder` / `V1Tag` (ledger 8); `/v2` — `V2Builder` / `V2Tag` (ledger 9)
+- `@midnightntwrk/wallet-sdk-unshielded-wallet/v1` and `/v2` — analogous builders
+- `@midnightntwrk/wallet-sdk-dust-wallet/v1` and `/v2` — analogous builders
 
-Variants carry a unique symbol tag (`V1Tag: unique symbol = Symbol('V1')`) that the runtime uses for type-safe dispatch. A "versioned variant" pairs the variant object with the `ProtocolVersion` it handles:
+The default `ShieldedWallet(config)`, `UnshieldedWallet(config)` and `DustWallet(config)` already register both (`V1Builder` from the minimum supported version, `V2Builder` with a cross-ledger migration from `forks.v9`). To customize one side, use the package's `CustomForkingShieldedWallet` / `CustomForkingUnshieldedWallet` / `CustomForkingDustWallet`, which take one builder-plus-configuration per side.
+
+Variants carry a unique tag (`V1Tag`, `V2Tag`) that the runtime uses for type-safe dispatch. A "versioned variant" pairs the variant object with the `ProtocolVersion` it handles:
 
 ```typescript
 type VersionedVariant<T extends AnyVariant> = Readonly<{
@@ -55,10 +57,7 @@ The returned class (`BaseWalletClass`) has static methods `startEmpty`, `startFi
 
 ```typescript
 export interface Runtime<Variants extends Variant.AnyVersionedVariantArray> {
-  readonly stateChanges: Stream.Stream<
-    ProtocolState.ProtocolState<Variant.StateOf<HList.Each<Variants>>>,
-    WalletRuntimeError
-  >;
+  readonly stateChanges: Stream.Stream<RuntimeState<Variants>, WalletRuntimeError>;
 
   readonly progress: Effect.Effect<Progress>;
 
@@ -67,15 +66,20 @@ export interface Runtime<Variants extends Variant.AnyVersionedVariantArray> {
   dispatch<TResult, E = never>(
     impl: Poly.PolyFunction<Variant.RunningVariantOf<HList.Each<Variants>>, Effect.Effect<TResult, E>>,
   ): Effect.Effect<TResult, WalletRuntimeError | E>;
+
+  onVariantActivation<E = never>(
+    impl: Poly.PolyFunction<Variant.RunningVariantOf<HList.Each<Variants>>, Effect.Effect<void, E>>,
+  ): Effect.Effect<void>;
 }
 ```
 
 | Member | Type | Description |
 |--------|------|-------------|
-| `stateChanges` | `Stream<ProtocolState<State>, WalletRuntimeError>` | Continuous stream of wallet state snapshots |
+| `stateChanges` | `Stream<RuntimeState<Variants>, WalletRuntimeError>` | Continuous stream of wallet state snapshots |
 | `progress` | `Effect<{ sourceGap: bigint; applyGap: bigint }>` | Sync progress gaps; both `0n` means fully synced |
 | `currentVariant` | `Effect<EachRunningVariant<Variants>>` | The currently active running variant |
 | `dispatch<T, E>(fn)` | `(PolyFunction) => Effect<T, WalletRuntimeError \| E>` | Routes a polymorphic function call to the active variant |
+| `onVariantActivation(fn)` | `(PolyFunction) => Effect<void>` | Runs a callback each time a variant becomes active (e.g. after the fork) |
 
 ---
 
@@ -85,7 +89,8 @@ The `dispatch` method accepts a `PolyFunction` — a visitor object where each k
 
 ```typescript
 runtime.dispatch({
-  [V1Tag]: (runningVariant) => runningVariant.sendTransaction(tx),
+  [V1Tag]: (runningVariant) => runningVariant.balanceTransaction(keys.v8, tx), // ledger 8 keys
+  [V2Tag]: (runningVariant) => runningVariant.balanceTransaction(keys.v9, tx), // ledger 9 keys
 })
 ```
 
@@ -107,6 +112,7 @@ This sub-export contains the contracts that variant builders and variants must i
 | `StateChange` | `StateChange<TState>` tagged enum — variants: `State`, `ProgressUpdate`, `VersionChange` |
 | `VersionChangeType` | `VersionChangeType` tagged enum — variants: `Version` (specific protocol version), `Next` (next registered variant, used in testing) |
 | `WalletRuntimeError` | `class WalletRuntimeError extends Data.TaggedError('WalletRuntimeError')` — cross-cutting runtime error |
+| `StartMaterial` | What a wallet is started from: `{ _tag: 'FromSeed', seed }` or `{ _tag: 'ForVariants', byTag }` (per-variant key objects); helpers `fromSeed`, `forVariants`, `forVariant` |
 
 ### `Variant<TTag, TState, TPreviousState, TRunning>` contract
 
@@ -114,7 +120,7 @@ This sub-export contains the contracts that variant builders and variants must i
 type Variant<TTag, TState, TPreviousState, TRunning extends RunningVariant<TTag, TState>> =
   Poly.WithTag<TTag> & {
     start(context: VariantContext<TState>): Effect<TRunning, WalletRuntimeError, Scope.Scope>;
-    migrateState(previousState: TPreviousState): Effect<TState>;
+    migrateState(previousState: TPreviousState): Effect<TState, WalletRuntimeError>;
   };
 ```
 
@@ -139,7 +145,7 @@ The `state` stream must emit `StateChange` values. The runtime reads this stream
 
 You may need to interact with this layer if:
 
-1. **Writing a custom variant** — implementing `Variant` and `VariantBuilder` to handle a hard-fork or experimental protocol version before it is officially released.
+1. **Writing a custom variant** — implementing `Variant` and `VariantBuilder` to handle a hard-fork or experimental protocol version before it is officially released, or swapping one side of a forking wallet (e.g. the dust wallet's ledger 9 sync service) via the `CustomForking*Wallet` factories.
 2. **Advanced state serialisation** — if you need to inspect which variant produced a given state snapshot, `currentVariant` gives you the running variant with its tag.
 3. **Testing protocol migrations** — `VersionChangeType.Next` lets tests trigger a variant migration without specifying a concrete protocol version.
 
@@ -149,7 +155,7 @@ For everything else, work through the facade API or the per-wallet wallet classe
 
 ## Import Verification
 
-The following imports resolve against `@midnightntwrk/wallet-sdk-runtime@1.0.4` (verified with `tsc --noEmit` in the verify harness):
+The following imports resolve against `@midnightntwrk/wallet-sdk-runtime@2.0.0` (verified with `tsc --noEmit`):
 
 ```typescript
 import { WalletBuilder, Runtime } from "@midnightntwrk/wallet-sdk-runtime";
@@ -159,6 +165,7 @@ import type {
   WalletLike,
   StateChange,
   VersionChangeType,
+  StartMaterial,
 } from "@midnightntwrk/wallet-sdk-runtime/abstractions";
 ```
 

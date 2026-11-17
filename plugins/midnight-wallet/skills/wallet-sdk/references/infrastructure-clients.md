@@ -90,8 +90,10 @@ The proof server runs the ZK circuit to generate a SNARK proof for each
 transaction. This is the most time-consuming step in the transaction pipeline.
 
 **WASM alternative:** For browser environments or offline proving, the
-`@midnightntwrk/wallet-sdk-prover-client` package also exports a WASM-based
-prover through its capabilities package. This avoids the need for a separate
+`@midnightntwrk/wallet-sdk-prover-client/effect` sub-export has a `WasmProver`
+layer, and the capabilities package has an in-process `makeV9WasmProvingService`
+(select it per ledger version with `provers: { v9: { kind: 'wasm' } }` in the
+wallet configuration). This avoids the need for a separate
 proof server process but is significantly slower.
 
 > **See also:** [transactions.md](transactions.md) for how proving fits into
@@ -138,7 +140,8 @@ not in the address-format package:
 ```typescript
 import { createKeystore, PublicKey } from '@midnightntwrk/wallet-sdk-unshielded-wallet';
 
-const keystore = createKeystore(secretKey, 'testnet');
+// 2.0.0: the secret is tagged with its signature scheme
+const keystore = createKeystore({ kind: 'schnorr', secret: seeds.unshielded }, 'testnet');
 
 // PublicKey.fromKeyStore extracts the public key, hex address, and bech32 address
 const pubkey = PublicKey.fromKeyStore(keystore);
@@ -147,21 +150,24 @@ const pubkey = PublicKey.fromKeyStore(keystore);
 
 The `UnshieldedKeystore` interface provides:
 
-- `signData(data: Uint8Array): Signature` — sign arbitrary data
+- `signDataAsync(data: Uint8Array): Promise<Signature>` — the async signer to pass as `SignSegment` (`signRecipe`, `registerNightUtxosForDustGeneration`, …)
+- `signData(data: Uint8Array): Signature` — the synchronous signing primitive
 - `getBech32Address(): MidnightBech32m` — the encoded address
 - `getPublicKey(): SignatureVerifyingKey` — the raw public key
 
-> **See also:** [key-derivation.md](key-derivation.md) for how secret keys are
-> derived from seed phrases, and [wallet-construction.md](wallet-construction.md)
+> **See also:** [key-derivation.md](key-derivation.md) for how the seeds are
+> derived from a master seed or mnemonic, and [wallet-construction.md](wallet-construction.md)
 > for passing the keystore to the wallet builder.
 
 ## Customizing the wallet's services
 
 `WalletFacade.init` accepts factory functions for `submissionService`,
-`pendingTransactionsService`, and `provingService`. The default
-implementations come from `@midnightntwrk/wallet-sdk-capabilities`.
+`transactionLifecycleService`, `provingService`, `validationService`,
+`fetchBlockData` and `clock`. The default implementations come from
+`@midnightntwrk/wallet-sdk-capabilities`.
 
-To customize a service (e.g. swap the HTTP prover for the WASM prover,
-add metrics to submission, or use a custom pending-transactions store),
+To customize a service (e.g. swap the HTTP prover for the Wasm prover —
+often just `provers` in the configuration — add metrics to submission, or
+restore saved transaction-lifecycle state),
 see `capabilities-deep-dive.md` for the full sub-export list and
 factory signatures.

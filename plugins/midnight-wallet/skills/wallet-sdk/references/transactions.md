@@ -2,35 +2,40 @@
 
 The Wallet SDK transaction pipeline moves a payment or contract interaction through five stages: create, balance, sign, prove, and submit. Every public method on `WalletFacade` that touches transactions follows this lifecycle.
 
+> **Wallet SDK 2.0.0:** none of these methods take secret keys any more. The wallet holds the keys it derived from the seeds passed to `wallet.start(seeds)`. Build transactions only once the wallet is synced **and** `state.protocol._tag === 'Settled'` (see [state-and-balances.md](state-and-balances.md#protocol-phase)); a recipe also records the `protocolVersion` it was built for, and using it at a different version fails with `ProtocolVersionMismatchError`.
+
 ## Transaction Lifecycle Overview
 
 | Stage | Input | Output | What happens |
 |-------|-------|--------|--------------|
-| **Create** | Transfer outputs, secret keys, TTL | `UnprovenTransactionRecipe` | Builds the raw transaction and balances it in one call |
-| **Balance** | Unproven, unbound, or finalized tx + secret keys | `BalancingRecipe` (one of three recipe types) | Adds shielded, unshielded, and dust/fee inputs to cover outputs |
+| **Create** | Transfer outputs, TTL | `UnprovenTransactionRecipe` | Builds the raw transaction and balances it in one call |
+| **Balance** | Unproven, unbound, or finalized tx + TTL | `BalancingRecipe` (one of three recipe types) | Adds shielded, unshielded, and dust/fee inputs to cover outputs |
 | **Sign** | `BalancingRecipe` + signing callback | `BalancingRecipe` (signed) | Attaches cryptographic signatures to each transaction segment |
 | **Prove** | `BalancingRecipe` or `UnprovenTransaction` | `FinalizedTransaction` | Generates ZK proofs via the proof server (most expensive step) |
 | **Submit** | `FinalizedTransaction` | `TransactionIdentifier` | Sends the proven transaction to the network |
 
 Three recipe types flow through the pipeline:
 
-- **`UnprovenTransactionRecipe`** -- wraps a single `ledger.UnprovenTransaction`
-- **`UnboundTransactionRecipe`** -- wraps an `UnboundTransaction` plus an optional balancing `UnprovenTransaction`
-- **`FinalizedTransactionRecipe`** -- wraps a `ledger.FinalizedTransaction` (the original) plus a balancing `UnprovenTransaction`
+- **`UnprovenTransactionRecipe`** -- `transaction` (unproven)
+- **`UnboundTransactionRecipe`** -- `baseTransaction` (unbound) plus an optional balancing unproven transaction
+- **`FinalizedTransactionRecipe`** -- `originalTransaction` (finalized) plus a balancing unproven transaction
+
+Every recipe also carries `protocolVersion`, the version its parts have to be proved and submitted at. The transactions inside are SDK handles (`UnprovenTx`, `UnboundTx`, `FinalizedTx` from `@midnightntwrk/wallet-sdk-abstractions`) that seal the bytes together with that version.
 
 ## Creating Transfers
 
 `transferTransaction()` creates and balances a transfer in a single call. It accepts both shielded and unshielded outputs, merges the resulting transactions, and adds fee balancing automatically.
 
 ```typescript
-import { WalletFacade, type CombinedTokenTransfer } from '@midnightntwrk/wallet-sdk-facade';
+import { type CombinedTokenTransfer } from '@midnightntwrk/wallet-sdk-facade';
+import * as ledger from '@midnightntwrk/ledger-v9';
 
 const outputs: CombinedTokenTransfer[] = [
   {
     type: 'unshielded',
     outputs: [
       {
-        type: 'NIGHT',
+        type: ledger.unshieldedToken().raw, // NIGHT
         receiverAddress: recipientUnshieldedAddress,
         amount: 5_000_000n, // 5 NIGHT (6 decimal places)
       },
@@ -40,23 +45,21 @@ const outputs: CombinedTokenTransfer[] = [
     type: 'shielded',
     outputs: [
       {
-        type: 'NIGHT',
+        type: ledger.shieldedToken().raw,
         receiverAddress: recipientShieldedAddress,
-        amount: 10_000_000n, // 10 NIGHT
+        amount: 10_000_000n,
       },
     ],
   },
 ];
 
-const recipe = await wallet.transferTransaction(
-  outputs,
-  { shieldedSecretKeys, dustSecretKey },
-  { ttl: new Date(Date.now() + 3600_000) }, // 1-hour TTL
-);
+const recipe = await wallet.transferTransaction(outputs, {
+  ttl: new Date(Date.now() + 3600_000), // 1-hour TTL
+});
 // recipe.type === 'UNPROVEN_TRANSACTION'
 ```
 
-`CombinedTokenTransfer` is a discriminated union -- either `{ type: 'shielded', outputs: TokenTransfer<ShieldedAddress>[] }` or `{ type: 'unshielded', outputs: TokenTransfer<UnshieldedAddress>[] }`. Each `TokenTransfer` specifies a `type` (token type string, e.g. `'NIGHT'`), a `receiverAddress`, and an `amount` in the smallest unit. For NIGHT, amounts use 6 decimal places (1 NIGHT = 1,000,000 units).
+`CombinedTokenTransfer` is a discriminated union -- either `{ type: 'shielded', outputs: TokenTransfer<ShieldedAddress>[] }` or `{ type: 'unshielded', outputs: TokenTransfer<UnshieldedAddress>[] }`. Each `TokenTransfer` specifies a `type` (the raw token type, e.g. `ledger.unshieldedToken().raw` for NIGHT), a `receiverAddress` (a decoded `UnshieldedAddress` / `ShieldedAddress`, such as what `wallet.unshielded.getAddress()` returns), and an `amount` in the smallest unit. For NIGHT, amounts use 6 decimal places (1 NIGHT = 1,000,000 units).
 
 The `payFees` option defaults to `true`. Set it to `false` to skip dust/fee balancing (useful when composing transactions manually).
 
@@ -70,17 +73,13 @@ Balancing adds inputs to cover a transaction's outputs across shielded, unshield
 | `balanceUnboundTransaction` | `UnboundTransaction` | `UnboundTransactionRecipe` |
 | `balanceFinalizedTransaction` | `ledger.FinalizedTransaction` | `FinalizedTransactionRecipe` |
 
-All three accept the same `secretKeys` and `options` parameters:
+All three take the transaction and an `options` object (no keys):
 
 ```typescript
-const recipe = await wallet.balanceUnprovenTransaction(
-  unprovenTx,
-  { shieldedSecretKeys, dustSecretKey },
-  {
-    ttl: new Date(Date.now() + 3600_000),
-    tokenKindsToBalance: 'all', // default
-  },
-);
+const recipe = await wallet.balanceUnprovenTransaction(unprovenTx, {
+  ttl: new Date(Date.now() + 3600_000),
+  tokenKindsToBalance: 'all', // default
+});
 ```
 
 The optional `tokenKindsToBalance` parameter controls which token kinds are balanced. It accepts `'all'` (default) or an array of specific kinds: `'shielded'`, `'unshielded'`, `'dust'`. For example, `['shielded', 'dust']` skips unshielded balancing.
@@ -89,30 +88,27 @@ Internally, balancing runs in stages: unshielded balancing, shielded balancing, 
 
 ## Signing
 
-`signRecipe` signs all transaction segments in a recipe using a synchronous callback:
+`signRecipe` signs all transaction segments in a recipe using an **async** callback:
 
 ```typescript
-const signedRecipe = await wallet.signRecipe(
-  recipe,
-  (data: Uint8Array) => ledger.signData(signingKey, data),
-);
+const signedRecipe = await wallet.signRecipe(recipe, unshieldedKeystore.signDataAsync);
 ```
 
-The callback type is `(data: Uint8Array) => ledger.Signature` -- it is **synchronous**, not async. The method itself returns `Promise<BalancingRecipe>` because it awaits internal delegation, but the signing callback must return a `ledger.Signature` directly.
+The callback type is `SignSegment = (data: Uint8Array) => Promise<Signature>` (exported from `@midnightntwrk/wallet-sdk-facade` and `@midnightntwrk/wallet-sdk-unshielded-wallet`). It changed from synchronous in 1.x so that MPC and HSM signers fit. The keystore from `createKeystore` has `signDataAsync` with exactly that shape; its `signData` is the synchronous primitive. Only unshielded spends need signing — a shielded-only transfer can go straight to `finalizeRecipe`.
 
 Two lower-level signing methods are also available:
 
-- **`signUnprovenTransaction(tx, signSegment)`** -- signs a single `ledger.UnprovenTransaction`, returns `Promise<ledger.UnprovenTransaction>`
-- **`signUnboundTransaction(tx, signSegment)`** -- signs a single `UnboundTransaction`, returns `Promise<UnboundTransaction>`
+- **`signUnprovenTransaction(tx, signSegment)`** -- signs a single unproven transaction, returns `Promise<UnprovenTx>`
+- **`signUnboundTransaction(tx, signSegment)`** -- signs a single unbound transaction, returns `Promise<UnboundTx>`
 
-Both accept the same synchronous `(data: Uint8Array) => ledger.Signature` callback.
+Both accept the same async `SignSegment` callback.
 
 ## Proving
 
 Proving generates zero-knowledge proofs for transactions. This is the most computationally expensive step and is delegated to the proof server.
 
-- **`finalizeRecipe(recipe)`** -- proves and finalizes an entire `BalancingRecipe`. Handles all three recipe types internally, merges the results, and adds the finalized transaction to pending tracking. Returns `Promise<ledger.FinalizedTransaction>`.
-- **`finalizeTransaction(tx)`** -- proves a single `ledger.UnprovenTransaction` via the proof server, binds it, and adds it to pending tracking. Returns `Promise<ledger.FinalizedTransaction>`. On failure, automatically reverts the transaction across all wallet sub-systems.
+- **`finalizeRecipe(recipe)`** -- proves and finalizes an entire `BalancingRecipe` at the recipe's `protocolVersion`. Handles all three recipe types internally, merges the results, and records the transaction as finalized in the lifecycle. Returns `Promise<FinalizedTx>`.
+- **`finalizeTransaction(tx)`** -- proves a single unproven transaction via the proof server and binds it. Returns `Promise<FinalizedTx>`. On failure, automatically reverts the transaction across all wallet sub-systems.
 
 ## Submission
 
@@ -120,69 +116,75 @@ Proving generates zero-knowledge proofs for transactions. This is the most compu
 const txId: TransactionIdentifier = await wallet.submitTransaction(finalizedTx);
 ```
 
-`submitTransaction` adds the transaction to pending tracking, submits it to the network via the submission service, and returns the `TransactionIdentifier` (a string). If submission fails, it automatically reverts the transaction.
+`submitTransaction` submits the transaction via the submission service, records it as submitted in the lifecycle and the transaction history, and returns the `TransactionIdentifier` (a string). If submission fails, it automatically reverts the transaction.
 
 ## Fee Estimation
 
 Two methods estimate transaction fees, both returning `bigint` values in DUST units (15 decimal places):
 
 - **`calculateTransactionFee(tx)`** -- calculates the fee for the given transaction only. Does not include the cost of the balancing transaction.
-- **`estimateTransactionFee(tx, secretKey, options?)`** -- estimates the total fee including the balancing transaction. Accepts optional `ttl` and `currentTime` parameters.
+- **`estimateTransactionFee(tx, options?)`** -- estimates the total fee including the balancing transaction. Accepts optional `ttl` and `currentTime`. No key argument in 2.0.0.
 
 ```typescript
-const feeEstimate: bigint = await wallet.estimateTransactionFee(
-  tx,
-  dustSecretKey,
-  { ttl: new Date(Date.now() + 3600_000) },
-);
+const feeEstimate: bigint = await wallet.estimateTransactionFee(tx, {
+  ttl: new Date(Date.now() + 3600_000),
+});
 ```
 
 ## Dust Registration
 
-Dust registration enables NIGHT UTXOs to generate DUST tokens for paying transaction fees.
-
-**Register:**
+Dust registration enables NIGHT UTXOs to generate DUST tokens for paying transaction fees. Registration pays its own fee from the DUST the UTXOs being registered have generated, so it works from a zero DUST balance — but in 2.0.0 a **first registration** has to wait until those UTXOs have generated enough to cover the fee. Estimate, wait, then register:
 
 ```typescript
-const recipe = await wallet.registerNightUtxosForDustGeneration(
-  nightUtxos,          // readonly UtxoWithMeta[]
-  nightVerifyingKey,   // ledger.SignatureVerifyingKey
-  (payload: Uint8Array) => ledger.signData(signingKey, payload), // synchronous
-  dustReceiverAddress, // optional DustAddress, defaults to wallet's own dust address
+const nightUtxos = state.unshielded.availableCoins.filter(
+  (coin) => !coin.meta.registeredForDustGeneration,
 );
-// Returns UnprovenTransactionRecipe -- still needs proving and submission
+
+// Don't call this with an empty list — it fails with
+// "No guaranteedUnshieldedOffer found in intent".
+if (nightUtxos.length > 0) {
+  const { fee } = await wallet.estimateRegistration(nightUtxos);
+  await wallet.waitForGeneratedDust(nightUtxos, fee); // optional { timeoutMs }
+
+  const recipe = await wallet.registerNightUtxosForDustGeneration(
+    nightUtxos,                         // readonly UtxoWithMeta[]
+    unshieldedKeystore.getPublicKey(),  // SignatureVerifyingKey
+    unshieldedKeystore.signDataAsync,   // SignSegment (async)
+    // dustReceiverAddress?             // defaults to the wallet's own dust address
+  );
+  // UnprovenTransactionRecipe -- still needs finalizeRecipe + submitTransaction
+  await wallet.submitTransaction(await wallet.finalizeRecipe(recipe));
+}
 ```
 
-The sign callback for `registerNightUtxosForDustGeneration` is synchronous: `(payload: Uint8Array) => ledger.Signature`.
+Skip the wait and the registration throws `InsufficientDustForFeeError` (`_tag: 'Wallet.InsufficientDustForFee'`, from `@midnightntwrk/wallet-sdk-dust-wallet`). It carries `fee`, `claimableFeePayment`, `shortfall` and an `estimate` (`{ _tag: 'Reachable', at, seconds }` or `{ _tag: 'Unreachable', reason: 'NoGeneration' | 'ExceedsCap' }`); test for it with `isInsufficientDustForFeeError(err)`. How long the wait takes depends on how much NIGHT is being registered. On a local devnet, 5 NIGHT had not covered the fee after five minutes, while 1000 NIGHT was ready within the minute; fund test wallets generously.
 
-**Estimate registration economics:**
-
-```typescript
-const { fee, dustGenerationEstimations } = await wallet.estimateRegistration(nightUtxos);
-// fee: bigint -- the registration transaction fee
-// dustGenerationEstimations: array of UTXOs with dust generation details
-```
-
-`estimateRegistration` internally creates a mock registration transaction (using a sample signing key) to calculate the exact fee, and provides dust generation estimates for the given UTXOs.
+`estimateRegistration(nightUtxos)` returns `{ fee, dustGenerationEstimations }` — the registration fee and per-UTXO dust generation details.
 
 **Deregister:**
 
 ```typescript
 const recipe = await wallet.deregisterFromDustGeneration(
-  nightUtxos,
-  nightVerifyingKey,
-  (payload: Uint8Array) => ledger.signData(signingKey, payload),
+  registeredUtxos,
+  unshieldedKeystore.getPublicKey(),
+  unshieldedKeystore.signDataAsync,
 );
+// Deregistering NIGHT can't pay its own fee: balance it with DUST before finalizing.
+const balanced = await wallet.balanceUnprovenTransaction(recipe.transaction, {
+  ttl: new Date(Date.now() + 30 * 60 * 1000),
+  tokenKindsToBalance: ['dust'],
+});
+await wallet.submitTransaction(await wallet.finalizeRecipe(balanced));
 ```
 
 ## Reverting Transactions
 
 When a transaction fails or needs to be abandoned, reverting releases locked UTXOs back to the wallet:
 
-- **`revert(txOrRecipe)`** -- accepts either an `AnyTransaction` or a `BalancingRecipe`. Extracts all component transactions from a recipe and reverts each one.
-- **`revertTransaction(tx)`** -- reverts a single transaction across all three wallet sub-systems (shielded, unshielded, dust) in parallel, then clears it from pending tracking.
+- **`revert(txOrRecipe, reason?)`** -- accepts either a transaction or a `BalancingRecipe`. Extracts all component transactions from a recipe and reverts each one.
+- **`revertTransaction(tx, reason?)`** -- reverts a single transaction across all three wallet sub-systems (shielded, unshielded, dust), and records it as `Reverted` in the lifecycle.
 
-Reverting happens automatically on `finalizeTransaction` failure and `submitTransaction` failure. The facade also subscribes to the pending transactions service and auto-reverts any transactions that fail after submission.
+Reverting happens automatically on `finalizeTransaction` failure and `submitTransaction` failure. The transaction lifecycle service also tracks submitted transactions against the indexer and releases coins for ones the chain rejects or whose TTL passes; read the outcome from `state.lifecycle` (see [state-and-balances.md](state-and-balances.md#lifecycle-entries)).
 
 > **See also:** `errors-and-troubleshooting.md` for the per-wallet
 > error types thrown when finalize or submit fails.
@@ -195,7 +197,6 @@ Reverting happens automatically on `finalizeTransaction` failure and `submitTran
 const recipe = await wallet.initSwap(
   desiredInputs,   // CombinedSwapInputs: { shielded?: Record<RawTokenType, bigint>, unshielded?: ... }
   desiredOutputs,  // CombinedSwapOutputs[] (same shape as CombinedTokenTransfer)
-  { shieldedSecretKeys, dustSecretKey },
   { ttl, payFees: false }, // payFees defaults to false for swaps
 );
 ```
@@ -220,9 +221,7 @@ for (const entry of entries) {
 }
 ```
 
-Transaction history depends on the `TransactionHistoryStorage` implementation provided during wallet construction.
-
-> **Note:** `queryTxHistoryByHash` and `getAllFromTxHistory` exist in the wallet SDK source but may not be available in all published versions of `@midnightntwrk/wallet-sdk-facade`. Check your installed version's type exports before using these methods.
+Transaction history depends on the `TransactionHistoryStorage` implementation provided during wallet construction (`txHistoryStorage`). Each `WalletEntry` has a `lifecycle` field (`pending`, `finalized` or `rejected`) and optional `shielded` / `unshielded` / `dust` sections; `isPendingWalletEntry` and `isFinalizedWalletEntry` narrow it.
 
 ---
 
