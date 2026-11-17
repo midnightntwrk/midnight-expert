@@ -6,7 +6,7 @@ description: Use this skill when an agent needs real, compilable examples of Com
 
 # Compact Code Examples
 
-Compilable Compact smart contracts, TypeScript witnesses, and tests sourced from 8 repositories. All code uses `pragma language_version 0.28` and passes `compact compile` with full proof generation.
+Compilable Compact smart contracts, TypeScript witnesses, and tests sourced from 8 repositories. All contracts use `pragma language_version 0.28` and pass `compact compile` with full proof generation. The TypeScript tests and simulators still use the compact-runtime 0.16 API until they move to 0.21.0 in a follow-up PR.
 
 ## How to use this skill
 

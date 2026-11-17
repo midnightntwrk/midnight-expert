@@ -1,5 +1,5 @@
 // Schnorr Signature Verification Polyfill for Jubjub Curve
-// CompactStandardLibrary has jubjubSchnorrVerify since compiler 0.36. This polyfill
+// CompactStandardLibrary has jubjubSchnorrVerify since compiler 0.34. This polyfill
 // stays because zkloan's off-chain signer matches its 2^248 challenge reduction.
 // See: https://github.com/LFDT-Minokawa/compact/blob/25b22e3/compiler/standard-library.compact
 
