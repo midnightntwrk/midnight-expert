@@ -25,7 +25,7 @@ The `update` subcommand refreshes image versions in an existing `devnet.yml`:
 4. Edits the image tags directly in the file (preserving all other content), or, for a generated file that predates the ledger 9 template, regenerates it with a timestamped backup (see below)
 5. Refreshes the `# Generated:` timestamp
 
-On a file that's already on the ledger 9 template, update only modifies the three `image:` lines for Midnight services, and versions you pinned above the caps stay as they are. A generated file from before that template (no SPO/Blockfrost settings, block-1 healthcheck or indexer restart policy) is regenerated instead, because the 4.4 indexer exits without those settings; the old file is kept as `<file>.<timestamp>.bak`, and you should `stop --remove-volumes` before starting, since the old chain data doesn't fit the new images. A hand-written file missing those settings is left alone, and update tells you what's missing.
+On a file that's already on the ledger 9 template, update only modifies the three `image:` lines for Midnight services, and versions you pinned above the caps stay as they are. A generated file from before that template (no SPO/Blockfrost settings, block-1 healthcheck or indexer restart policy) is regenerated instead, because the 4.4 indexer exits without those settings; the old file is kept as `<file>.<timestamp>.bak`, and the new images start a fresh chain, so wallets and contracts from the old devnet are gone. A hand-written file missing those settings is left alone, and update tells you what's missing.
 
 ### Staleness Checking
 
