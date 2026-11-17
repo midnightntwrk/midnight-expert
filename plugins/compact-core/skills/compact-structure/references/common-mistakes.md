@@ -39,10 +39,10 @@ export circuit doSomething(): [] {
 pragma >= 0.22;
 
 // Correct - include the language_version keyword
-pragma language_version >= 0.22;
+pragma language_version 0.28;
 ```
 
-A lower bound (`>= 0.22`), a patch version (`>= 0.22.0`), and an exact version (`0.23`) all compile. Pinning an exact version guards against future language changes, but it is a choice, not a compiler requirement.
+A lower bound (`>= 0.22`), a patch version (`>= 0.22.0`), and an exact version (`0.28`) all compile on compiler 0.36.0; an exact version that isn't the compiler's language version (`0.23`) fails with `language version 0.28.0 mismatch`. Pinning an exact version guards against future language changes, but it is a choice, not a compiler requirement.
 
 > **Tip:** Run `compact compile --language-version` to check your compiler's supported version.
 
@@ -202,8 +202,8 @@ balances.insert(disclose(key), disclose((a + b) as Uint<64>));
 // Arithmetic compiles -- the Uint operand widens to Field
 const result = myField + myUint;      // result is Field
 
-// Equality: cast explicitly. 0.31.1 accepts myField == myUint, but 0.35.0
-// rejects it: incompatible types Field and Uint<64> for equality operator
+// Equality: cast explicitly. 0.31.1 accepts myField == myUint, but 0.35.0 and later
+// reject it: incompatible types Field and Uint<64> for equality operator
 if (myField == (myUint as Field)) { ... }
 
 // Relational operators are the exception: Field has no ordering
@@ -222,15 +222,15 @@ if ((myField as Uint<64>) < (otherField as Uint<64>)) { ... }
 | `unbound identifier Void` | `Void` return type | Use `[]` return type |
 | `parse error: found "{" looking for ";"` | Witness declared with a body | End the declaration with `;`; implement it in TypeScript |
 | `parse error: found ":" looking for ")", …` | `Enum::variant` syntax | Use `Enum.variant` dot notation |
-| `parse error: found ">=" looking for an identifier` | `pragma >= …` without `language_version` | `pragma language_version >= 0.22;` |
+| `parse error: found ">=" looking for an identifier` | `pragma >= …` without `language_version` | `pragma language_version 0.28;` |
 | `unbound identifier public_key` | Assuming built-in function | Use `persistentHash` pattern |
 | `unbound identifier Cell` | Deprecated wrapper | Remove Cell, use type directly |
 | `parse error: found keyword "function" (which is reserved for future use) looking for "circuit"` | `pure function` keyword | Use `pure circuit` |
 | `operation value undefined for ledger field type Counter` | Wrong method name | Use `.read()` not `.value()` |
 | `potential witness-value disclosure must be declared but is not: …` | Witness value or parameter used in a branch, ledger write, or exported return | `disclose()` at the point of use |
 | `incompatible combination of types Field and Field for relational operator` | `<`, `<=`, `>`, `>=` on `Field` | Cast both operands to `Uint<N>` |
-| `incompatible types Field and Uint<64> for equality operator` | `Field == Uint` on compiler 0.35.0 (0.31.1 accepts it) | Cast: `f == (u as Field)` |
-| `cannot cast from type Uint<64> to type Bytes<32>` | Older compiler without direct Uint->Bytes casts | Cast directly on 0.31.1: `x as Bytes<32>`, or via Field: `(x as Field) as Bytes<32>` |
+| `incompatible types Field and Uint<64> for equality operator` | `Field == Uint` on compiler 0.35.0 and later, including 0.36.0 (0.31.1 accepts it) | Cast: `f == (u as Field)` |
+| `cannot cast from type Uint<64> to type Bytes<32>` | Older compiler without direct Uint->Bytes casts | Cast directly (0.31.1 and later, including 0.36.0): `x as Bytes<32>`, or via Field: `(x as Field) as Bytes<32>` |
 | `expected second argument of insert to have type Uint<64> but received Uint<0..N>` | Arithmetic result not cast | Cast: `(a + b) as Uint<64>` |
 | `cannot prove assertion` | Logic error or bad witness value | Check logic, range checks, witness returns |
 | `expected structure type, received <type>` | Accessing field on non-struct | Verify base type is a struct |

@@ -142,7 +142,7 @@ For full documentation on variable declarations, destructuring, shadowing, block
 Every source file begins with a version pragma:
 
 ```compact
-pragma language_version 0.23;
+pragma language_version 0.28;
 ```
 
 > **Tip:** Run `compact compile --language-version` to check which language version your compiler supports.
@@ -221,7 +221,7 @@ Common wrong-to-correct patterns:
 |-------|---------|
 | `ledger { field: Type; }` | `export ledger field: Type;` |
 | `circuit fn(): Void` | `circuit fn(): []` |
-| `pragma >= 0.22;` | `pragma language_version >= 0.22;` |
+| `pragma >= 0.22;` | `pragma language_version 0.28;` |
 | `Choice::rock` | `Choice.rock` |
 | `public_key(sk)` | `persistentHash<Vector<2, Bytes<32>>>([pad(32, "myapp:pk:"), sk])` |
 | `counter.value()` | `counter.read()` |

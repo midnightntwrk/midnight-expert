@@ -238,7 +238,7 @@ For larger contracts, split code across files using `include`:
 
 ```compact
 // main.compact
-pragma language_version 0.23;
+pragma language_version 0.28;
 import CompactStandardLibrary;
 
 include "ledger";

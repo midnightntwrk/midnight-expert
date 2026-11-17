@@ -13,7 +13,7 @@ Every Compact program follows a consistent anatomy that maps directly to on-chai
 A Compact contract is organized in this order:
 
 ```compact
-pragma language_version 0.23;
+pragma language_version 0.28;
 
 import CompactStandardLibrary;
 
@@ -56,13 +56,13 @@ export circuit do_something(): [] {
 Every contract starts with a version pragma and standard library import:
 
 ```compact
-pragma language_version 0.23;
+pragma language_version 0.28;
 import CompactStandardLibrary;
 ```
 
 > **Tip:** Run `compact compile --language-version` to check which language version your compiler supports.
 
-The pragma needs the `language_version` keyword. A minimum version (`>= 0.22`), a patch version (`>= 0.22.0`), and an exact version (`0.23`) all compile. The standard library provides `persistentHash`, `persistentCommit` (takes `rand: Bytes<32>` parameter), `transientHash`, and `transientCommit`. Language built-ins include `pad`, `disclose`, `assert`, and `default`.
+The pragma needs the `language_version` keyword. A minimum version (`>= 0.22`), a patch version (`>= 0.22.0`), and an exact version (`0.28`) all compile on compiler 0.36.0; an exact version other than the compiler's language version (`0.23`) fails with `language version 0.28.0 mismatch`. The standard library provides `persistentHash`, `persistentCommit` (takes `rand: Bytes<32>` parameter), `transientHash`, and `transientCommit`. Language built-ins include `pad`, `disclose`, `assert`, and `default`.
 
 ## Data Types Quick Reference
 
@@ -167,7 +167,7 @@ export { Maybe, Either }   // Re-export stdlib types
 |---------|---------|
 | `ledger { field: Type; }` | `export ledger field: Type;` |
 | `circuit fn(): Void` | `circuit fn(): []` |
-| `pragma >= 0.20;` (no `language_version`) | `pragma language_version >= 0.20;` |
+| `pragma >= 0.20;` (no `language_version`) | `pragma language_version 0.28;` |
 | `enum State { ... }` (no export) | `export enum State { ... }` |
 | `if (witness_val == x)` | `if (disclose(witness_val == x))` |
 | `Cell<Field>` | `Field` (Cell implicit, cannot be written) |
