@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `plugins/midnight-tooling/network-supported-compiler.txt`, a single-line pin of the network-supported Compact compiler (currently `0.31.1`) read by `install-cli` and both example-compile CI workflows.
 - `install-cli` Step 3D: after any install or update, compare the installed compiler to the network-supported version and warn on mismatch, linking the compatibility matrix.
+- `midnight-wallet:wallet-sdk` `references/choosing-a-wallet.md`: a decision note for picking an onboarding route on Midnight (hosted WaaS, 1AM, Kuira, Lace) on four questions — who installs, who holds the keys, who proves, who pays the fee — plus the constraints that decide more often than the wallet does (empty wallets and DUST accrual, no Midnight fee sponsorship, no cross-pool transfers, proving location as the privacy boundary, network-id detection).
 
 ### Changed
 
