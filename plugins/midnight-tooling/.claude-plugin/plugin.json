@@ -1,6 +1,6 @@
 {
   "name": "midnight-tooling",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Installs, configures, and manages the Midnight Network development toolchain \u2014 Compact CLI, compiler version switching, local devnet (node, indexer, proof server), diagnostics, and release notes for all Midnight components.",
   "author": {
     "name": "Midnight Foundation"
