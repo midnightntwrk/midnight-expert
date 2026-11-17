@@ -7,10 +7,13 @@ import WebSocket from "ws";
 (globalThis as any).WebSocket = WebSocket;
 
 import { Buffer } from "buffer";
-import { HDWallet, Roles } from "@midnightntwrk/wallet-sdk-hd";
+import { firstValueFrom as rxFirstValueFrom, filter as rxFilter } from "rxjs";
+import { WalletSeeds } from "@midnightntwrk/wallet-sdk-hd";
 import {
   WalletFacade,
+  type FacadeState,
   WalletEntrySchema,
+  mergeWalletEntries,
   type DefaultConfiguration,
   type CombinedTokenTransfer,
 } from "@midnightntwrk/wallet-sdk-facade";
@@ -22,11 +25,21 @@ import {
 } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
 import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
 import { InMemoryTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
-import * as ledger from "@midnight-ntwrk/ledger-v8";
+import * as ledger from "@midnightntwrk/ledger-v9";
 import {
   MidnightBech32m,
   UnshieldedAddress,
 } from "@midnightntwrk/wallet-sdk-address-format";
+
+// Synced, and all three sub-wallets on the same protocol version. A wallet that
+// synced across the ledger 9 fork reports protocol "Crossing" until the last
+// sub-wallet catches up, and a transaction built then can fail with
+// ProtocolVersionMismatchError, so wait for "Settled" before building one.
+function waitForSettled(wallet: WalletFacade): Promise<FacadeState> {
+  return rxFirstValueFrom(
+    wallet.state().pipe(rxFilter((s) => s.isSynced && s.protocol._tag === "Settled"))
+  );
+}
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -35,7 +48,10 @@ import {
 const GENESIS_SEED_HEX =
   "0000000000000000000000000000000000000000000000000000000000000001";
 
-const DEFAULT_AMOUNT = 5_000_000n; // 5 NIGHT (6 decimal places)
+// 1000 NIGHT (6 decimal places). A first DUST registration waits until the
+// new UTXO has generated its own fee, and a few NIGHT take over an hour to
+// get there; 1000 gets there in seconds.
+const DEFAULT_AMOUNT = 1_000_000_000n;
 
 // ─── Arg parsing ─────────────────────────────────────────────────────────────
 
@@ -47,7 +63,7 @@ function parseArgs(): { recipientBech32: string; amount: bigint } {
       "Usage: fund-wallet-undeployed.ts <recipient-unshielded-bech32-address> [amount-bigint]"
     );
     console.error("  recipient  — bech32m unshielded address (mn_addr_undeployed…)");
-    console.error("  amount     — NIGHT amount in smallest units (default: 5000000)");
+    console.error("  amount     — NIGHT amount in smallest units (default: 1000000000)");
     process.exit(1);
   }
 
@@ -86,30 +102,12 @@ async function main() {
   // ─── Step 1: HD derivation from genesis seed ──────────────────────────────
 
   const seed = Buffer.from(GENESIS_SEED_HEX, "hex");
-  const hd = HDWallet.fromSeed(seed);
-  if (hd.type !== "seedOk") {
-    console.error(`HDWallet.fromSeed failed: ${hd.type}`);
-    process.exit(1);
-  }
-  const derived = hd.hdWallet
-    .selectAccount(0)
-    .selectRoles([Roles.Zswap, Roles.NightExternal, Roles.Dust] as const)
-    .deriveKeysAt(0);
-  if (derived.type !== "keysDerived") {
-    console.error(`deriveKeysAt failed: ${derived.type}`);
-    process.exit(1);
-  }
-  hd.hdWallet.clear();
-  const derivedKeys = derived.keys as Record<number, Uint8Array>;
-
-  // ─── Step 2: Key conversion ───────────────────────────────────────────────
-
-  const shieldedSecretKeys = ledger.ZswapSecretKeys.fromSeed(
-    derivedKeys[Roles.Zswap]
-  );
-  const dustSecretKey = ledger.DustSecretKey.fromSeed(derivedKeys[Roles.Dust]);
+  // WalletSeeds.fromMasterSeed walks the same HD path the 1.x HDWallet code
+  // did (account 0, roles Zswap / NightExternal / Dust, index 0), so the
+  // same master seed gives the same wallet and addresses.
+  const seeds = WalletSeeds.fromMasterSeed(seed);
   const unshieldedKeystore = createKeystore(
-    derivedKeys[Roles.NightExternal],
+    { kind: "schnorr", secret: seeds.unshielded },
     "undeployed"
   );
 
@@ -125,10 +123,10 @@ async function main() {
     relayURL: new URL("ws://localhost:9944"),
     provingServerUrl: new URL("http://localhost:6300"),
     indexerClientConnection: {
-      indexerHttpUrl: "http://localhost:8088/api/v3/graphql",
-      indexerWsUrl: "ws://localhost:8088/api/v3/graphql/ws",
+      indexerHttpUrl: "http://localhost:8088/api/v4/graphql",
+      indexerWsUrl: "ws://localhost:8088/api/v4/graphql/ws",
     },
-    txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
+    txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema, mergeWalletEntries),
   };
 
   // ─── Step 4: Wallet facade init ───────────────────────────────────────────
@@ -136,26 +134,23 @@ async function main() {
   const wallet = await WalletFacade.init({
     configuration,
     shielded: (cfg) =>
-      ShieldedWallet(cfg).startWithSecretKeys(shieldedSecretKeys),
+      ShieldedWallet(cfg).startWithSeed(seeds.shielded),
     unshielded: (cfg) =>
       UnshieldedWallet(cfg).startWithPublicKey(
         PublicKey.fromKeyStore(unshieldedKeystore)
       ),
     dust: (cfg) =>
-      DustWallet(cfg).startWithSecretKey(
-        dustSecretKey,
-        ledger.LedgerParameters.initialParameters().dust
-      ),
+      DustWallet(cfg).startWithSeed(seeds.dust),
   });
 
   // ─── Step 5: Start and wait for sync ─────────────────────────────────────
 
-  await wallet.start(shieldedSecretKeys, dustSecretKey);
-  const state = await wallet.waitForSyncedState();
+  await wallet.start(seeds);
+  const state = await waitForSettled(wallet);
 
   // ─── Step 6: Print sender info ────────────────────────────────────────────
 
-  const NIGHT_TOKEN_TYPE = ledger.nativeToken().raw;
+  const NIGHT_TOKEN_TYPE = ledger.unshieldedToken().raw;
   const senderBech32 = MidnightBech32m.encode(
     "undeployed",
     state.unshielded.address
@@ -188,7 +183,6 @@ async function main() {
   try {
     recipe = await wallet.transferTransaction(
       outputs,
-      { shieldedSecretKeys, dustSecretKey },
       { ttl }
     );
   } catch (err) {
@@ -204,8 +198,7 @@ async function main() {
 
   let signedRecipe;
   try {
-    signedRecipe = await wallet.signRecipe(recipe, (payload) =>
-      unshieldedKeystore.signData(payload)
+    signedRecipe = await wallet.signRecipe(recipe, unshieldedKeystore.signDataAsync
     );
   } catch (err) {
     console.error(`Error: signRecipe failed: ${err}`);
