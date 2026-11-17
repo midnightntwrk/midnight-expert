@@ -27,7 +27,7 @@ for funding.
 
 ## Balance shapes
 
-- **Unshielded NIGHT:** `state.unshielded.balances[ledger.nativeToken().raw]` — a `bigint`. The key is the native token's raw bytes (64 hex zeros), NOT the empty string. 6 decimal places: `1_000_000n` = 1 NIGHT.
+- **Unshielded NIGHT:** `state.unshielded.balances[ledger.unshieldedToken().raw]` — a `bigint`. The key is the native token's raw bytes (64 hex zeros), NOT the empty string. 6 decimal places: `1_000_000n` = 1 NIGHT.
 - **Shielded:** `state.shielded.balances[<token-raw-bytes>]` — a `bigint` per token kind.
 - **DUST:** `state.dust.balance(new Date())` — a `bigint`. DUST has expiry, so the call requires a `Date`.
 

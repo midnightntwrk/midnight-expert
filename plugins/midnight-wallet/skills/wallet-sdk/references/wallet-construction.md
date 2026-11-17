@@ -2,55 +2,67 @@
 
 ## Overview
 
-Constructing a Midnight wallet has three phases:
+Constructing a Midnight wallet (wallet SDK 2.0.0, ledger 9) has four phases:
 
-1. **Convert keys** -- derive cryptographic keys from an HD wallet seed
+1. **Derive seeds** -- one master seed gives the three per-wallet seeds
 2. **Build config** -- assemble a `DefaultConfiguration` with network URLs and storage
 3. **Init facade** -- call `WalletFacade.init()` with factory functions for each wallet sub-system
+4. **Start and settle** -- `wallet.start(seeds)`, then wait until the wallet is synced and settled
 
-## Key Conversion
+## Seeds and the Unshielded Keystore
 
-Three separate conversions turn raw derived bytes into wallet-ready keys. Each conversion uses a specific package:
+The shielded and dust wallets start straight from their seeds. Only the unshielded wallet needs a keystore, because it signs:
 
-| Conversion | Function | Package |
+| Wallet | Started from | Package |
 |---|---|---|
-| Shielded (Zswap) keys | `ZswapSecretKeys.fromSeed()` | `@midnight-ntwrk/ledger-v8` |
-| Unshielded keystore | `createKeystore()` | `@midnightntwrk/wallet-sdk-unshielded-wallet` |
-| Dust secret key | `DustSecretKey.fromSeed()` | `@midnight-ntwrk/ledger-v8` |
+| Shielded | `seeds.shielded` via `startWithSeed()` | `@midnightntwrk/wallet-sdk-shielded` |
+| Unshielded | `PublicKey.fromKeyStore(createKeystore(...))` via `startWithPublicKey()` | `@midnightntwrk/wallet-sdk-unshielded-wallet` |
+| Dust | `seeds.dust` via `startWithSeed()` | `@midnightntwrk/wallet-sdk-dust-wallet` |
 
-> **CRITICAL:** `createKeystore()` is exported from `@midnightntwrk/wallet-sdk-unshielded-wallet`, **not** from `@midnight-ntwrk/address-format` or any other package.
+> **CRITICAL:** `createKeystore()` is exported from `@midnightntwrk/wallet-sdk-unshielded-wallet`, **not** from `@midnightntwrk/wallet-sdk-address-format` or any other package. In 2.0.0 it takes `{ kind, secret }`, not bare bytes.
 
 ```typescript
-import * as ledger from '@midnight-ntwrk/ledger-v8';
-import { createKeystore, PublicKey as UnshieldedPublicKey } from '@midnightntwrk/wallet-sdk-unshielded-wallet';
+import { WalletSeeds } from '@midnightntwrk/wallet-sdk-hd';
+import { createKeystore, PublicKey } from '@midnightntwrk/wallet-sdk-unshielded-wallet';
 
-// After HD key derivation (see key-derivation.md):
-const shieldedSecretKeys = ledger.ZswapSecretKeys.fromSeed(derivationResult.keys[Roles.Zswap]);
-const dustSecretKey = ledger.DustSecretKey.fromSeed(derivationResult.keys[Roles.Dust]);
-const unshieldedKeystore = createKeystore(derivationResult.keys[Roles.NightExternal], configuration.networkId);
+const seeds = WalletSeeds.fromMasterSeed(masterSeed);
+const unshieldedKeystore = createKeystore(
+  { kind: 'schnorr', secret: seeds.unshielded },
+  configuration.networkId,
+);
 ```
 
-See [key-derivation.md](key-derivation.md) for the full HD wallet derivation flow that produces `derivationResult`.
+`"schnorr"` is the scheme that works on both sides of the ledger 9 boundary. See [key-derivation.md](key-derivation.md) for `WalletSeeds` options and the lower-level `HDWallet` API.
 
 ## Configuration
 
-`DefaultConfiguration` is an intersection of six sub-configuration types:
+`DefaultConfiguration` combines the wallets' and services' configuration types, with the fork schedule optional:
 
 ```typescript
-type DefaultConfiguration =
-  DefaultShieldedConfiguration &
+type WalletsConfiguration =
   DefaultUnshieldedConfiguration &
+  DefaultShieldedConfiguration &
   DefaultDustConfiguration &
   DefaultSubmissionConfiguration &
-  DefaultPendingTransactionsServiceConfiguration &
-  Partial<DefaultProvingConfiguration>;
+  DefaultTransactionLifecycleServiceConfiguration &
+  DefaultProvingConfiguration;
+
+type DefaultConfiguration = Omit<WalletsConfiguration, 'forks'> & {
+  forks?: ProtocolVersion.ForkSchedule; // defaults to DefaultForkSchedule
+};
 ```
+
+Leave `forks` unset unless you run a chain with a different ledger 9 fork version; the facade fills in `DefaultForkSchedule`.
 
 A typical configuration object:
 
 ```typescript
 import { InMemoryTransactionHistoryStorage } from '@midnightntwrk/wallet-sdk-abstractions';
-import { type DefaultConfiguration, WalletEntrySchema } from '@midnightntwrk/wallet-sdk-facade';
+import {
+  type DefaultConfiguration,
+  WalletEntrySchema,
+  mergeWalletEntries,
+} from '@midnightntwrk/wallet-sdk-facade';
 
 const configuration: DefaultConfiguration = {
   networkId: 'undeployed',
@@ -66,7 +78,7 @@ const configuration: DefaultConfiguration = {
     indexerHttpUrl: 'http://localhost:8088/api/v4/graphql',
     indexerWsUrl: 'ws://localhost:8088/api/v4/graphql/ws',
   },
-  txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
+  txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema, mergeWalletEntries),
 };
 ```
 
@@ -90,11 +102,14 @@ normalizes. Any positive amount the wallet can cover in DUST works; the
 compact-cli-dev template uses `300_000_000_000_000n`. (compact-core's basic-start builds its wallets with testkit's `FluentWalletBuilder`, whose default overhead is `0n`.)
 
 > **DUST registration does not need `additionalFeeOverhead`.** Registration is
-> self-funding — its fee is paid by the DUST the registered NIGHT UTXOs generate,
-> not from the wallet's existing DUST balance — so it succeeds even at a `0` DUST
-> balance (verified on a local devnet). `examples/register-dust.ts` leaves the
-> overhead off for that reason. Set `additionalFeeOverhead` on the wallets that
-> submit **transfers or contract calls**. See
+> self-funding — its fee is paid by the DUST the NIGHT UTXOs being registered
+> have generated, not from the wallet's existing DUST balance — so it works from
+> a `0` DUST balance. In 2.0.0 a first registration has to wait until those UTXOs
+> have generated the fee, or it throws `InsufficientDustForFeeError` with an
+> estimate of how long to wait before retrying (see
+> [transactions.md](transactions.md#dust-registration)). Set
+> `additionalFeeOverhead` on the wallets that submit **transfers or contract
+> calls**. See
 > [managing-test-wallets references/dust-registration.md](../../managing-test-wallets/references/dust-registration.md)
 > and `/midnight-status-codes:lookup 117` / `138`.
 
@@ -104,27 +119,20 @@ compact-cli-dev template uses `300_000_000_000_000n`. (compact-core's basic-star
 
 ```typescript
 import { ShieldedWallet } from '@midnightntwrk/wallet-sdk-shielded';
-import { UnshieldedWallet } from '@midnightntwrk/wallet-sdk-unshielded-wallet';
+import { UnshieldedWallet, PublicKey } from '@midnightntwrk/wallet-sdk-unshielded-wallet';
 import { DustWallet } from '@midnightntwrk/wallet-sdk-dust-wallet';
 import { WalletFacade } from '@midnightntwrk/wallet-sdk-facade';
 
 const wallet: WalletFacade = await WalletFacade.init({
   configuration,
-  shielded: (config) =>
-    ShieldedWallet(config).startWithSecretKeys(shieldedSecretKeys),
+  shielded: (config) => ShieldedWallet(config).startWithSeed(seeds.shielded),
   unshielded: (config) =>
-    UnshieldedWallet(config).startWithPublicKey(
-      UnshieldedPublicKey.fromKeyStore(unshieldedKeystore)
-    ),
-  dust: (config) =>
-    DustWallet(config).startWithSecretKey(
-      dustSecretKey,
-      ledger.LedgerParameters.initialParameters().dust,
-    ),
+    UnshieldedWallet(config).startWithPublicKey(PublicKey.fromKeyStore(unshieldedKeystore)),
+  dust: (config) => DustWallet(config).startWithSeed(seeds.dust),
 });
 ```
 
-> **CRITICAL:** `DustWallet` requires `ledger.LedgerParameters.initialParameters().dust` as the second parameter to `startWithSecretKey()`. Omitting it causes a runtime error.
+`DustWallet(config).startWithSeed(seed, dustParameters?)` takes the generation rates as an optional second argument; leave it off to use the defaults. The 1.x `startWithSecretKey(key, LedgerParameters.initialParameters().dust)` form is gone from the default wallet. If you hold key objects rather than seeds, use `startWithKeys` with **both** ledger versions' keys (`{ v8, v9 }`) — key objects can't cross the boundary on their own.
 
 ### Optional Service Overrides
 
@@ -133,49 +141,58 @@ const wallet: WalletFacade = await WalletFacade.init({
 | Parameter | Type | Default |
 |---|---|---|
 | `submissionService` | `(config) => SubmissionService` | Built-in relay submission |
-| `pendingTransactionsService` | `(config) => PendingTransactionsService` | Built-in indexer-backed service |
-| `provingService` | `(config) => ProvingService` | Remote proving via `provingServerUrl` |
+| `transactionLifecycleService` | `(config, { clock }) => TransactionLifecycleService` | Built-in indexer-backed lifecycle tracking (replaces 1.x `pendingTransactionsService`) |
+| `provingService` | `(config) => VersionedProvingService` | Remote proving via `provingServerUrl` (or `provers`) |
+| `fetchBlockData` / `validationService` | factories | Built-in, for pre-submission validation |
+| `clock` | `(config) => Clock` | `Clock.systemClock` |
+
+Each factory receives the resolved configuration (your configuration plus `forks`) and may return the service or a Promise of it.
 
 ## Starting the Wallet
 
-After initialization, start the wallet and wait for state synchronization:
+After initialization, start the wallet with the **seeds** (not key objects):
 
 ```typescript
-await wallet.start(shieldedSecretKeys, dustSecretKey);
+await wallet.start(seeds);
 ```
 
-To block until the wallet has fully synced with the indexer:
+Then wait until it is synced **and settled** before building any transaction:
 
 ```typescript
-const syncedState = await wallet.waitForSyncedState();
-// syncedState.isSynced is guaranteed true
+import { firstValueFrom, filter } from 'rxjs';
+
+const syncedState = await firstValueFrom(
+  wallet.state().pipe(filter((s) => s.isSynced && s.protocol._tag === 'Settled')),
+);
 ```
+
+`wallet.waitForSyncedState()` still exists, but it only waits for `isSynced`. Around the ledger 9 fork the three sub-wallets cross the boundary at slightly different moments; until the last one does, `state.protocol` is `{ _tag: 'Crossing', from, to, behind }`, and a transaction built then can fail with `ProtocolVersionMismatchError`. `Settled` means all three agree. See [state-and-balances.md](state-and-balances.md#protocol-phase).
 
 ## Transaction History Storage
 
 The `TransactionHistoryStorage` interface defines how wallet transaction history is persisted:
 
 ```typescript
-interface TransactionHistoryStorage<T extends { hash: TransactionHash }> {
-  upsert(entry: T): Promise<void>;
-  getAll(): Promise<readonly T[]>;
-  get(hash: TransactionHash): Promise<T | undefined>;
-  serialize(): Promise<SerializedTransactionHistory>;
-}
+// reader
+getAll(): Promise<readonly T[]>;
+get(hash: TransactionHash): Promise<T | undefined>;
+serialize(): Promise<SerializedTransactionHistory>;
+// writer: one call per lifecycle event
+gotPending(entry: PendingEntryInput<T>): Promise<void>;
+gotFinalized(entry: FinalizedEntryInput<T>): Promise<void>;
+gotRejected(entry: RejectedEntryInput<T>): Promise<void>;
 ```
 
-> **Note:** The interface uses `upsert()`, not `put()` or `set()`. This is an insert-or-update semantic keyed by the entry's `hash` property.
+> **Note:** 1.x's single `upsert()` is gone. The wallets report each transaction as pending, finalized or rejected, and the storage merges what the three wallets write under the same hash.
 
-The SDK provides `InMemoryTransactionHistoryStorage` from `@midnightntwrk/wallet-sdk-abstractions` as a ready-made in-memory implementation. Pass `WalletEntrySchema` (from `@midnightntwrk/wallet-sdk-facade`) to its constructor to enable serialization.
-
-> **Note:** `InMemoryTransactionHistoryStorage` (from `wallet-sdk-abstractions`) and `WalletEntrySchema` (from `wallet-sdk-facade`) are the canonical imports used in the SDK's own docs-snippets. If these are missing from your installed package versions, update to the latest release or implement `TransactionHistoryStorage` directly.
+The SDK provides `InMemoryTransactionHistoryStorage` from `@midnightntwrk/wallet-sdk-abstractions` as a ready-made in-memory implementation. Its constructor is `(schema, merge?)`: pass `WalletEntrySchema` and `mergeWalletEntries` (both from `@midnightntwrk/wallet-sdk-facade`). The merge function is what combines the shielded, unshielded and dust sections of one transaction into one entry. `InMemoryTransactionHistoryStorage.restore(serialized, schema, merge?)` rebuilds one from `serialize()` output.
 
 ## Lifecycle
 
 | Phase | Method | Description |
 |---|---|---|
 | **Init** | `WalletFacade.init(initParams)` | Creates facade, wires up sub-wallets and services |
-| **Start** | `wallet.start(shieldedKeys, dustKey)` | Begins syncing with the network |
+| **Start** | `wallet.start(seeds)` | Begins syncing with the network |
 | **Stop** | `wallet.stop()` | Gracefully shuts down all sub-wallets and services |
 
 Always call `stop()` when the wallet is no longer needed to release WebSocket connections and other resources.
@@ -196,4 +213,4 @@ This is not needed in browser environments where `WebSocket` is available native
 **See also:**
 - [examples/basic-wallet-setup.ts](../examples/basic-wallet-setup.ts) -- complete working example
 - [references/state-and-balances.md](state-and-balances.md) -- querying balances after wallet start
-- [references/key-derivation.md](key-derivation.md) -- HD wallet seed derivation
+- [references/key-derivation.md](key-derivation.md) -- deriving the wallet seeds

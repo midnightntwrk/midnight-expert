@@ -41,7 +41,7 @@ PACKAGES=(
   "@midnightntwrk/wallet-sdk-indexer-client"
   "@midnightntwrk/wallet-sdk-node-client"
   "@midnightntwrk/wallet-sdk-prover-client"
-  "@midnight-ntwrk/ledger-v8"
+  "@midnightntwrk/ledger-v9"
   "ws"
   "rxjs"
 )

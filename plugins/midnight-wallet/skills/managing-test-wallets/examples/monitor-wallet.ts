@@ -1,5 +1,5 @@
 // Verified against the package versions pinned in
-// midnight-wallet:sdk-regression-check/versions.lock.json on 2026-06-02.
+// midnight-wallet:sdk-regression-check/versions.lock.json on 2026-11-17.
 // If your installed @midnightntwrk/wallet-sdk-* versions differ,
 // run scripts/drift-check.sh in that skill before trusting this template.
 
@@ -7,10 +7,11 @@ import WebSocket from "ws";
 (globalThis as any).WebSocket = WebSocket;
 
 import { Buffer } from "buffer";
-import { HDWallet, Roles } from "@midnightntwrk/wallet-sdk-hd";
+import { WalletSeeds } from "@midnightntwrk/wallet-sdk-hd";
 import {
   WalletFacade,
   WalletEntrySchema,
+  mergeWalletEntries,
   type DefaultConfiguration,
 } from "@midnightntwrk/wallet-sdk-facade";
 import { ShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
@@ -21,7 +22,7 @@ import {
 } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
 import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
 import { InMemoryTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
-import * as ledger from "@midnight-ntwrk/ledger-v8";
+import * as ledger from "@midnightntwrk/ledger-v9";
 import { MidnightBech32m } from "@midnightntwrk/wallet-sdk-address-format";
 
 // ─── Arg parsing ─────────────────────────────────────────────────────────────
@@ -51,30 +52,12 @@ async function main() {
 
   // ─── Step 1: HD derivation ────────────────────────────────────────────────
 
-  const hd = HDWallet.fromSeed(seed);
-  if (hd.type !== "seedOk") {
-    console.error(`HDWallet.fromSeed failed: ${hd.type}`);
-    process.exit(1);
-  }
-  const derived = hd.hdWallet
-    .selectAccount(0)
-    .selectRoles([Roles.Zswap, Roles.NightExternal, Roles.Dust] as const)
-    .deriveKeysAt(0);
-  if (derived.type !== "keysDerived") {
-    console.error(`deriveKeysAt failed: ${derived.type}`);
-    process.exit(1);
-  }
-  hd.hdWallet.clear();
-  const derivedKeys = derived.keys as Record<number, Uint8Array>;
-
-  // ─── Step 2: Key conversion ───────────────────────────────────────────────
-
-  const shieldedSecretKeys = ledger.ZswapSecretKeys.fromSeed(
-    derivedKeys[Roles.Zswap]
-  );
-  const dustSecretKey = ledger.DustSecretKey.fromSeed(derivedKeys[Roles.Dust]);
+  // WalletSeeds.fromMasterSeed walks the same HD path the 1.x HDWallet code
+  // did (account 0, roles Zswap / NightExternal / Dust, index 0), so the
+  // same master seed gives the same wallet and addresses.
+  const seeds = WalletSeeds.fromMasterSeed(seed);
   const unshieldedKeystore = createKeystore(
-    derivedKeys[Roles.NightExternal],
+    { kind: "schnorr", secret: seeds.unshielded },
     "undeployed"
   );
 
@@ -86,10 +69,10 @@ async function main() {
     relayURL: new URL("ws://localhost:9944"),
     provingServerUrl: new URL("http://localhost:6300"),
     indexerClientConnection: {
-      indexerHttpUrl: "http://localhost:8088/api/v3/graphql",
-      indexerWsUrl: "ws://localhost:8088/api/v3/graphql/ws",
+      indexerHttpUrl: "http://localhost:8088/api/v4/graphql",
+      indexerWsUrl: "ws://localhost:8088/api/v4/graphql/ws",
     },
-    txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
+    txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema, mergeWalletEntries),
   };
 
   // ─── Step 4: Wallet facade init ───────────────────────────────────────────
@@ -97,21 +80,18 @@ async function main() {
   const wallet = await WalletFacade.init({
     configuration,
     shielded: (cfg) =>
-      ShieldedWallet(cfg).startWithSecretKeys(shieldedSecretKeys),
+      ShieldedWallet(cfg).startWithSeed(seeds.shielded),
     unshielded: (cfg) =>
       UnshieldedWallet(cfg).startWithPublicKey(
         PublicKey.fromKeyStore(unshieldedKeystore)
       ),
     dust: (cfg) =>
-      DustWallet(cfg).startWithSecretKey(
-        dustSecretKey,
-        ledger.LedgerParameters.initialParameters().dust
-      ),
+      DustWallet(cfg).startWithSeed(seeds.dust),
   });
 
   // ─── Step 5: Start wallet ─────────────────────────────────────────────────
 
-  await wallet.start(shieldedSecretKeys, dustSecretKey);
+  await wallet.start(seeds);
 
   // ─── Step 6: SIGINT handler ───────────────────────────────────────────────
 
@@ -122,7 +102,7 @@ async function main() {
 
   // ─── Step 7: Subscribe to state and print live ticker ────────────────────
 
-  const NIGHT_TOKEN_TYPE = ledger.nativeToken().raw;
+  const NIGHT_TOKEN_TYPE = ledger.unshieldedToken().raw;
 
   wallet.state().subscribe((state) => {
     const timestamp = new Date().toISOString();

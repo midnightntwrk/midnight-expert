@@ -1,6 +1,6 @@
 # Key Derivation
 
-How the Midnight Wallet SDK derives cryptographic keys from seeds and mnemonics using BIP-32 hierarchical deterministic (HD) derivation.
+How the Midnight Wallet SDK derives wallet seeds and keys from a master seed or mnemonic using BIP-32 hierarchical deterministic (HD) derivation. Applies to wallet SDK 2.0.0 (ledger 9).
 
 **Package:** `@midnightntwrk/wallet-sdk-hd`
 
@@ -64,9 +64,42 @@ const seed: Uint8Array = mnemonicToSeedSync(phrase);
 
 ---
 
-## Derivation Flow
+## Wallet Seeds (recommended)
 
-The full derivation pipeline follows a builder pattern: seed -> wallet -> account -> roles -> keys.
+In wallet SDK 2.0.0 the wallets start from **seeds**, not key objects. `WalletSeeds.fromMasterSeed` derives the three per-wallet seeds in one call:
+
+```typescript
+import { WalletSeeds, generateRandomSeed } from '@midnightntwrk/wallet-sdk-hd';
+
+const masterSeed = generateRandomSeed(); // or mnemonicToSeedSync(phrase), or a known hex seed
+const seeds = WalletSeeds.fromMasterSeed(masterSeed);
+// seeds.shielded   → ShieldedWallet(config).startWithSeed(seeds.shielded)
+// seeds.unshielded → createKeystore({ kind: 'schnorr', secret: seeds.unshielded }, networkId)
+// seeds.dust       → DustWallet(config).startWithSeed(seeds.dust)
+// seeds            → wallet.start(seeds)
+```
+
+**Signature:** `WalletSeeds.fromMasterSeed(masterSeed: Uint8Array, options?: WalletSeedsOptions): WalletSeeds`
+
+| Option | Default | Meaning |
+|---|---|---|
+| `account` | `0` | Account to derive within |
+| `addressIndex` | `0` | Address index within each role |
+| `unshieldedRole` | `Roles.NightExternal` | Where the unshielded seed comes from. `NightExternal` is the schnorr key that works on both sides of the ledger 9 boundary; `Roles.EcdsaUnshielded` is ledger 9 only |
+
+Why seeds: each ledger version derives its own key objects from a seed, and a ledger 8 key object can't be used by ledger 9 (or the reverse). A seed is the only key material that crosses the protocol boundary, so the wallet keeps working when the chain forks.
+
+Notes:
+
+- With the defaults this walks the same path the 1.x code used (`account 0`, roles `Zswap` / `NightExternal` / `Dust`, index `0`), so a master seed from wallet SDK 1.x restores the same wallet and the same addresses.
+- It **throws** `SeedDerivationError` on a seed BIP-32 rejects or an index outside the tree, instead of returning a tagged result. Use `HDWallet` (below) if you'd rather branch on a result.
+- The BIP-32 tree's private material is wiped before it returns. The returned seeds are still secrets.
+
+---
+
+## Lower-Level Derivation: `HDWallet`
+
+`HDWallet` is still exported for callers that need other accounts, roles, or indexes directly. The pipeline follows a builder pattern: seed -> wallet -> account -> roles -> keys.
 
 ```typescript
 import { HDWallet, Roles } from '@midnightntwrk/wallet-sdk-hd';
@@ -92,7 +125,7 @@ if (keyResult.type === 'keyDerived') {
   console.log('Key bytes:', keyResult.key); // Uint8Array
 }
 
-// 4b. Derive multiple roles at once (recommended for wallet construction)
+// 4b. Derive multiple roles at once
 const roles = account.selectRoles([
   Roles.Zswap,
   Roles.NightExternal,
@@ -101,9 +134,9 @@ const roles = account.selectRoles([
 
 const keysResult = roles.deriveKeysAt(0);
 if (keysResult.type === 'keysDerived') {
-  const zswap: Uint8Array = keysResult.keys[Roles.Zswap];           // → ShieldedWallet
-  const nightExternal: Uint8Array = keysResult.keys[Roles.NightExternal]; // → UnshieldedWallet
-  const dust: Uint8Array = keysResult.keys[Roles.Dust];             // → DustWallet
+  const zswap: Uint8Array = keysResult.keys[Roles.Zswap];           // = WalletSeeds.shielded
+  const nightExternal: Uint8Array = keysResult.keys[Roles.NightExternal]; // = WalletSeeds.unshielded
+  const dust: Uint8Array = keysResult.keys[Roles.Dust];             // = WalletSeeds.dust
 }
 
 // 5. Clean up -- wipe private key material from memory
@@ -116,7 +149,7 @@ hdWallet.clear();
 
 2. **`selectAccount(account)`** -- Returns an `AccountKey` that binds the account index. This sets the `{account}'` segment of the derivation path `m/44'/2400'/{account}'/{role}/{index}`.
 
-3. **`selectRole(role)` / `selectRoles(roles)`** -- Returns a `RoleKey` (single) or `CompositeRoleKey<T>` (multiple). The roles use the `Roles` constant values (0-4).
+3. **`selectRole(role)` / `selectRoles(roles)`** -- Returns a `RoleKey` (single) or `CompositeRoleKey<T>` (multiple). The roles use the `Roles` constant values (0-4): `NightExternal` 0, `NightInternal` 1, `Dust` 2, `Zswap` 3, `EcdsaUnshielded` 4.
 
 4. **`deriveKeyAt(index)` / `deriveKeysAt(index)`** -- Performs the actual BIP-32 derivation at the given index. Returns discriminated unions with the derived key bytes or an out-of-bounds error.
 
@@ -175,13 +208,13 @@ type CompositeDerivationResult<T extends readonly Role[]> =
 
 ### Memory Hygiene
 
-- Call `hdWallet.clear()` as soon as all keys are derived. This calls `wipePrivateData()` on the underlying `@scure/bip32` `HDKey`, zeroing out the private key material.
+- `WalletSeeds.fromMasterSeed` wipes its BIP-32 tree itself. With `HDWallet`, call `hdWallet.clear()` as soon as all keys are derived. This calls `wipePrivateData()` on the underlying `@scure/bip32` `HDKey`, zeroing out the private key material.
 - Do not hold references to the `HDWallet` instance longer than necessary.
 
 ### Never Log Seeds
 
 - Never log, print, or persist raw seeds or mnemonic phrases in plaintext.
-- Derived key bytes (`Uint8Array`) are also sensitive -- treat them as secrets.
+- Derived seeds and key bytes (`Uint8Array`) are also sensitive -- treat them as secrets.
 
 ### Deterministic Recovery
 
@@ -192,4 +225,4 @@ type CompositeDerivationResult<T extends readonly Role[]> =
 
 - Always call `validateMnemonic()` before accepting user-provided mnemonics. Invalid mnemonics will still produce seeds via `mnemonicToSeedSync`, but those seeds will not match the expected key tree.
 
-> **See also:** [wallet-construction.md](wallet-construction.md) for how derived keys feed into wallet construction. [examples/basic-wallet-setup.ts](../examples/basic-wallet-setup.ts) for a runnable example.
+> **See also:** [wallet-construction.md](wallet-construction.md) for how the seeds feed into wallet construction. [examples/basic-wallet-setup.ts](../examples/basic-wallet-setup.ts) for a runnable example.

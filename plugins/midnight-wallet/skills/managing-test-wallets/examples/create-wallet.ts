@@ -1,5 +1,5 @@
 // Verified against the package versions pinned in
-// midnight-wallet:sdk-regression-check/versions.lock.json on 2026-06-02.
+// midnight-wallet:sdk-regression-check/versions.lock.json on 2026-11-17.
 // If your installed @midnightntwrk/wallet-sdk-* versions differ,
 // run scripts/drift-check.sh in that skill before trusting this template.
 
@@ -7,15 +7,17 @@ import WebSocket from "ws";
 (globalThis as any).WebSocket = WebSocket;
 
 import { Buffer } from "buffer";
+import { firstValueFrom, filter } from "rxjs";
 import {
-  HDWallet,
-  Roles,
+  WalletSeeds,
   generateRandomSeed,
   validateMnemonic,
 } from "@midnightntwrk/wallet-sdk-hd";
 import {
   WalletFacade,
+  type FacadeState,
   WalletEntrySchema,
+  mergeWalletEntries,
   type DefaultConfiguration,
 } from "@midnightntwrk/wallet-sdk-facade";
 import { ShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
@@ -26,9 +28,19 @@ import {
 } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
 import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
 import { InMemoryTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
-import * as ledger from "@midnight-ntwrk/ledger-v8";
+import * as ledger from "@midnightntwrk/ledger-v9";
 import { MidnightBech32m } from "@midnightntwrk/wallet-sdk-address-format";
 import { mnemonicToSeedSync } from "@scure/bip39";
+
+// Synced, and all three sub-wallets on the same protocol version. A wallet that
+// synced across the ledger 9 fork reports protocol "Crossing" until the last
+// sub-wallet catches up, and a transaction built then can fail with
+// ProtocolVersionMismatchError, so wait for "Settled" before building one.
+function waitForSettled(wallet: WalletFacade): Promise<FacadeState> {
+  return firstValueFrom(
+    wallet.state().pipe(filter((s) => s.isSynced && s.protocol._tag === "Settled"))
+  );
+}
 
 // ─── Arg parsing ─────────────────────────────────────────────────────────────
 
@@ -72,31 +84,13 @@ function parseArgs(): Uint8Array {
 async function main() {
   const seed = parseArgs();
 
-  // Step 1: HD derivation
-  const hdResult = HDWallet.fromSeed(seed);
-  if (hdResult.type !== "seedOk") {
-    console.error(`HDWallet.fromSeed failed: ${hdResult.type}`);
-    process.exit(1);
-  }
-  const derived = hdResult.hdWallet
-    .selectAccount(0)
-    .selectRoles([Roles.Zswap, Roles.NightExternal, Roles.Dust] as const)
-    .deriveKeysAt(0);
-
-  if (derived.type !== "keysDerived") {
-    console.error(`deriveKeysAt failed: ${derived.type}`);
-    process.exit(1);
-  }
-  hdResult.hdWallet.clear();
-  const derivedKeys = derived.keys as Record<number, Uint8Array>;
-
-  // Step 2: Key conversion
-  const shieldedSecretKeys = ledger.ZswapSecretKeys.fromSeed(
-    derivedKeys[Roles.Zswap]
-  );
-  const dustSecretKey = ledger.DustSecretKey.fromSeed(derivedKeys[Roles.Dust]);
+  // Step 1: Derive the three wallets' seeds
+  // WalletSeeds.fromMasterSeed walks the same HD path the 1.x HDWallet code
+  // did (account 0, roles Zswap / NightExternal / Dust, index 0), so the
+  // same master seed gives the same wallet and addresses.
+  const seeds = WalletSeeds.fromMasterSeed(seed);
   const unshieldedKeystore = createKeystore(
-    derivedKeys[Roles.NightExternal],
+    { kind: "schnorr", secret: seeds.unshielded },
     "undeployed"
   );
 
@@ -107,33 +101,30 @@ async function main() {
     relayURL: new URL("ws://localhost:9944"),
     provingServerUrl: new URL("http://localhost:6300"),
     indexerClientConnection: {
-      indexerHttpUrl: "http://localhost:8088/api/v3/graphql",
-      indexerWsUrl: "ws://localhost:8088/api/v3/graphql/ws",
+      indexerHttpUrl: "http://localhost:8088/api/v4/graphql",
+      indexerWsUrl: "ws://localhost:8088/api/v4/graphql/ws",
     },
-    txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
+    txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema, mergeWalletEntries),
   };
 
   // Step 4: Wallet facade init
   const wallet = await WalletFacade.init({
     configuration,
     shielded: (cfg) =>
-      ShieldedWallet(cfg).startWithSecretKeys(shieldedSecretKeys),
+      ShieldedWallet(cfg).startWithSeed(seeds.shielded),
     unshielded: (cfg) =>
       UnshieldedWallet(cfg).startWithPublicKey(
         PublicKey.fromKeyStore(unshieldedKeystore)
       ),
     dust: (cfg) =>
-      DustWallet(cfg).startWithSecretKey(
-        dustSecretKey,
-        ledger.LedgerParameters.initialParameters().dust
-      ),
+      DustWallet(cfg).startWithSeed(seeds.dust),
   });
 
   // Step 5: Start sync
-  await wallet.start(shieldedSecretKeys, dustSecretKey);
+  await wallet.start(seeds);
 
   // Step 6: Wait for synced state
-  const state = await wallet.waitForSyncedState();
+  const state = await waitForSettled(wallet);
 
   // Step 7: Extract addresses as bech32 strings
   const unshieldedAddr = MidnightBech32m.encode(
@@ -150,7 +141,7 @@ async function main() {
   ).asString();
 
   // Step 8: Read NIGHT balance
-  const NIGHT_TOKEN_TYPE = ledger.nativeToken().raw;
+  const NIGHT_TOKEN_TYPE = ledger.unshieldedToken().raw;
   const night = state.unshielded.balances[NIGHT_TOKEN_TYPE] ?? 0n;
 
   // Step 9: Print results

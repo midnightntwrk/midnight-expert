@@ -9,15 +9,19 @@ seed. To fund a new wallet:
 
 1. Build a sender `WalletFacade` from the genesis seed (see
    `midnight-tooling:devnet#genesis-seed` for the seed value).
-2. Wait for the sender to sync.
-3. Submit an unshielded NIGHT transfer via `wallet.transferTransaction`
+2. Wait for the sender to be synced and settled (`isSynced` and
+   `protocol._tag === 'Settled'`).
+3. Build an unshielded NIGHT transfer via `wallet.transferTransaction(outputs, { ttl })`
    to the recipient's UNSHIELDED address.
-4. Sign the recipe with `wallet.signRecipe(recipe, (data) => unshieldedKeystore.signData(data))`.
+4. Sign the recipe with `wallet.signRecipe(recipe, unshieldedKeystore.signDataAsync)`.
 5. Finalize via `wallet.finalizeRecipe(recipe)`.
 6. Submit via `wallet.submitTransaction(finalizedTx)`.
 7. Optionally wait for the recipient to observe the incoming balance.
 
-See `examples/fund-wallet-undeployed.ts` for the runnable script.
+See `examples/fund-wallet-undeployed.ts` for the runnable script. It
+sends 1000 NIGHT by default: much less and the recipient's first DUST
+registration waits a long time for the NIGHT to generate its fee (see
+`dust-registration.md`).
 
 ## Public testnets (`preprod`, `preview`)
 
@@ -26,15 +30,15 @@ funds the address manually via the faucet web page.
 
 | Network | Faucet URL |
 |---------|------------|
-| preprod | https://faucet.preprod.midnight.network/ |
-| preview | https://faucet.preview.midnight.network/ |
+| preprod | https://midnight-tmnight-preprod.nethermind.dev/ |
+| preview | https://midnight-tmnight-preview.nethermind.dev/ |
 
 The funding pattern is "print the address and the URL, watch for the
 balance to arrive":
 
 1. Print the recipient's UNSHIELDED address and the faucet URL.
 2. Subscribe to wallet state.
-3. Poll until `state.unshielded.balances[ledger.nativeToken().raw] > 0n`,
+3. Poll until `state.unshielded.balances[ledger.unshieldedToken().raw] > 0n`,
    or a timeout fires.
 
 See `examples/fund-wallet-public-faucet.ts` for the runnable script.

@@ -3,12 +3,13 @@ name: midnight-wallet:wallet-sdk
 description: >-
   This skill should be used when the user asks about the Midnight Wallet SDK
   packages (@midnightntwrk/wallet-sdk-*), how to construct a wallet with
-  WalletFacade, HD key derivation from seeds or mnemonics,
+  WalletFacade, deriving wallet seeds from a master seed or mnemonic,
   the three-wallet architecture (shielded, unshielded, dust), observing wallet
   state and sync progress, transaction balancing and signing, proving and
   submission services, connecting to infrastructure (indexer client, node client,
   prover client), or Bech32m address formatting. Also covers ProtocolVersion,
-  SyncProgress, FacadeState, and the wallet runtime
+  SyncProgress, FacadeState, the ledger 9 protocol boundary, and the wallet
+  runtime
 ---
 
 # Wallet SDK Reference
@@ -33,24 +34,36 @@ DApp with a browser extension wallet (Lace or other), load
 
 ## Quick Start: Wallet Construction
 
-The most common task is constructing a `WalletFacade` from a seed. The flow is:
+The most common task is constructing a `WalletFacade` from a seed. In wallet
+SDK 2.0.0 (ledger 9) the flow is:
 
-    Seed (64 hex chars)
-      → HDWallet.fromSeed() → selectAccount(0) → selectRoles() → deriveKeysAt(0)
-        → ShieldedWallet (Zswap role)
-        → UnshieldedWallet (NightExternal role)
-        → DustWallet (Dust role)
-          → WalletFacade.init({ shielded, unshielded, dust, configuration })
+    Master seed (32 bytes / 64 hex chars)
+      → WalletSeeds.fromMasterSeed() → { shielded, unshielded, dust }
+        → ShieldedWallet(config).startWithSeed(seeds.shielded)
+        → UnshieldedWallet(config).startWithPublicKey(
+            PublicKey.fromKeyStore(createKeystore({ kind: "schnorr", secret: seeds.unshielded }, networkId)))
+        → DustWallet(config).startWithSeed(seeds.dust)
+          → WalletFacade.init({ configuration, shielded, unshielded, dust })
+            → wallet.start(seeds)
+              → wait for isSynced && protocol._tag === "Settled"
+
+Seeds, not key objects, are what the wallet starts from: each ledger version
+derives its own keys from a seed, so a seed is the only key material that
+crosses the ledger 8 / ledger 9 boundary. `WalletSeeds.fromMasterSeed` walks
+the same HD path as the 1.x `HDWallet` code, so a 1.x master seed restores the
+same wallet and addresses.
 
 Key packages involved:
 
 | Package | What it provides |
 |---------|-----------------|
-| `@midnightntwrk/wallet-sdk-hd` | `HDWallet`, `Roles`, `generateRandomSeed` |
-| `@midnightntwrk/wallet-sdk-facade` | `WalletFacade` — unified API |
+| `@midnightntwrk/wallet-sdk-hd` | `WalletSeeds`, `generateRandomSeed`, mnemonic helpers (`HDWallet` / `Roles` for lower-level derivation) |
+| `@midnightntwrk/wallet-sdk-facade` | `WalletFacade`, `FacadeState`, `WalletEntrySchema`, `mergeWalletEntries` |
 | `@midnightntwrk/wallet-sdk-shielded` | `ShieldedWallet` factory |
 | `@midnightntwrk/wallet-sdk-unshielded-wallet` | `UnshieldedWallet` factory, `createKeystore`, `PublicKey` |
-| `@midnightntwrk/wallet-sdk-dust-wallet` | `DustWallet` factory |
+| `@midnightntwrk/wallet-sdk-dust-wallet` | `DustWallet` factory, `isInsufficientDustForFeeError` |
+| `@midnightntwrk/wallet-sdk-abstractions` | `InMemoryTransactionHistoryStorage` |
+| `@midnightntwrk/ledger-v9` | Ledger types and token helpers (`unshieldedToken()`, `shieldedToken()`) |
 
 For the full construction code, see `examples/basic-wallet-setup.ts`.
 For configuration details, see `references/wallet-construction.md`.
@@ -60,7 +73,7 @@ For configuration details, see `references/wallet-construction.md`.
 | Task | Reference |
 |------|-----------|
 | Look up a package name, import path, or key type | `references/quick-reference.md` |
-| Generate keys from a seed or mnemonic | `references/key-derivation.md` |
+| Generate a seed or derive wallet seeds / keys | `references/key-derivation.md` |
 | Construct and configure a WalletFacade | `references/wallet-construction.md` |
 | Read wallet state, balances, or sync progress | `references/state-and-balances.md` |
 | Create, balance, sign, prove, or submit a transaction | `references/transactions.md` |

@@ -9,8 +9,8 @@ Three transfer kinds, all built via `wallet.transferTransaction`:
 
 Every transfer goes through five stages:
 
-1. **Build** the transfer recipe via `wallet.transferTransaction(outputs, secretKeys, options)`
-2. **Sign** the recipe via `wallet.signRecipe(recipe, callback)`
+1. **Build** the transfer recipe via `wallet.transferTransaction(outputs, { ttl })` — no secret keys; the wallet already holds them from `start(seeds)`
+2. **Sign** the recipe via `wallet.signRecipe(recipe, unshieldedKeystore.signDataAsync)` — the callback returns a `Promise<Signature>`
 3. **Finalize** (proves the ZK component) via `wallet.finalizeRecipe(recipe)`
 4. **Submit** to the network via `wallet.submitTransaction(finalizedTx)`
 5. (Optional) **Watch** the recipient's wallet state until the balance arrives
@@ -18,10 +18,10 @@ Every transfer goes through five stages:
 ## Unshielded NIGHT transfer
 
 ```typescript
-import * as ledger from '@midnight-ntwrk/ledger-v8';
+import * as ledger from '@midnightntwrk/ledger-v9';
 import { MidnightBech32m, UnshieldedAddress } from '@midnightntwrk/wallet-sdk-address-format';
 
-const NIGHT_TOKEN_TYPE = ledger.nativeToken().raw;
+const NIGHT_TOKEN_TYPE = ledger.unshieldedToken().raw;
 const recipientAddress = MidnightBech32m
   .parse(recipientBech32)
   .decode(UnshieldedAddress, 'undeployed');
@@ -31,11 +31,10 @@ const recipe = await wallet.transferTransaction(
     type: 'unshielded',
     outputs: [{ type: NIGHT_TOKEN_TYPE, receiverAddress: recipientAddress, amount: 5_000_000n }],
   }],
-  { shieldedSecretKeys, dustSecretKey },
   { ttl: new Date(Date.now() + 3_600_000) },
 );
 
-const signed = await wallet.signRecipe(recipe, (data) => unshieldedKeystore.signData(data));
+const signed = await wallet.signRecipe(recipe, unshieldedKeystore.signDataAsync);
 const finalized = await wallet.finalizeRecipe(signed);
 const txId = await wallet.submitTransaction(finalized);
 ```
@@ -50,7 +49,6 @@ const recipe = await wallet.transferTransaction(
     type: 'shielded',
     outputs: [{ type: NIGHT_TOKEN_TYPE, receiverAddress: recipientShieldedAddress, amount: 1_000_000n }],
   }],
-  { shieldedSecretKeys, dustSecretKey },
   { ttl: new Date(Date.now() + 3_600_000) },
 );
 ```
@@ -66,7 +64,7 @@ both legs apply or neither.
 ## Fee estimation
 
 ```typescript
-const fee = await wallet.estimateTransactionFee(tx, dustSecretKey, { ttl });
+const fee = await wallet.estimateTransactionFee(tx, { ttl });
 ```
 
 `estimateTransactionFee` includes the cost of the balancing transaction;

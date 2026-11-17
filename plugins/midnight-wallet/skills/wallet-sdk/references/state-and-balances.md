@@ -2,32 +2,47 @@
 
 ## FacadeState
 
-`FacadeState` is the top-level state object emitted by a `WalletFacade`. It composes the state of all three wallet types plus pending transaction tracking:
+`FacadeState` is the top-level state object emitted by a `WalletFacade`. In wallet SDK 2.0.0 it composes the three wallet states, the transaction lifecycle records, and protocol-version readings:
 
 ```typescript
 class FacadeState {
-  public readonly shielded: ShieldedWalletState;
-  public readonly unshielded: UnshieldedWalletState;
-  public readonly dust: DustWalletState;
-  public readonly pending: PendingTransactions<FinalizedTransaction>;
+  readonly shielded: ShieldedWalletState;
+  readonly unshielded: UnshieldedWalletState;
+  readonly dust: DustWalletState;
+  readonly lifecycle: readonly LifecycleEntry[];   // replaces 1.x `pending`
 
-  public get isSynced(): boolean;
+  get protocolVersion(): WalletProtocolVersions;     // { shielded, unshielded, dust }
+  get activeProtocolVersion(): ProtocolVersion;      // the lowest of the three
+  get protocol(): ProtocolPhase;                     // Settled | Crossing
+  get isSynced(): boolean;
 }
 ```
 
-The `isSynced` getter returns `true` only when **all three** sub-wallets report strictly complete sync progress:
-
-```typescript
-public get isSynced(): boolean {
-  return (
-    this.shielded.state.progress.isStrictlyComplete() &&
-    this.dust.state.progress.isStrictlyComplete() &&
-    this.unshielded.progress.isStrictlyComplete()
-  );
-}
-```
+`isSynced` is `true` only when **all three** sub-wallets report strictly complete sync progress.
 
 > **Warning:** Do not read balances before `isSynced` returns `true`. Until all wallets have finished their initial sync, balance values are incomplete and will undercount holdings.
+
+### Protocol phase
+
+`state.protocol` says whether the three wallets agree about which side of the ledger 9 boundary the chain is on:
+
+```typescript
+type ProtocolPhase =
+  | { _tag: 'Settled'; version: ProtocolVersion }
+  | { _tag: 'Crossing'; from: ProtocolVersion; to: ProtocolVersion; behind: readonly ('shielded' | 'unshielded' | 'dust')[] };
+```
+
+Each sub-wallet notices the fork when its own sync reaches it, so around the fork some have crossed and some have not. While the phase is `Crossing`, the facade stays bound to `from` (that's `activeProtocolVersion`), and a transaction built then can fail with `ProtocolVersionMismatchError`. **Build transactions only from a state where `isSynced && protocol._tag === 'Settled'`.** A wallet synced from genesis on a chain that already forked passes through `Crossing` during its initial sync.
+
+### Lifecycle entries
+
+`state.lifecycle` lists every transaction the wallet is tracking, from balancing until its TTL passes, each with a tagged `status`: `Balanced`, `Finalized`, `Submitted` (still awaiting a result), or `Confirmed`, `PartialSuccess`, `Rejected`, `Orphaned`, `Expired`, `Reverted` (ended). Use `isAwaiting(entry)` (from `@midnightntwrk/wallet-sdk-facade`) to tell the two apart; ended entries stay in the list until their TTL passes, so don't rely on the list being empty:
+
+```typescript
+import { isAwaiting } from '@midnightntwrk/wallet-sdk-facade';
+
+const inFlight = state.lifecycle.filter(isAwaiting).length;
+```
 
 ## Subscribing to State
 
@@ -47,17 +62,19 @@ const sub: Subscription = wallet.state().subscribe((facadeState) => {
 sub.unsubscribe();
 ```
 
-For a one-shot wait until the wallet is fully synced, use `waitForSyncedState()`:
+For a one-shot wait until the wallet is synced and settled:
 
 ```typescript
-import * as ledger from '@midnight-ntwrk/ledger-v8';
+import { firstValueFrom, filter } from 'rxjs';
+import * as ledger from '@midnightntwrk/ledger-v9';
 
-const state: FacadeState = await wallet.waitForSyncedState();
-// state.isSynced is guaranteed true
-console.log('Shielded NIGHT:', state.shielded.balances[ledger.nativeToken().raw]);
+const state: FacadeState = await firstValueFrom(
+  wallet.state().pipe(filter((s) => s.isSynced && s.protocol._tag === 'Settled')),
+);
+console.log('Unshielded NIGHT:', state.unshielded.balances[ledger.unshieldedToken().raw]);
 ```
 
-Each individual wallet also exposes `waitForSyncedState(allowedGap?)` which accepts an optional `allowedGap` parameter (defaults to `0n`, meaning strictly complete).
+`wallet.waitForSyncedState()` is still there and resolves on `isSynced` alone; that's fine for reading balances but not enough before building a transaction. Each individual wallet also exposes `waitForSyncedState(allowedGap?)` which accepts an optional `allowedGap` parameter (defaults to `0n`, meaning strictly complete).
 
 ## Balance Shapes
 
@@ -67,19 +84,21 @@ Each individual wallet also exposes `waitForSyncedState(allowedGap?)` which acce
 
 | Getter | Type | Description |
 |--------|------|-------------|
-| `balances` | `Record<RawTokenType, bigint>` | Available balances per token type |
+| `balances` | `Record<TokenType, bigint>` | Available balances per token type |
 | `totalCoins` | `readonly UtxoWithMeta[]` | All coins (available + pending) |
 | `availableCoins` | `readonly UtxoWithMeta[]` | Coins available for spending |
 | `pendingCoins` | `readonly UtxoWithMeta[]` | Coins in pending transactions |
 | `address` | `UnshieldedAddress` | The wallet's unshielded address |
+| `verifyingKey` | `SignatureVerifyingKey` | The key the wallet signs with |
 | `progress` | `SyncProgress` | Current sync status |
+| `protocolVersion` | `ProtocolVersion` | The protocol version this wallet has reached |
 
-The `balances` record is keyed by `RawTokenType`. The native NIGHT token is keyed by its raw bytes — a 64-zero hex string — accessible via `ledger.nativeToken().raw`. The empty string `""` is **NOT** the native token key; `balances[""]` returns `undefined`. All amounts are `bigint` values in the smallest denomination: **6 decimal places**, so `1_000_000n` equals 1 NIGHT.
+The `balances` record is keyed by the raw token type. The native NIGHT token is keyed by its raw bytes — a 64-zero hex string — accessible via `ledger.unshieldedToken().raw` (the same value as `ledger.nativeToken().raw`). The empty string `""` is **NOT** the native token key; `balances[""]` returns `undefined`. All amounts are `bigint` values in the smallest denomination: **6 decimal places**, so `1_000_000n` equals 1 NIGHT.
 
 ```typescript
-import * as ledger from '@midnight-ntwrk/ledger-v8';
+import * as ledger from '@midnightntwrk/ledger-v9';
 
-const nightBalance = state.unshielded.balances[ledger.nativeToken().raw];
+const nightBalance = state.unshielded.balances[ledger.unshieldedToken().raw] ?? 0n;
 const nightAsDecimal = Number(nightBalance) / 1_000_000;
 console.log(`Unshielded NIGHT: ${nightAsDecimal}`);
 ```
@@ -90,16 +109,17 @@ console.log(`Unshielded NIGHT: ${nightAsDecimal}`);
 
 | Getter | Type | Description |
 |--------|------|-------------|
-| `balances` | `Record<RawTokenType, bigint>` | Available balances per token type |
+| `balances` | `Record<TokenType, bigint>` | Available balances per token type |
 | `totalCoins` | `readonly (AvailableCoin \| PendingCoin)[]` | All coins |
 | `availableCoins` | `readonly AvailableCoin[]` | Spendable coins |
-| `pendingCoins` | `readonly PendingCoin[]` | Coins in pending transactions |
+| `pendingCoins` | `readonly PendingCoin[]` | Coins the wallet expects to receive (not yet confirmed) |
+| `reservedCoins` | `readonly ReservedCoin[]` | Coins booked for a transaction that has not settled (held, not spendable) |
 | `coinPublicKey` | `ShieldedCoinPublicKey` | Public key for receiving shielded coins |
 | `encryptionPublicKey` | `ShieldedEncryptionPublicKey` | Encryption public key |
 | `address` | `ShieldedAddress` | The wallet's shielded address |
 | `progress` | `SyncProgress` | Current sync status |
 
-The same `ledger.nativeToken().raw` key and `bigint` denomination rules apply. Shielded balances are privacy-preserving: they are only visible to the wallet holder. On-chain observers cannot see shielded coin values or link them to an address.
+Shielded balances are keyed the same way; the shielded native token is `ledger.shieldedToken().raw`. Shielded balances are privacy-preserving: they are only visible to the wallet holder. On-chain observers cannot see shielded coin values or link them to an address.
 
 ### Dust
 
@@ -107,27 +127,28 @@ The same `ledger.nativeToken().raw` key and `bigint` denomination rules apply. S
 
 | Getter / Method | Type | Description |
 |-----------------|------|-------------|
-| `totalCoins` | `readonly Dust[]` | All dust coins |
-| `availableCoins` | `readonly Dust[]` | Available dust coins |
-| `pendingCoins` | `readonly Dust[]` | Pending dust coins |
-| `publicKey` | `DustPublicKey` | The dust wallet's public key |
+| `totalCoins` | `readonly DustFullInfo[]` | All dust coins |
+| `availableCoins` | `readonly DustFullInfo[]` | Available dust coins, with full metadata |
+| `pendingCoins` | `readonly DustFullInfo[]` | Pending dust coins |
+| `publicKey` | `bigint` | The dust wallet's public key |
 | `address` | `DustAddress` | The dust wallet's address |
 | `progress` | `SyncProgress` | Current sync status |
 | `balance(time: Date)` | `Balance` | Balance at the given time (expired DUST excluded) |
-| `availableCoinsWithFullInfo(time: Date)` | `readonly DustFullInfo[]` | Available coins with full metadata at the given time |
 | `estimateDustGeneration(nightUtxos, currentTime)` | `readonly UtxoWithFullDustDetails[]` | Estimate DUST yield from NIGHT UTXOs |
+
+1.x's `availableCoinsWithFullInfo(time)` is gone; `availableCoins` now carries the full info.
 
 The time parameter is required because DUST tokens have an expiry. Calling `balance(new Date())` gives you the current valid balance, excluding any expired DUST.
 
 ### Clock injection
 
-The wallet accepts an optional `Clock` (`{ readonly now: () => Date }`)
-during construction so that `state.dust.balance(time)` and other
-time-sensitive operations can use a deterministic time source. This is
-useful for tests where you want to control "now". The `Clock` is set
-on `WalletFacade.init`'s configuration (see `wallet-construction.md`).
-The default clock is `systemClock` (exported from `@midnightntwrk/wallet-sdk-facade`),
-which delegates to `new Date()`.
+The facade accepts an optional `Clock` (`{ readonly now: () => Date }`)
+so that time-sensitive operations can use a deterministic time source. This is
+useful for tests where you want to control "now". Pass it as the `clock`
+factory in `WalletFacade.init`'s parameters (next to `shielded` / `unshielded` /
+`dust`, not inside `configuration`; see `wallet-construction.md`).
+The default is `Clock.systemClock` (the `Clock` namespace is exported from
+`@midnightntwrk/wallet-sdk-facade`), which delegates to `new Date()`.
 
 ```typescript
 const dustBalance = state.dust.balance(new Date());
@@ -174,6 +195,7 @@ interface SyncProgress {
 
 ```typescript
 // WalletFacade.waitForSyncedState() takes no parameters — it waits for strict sync
+// (but not for the protocol phase to settle; see "Protocol phase" above)
 const state = await wallet.waitForSyncedState();
 
 // Individual sub-wallets accept an optional allowedGap parameter:
@@ -186,7 +208,7 @@ The facade exposes UTXO metadata through the `UtxoWithMeta` type:
 
 ```typescript
 type UtxoWithMeta = {
-  utxo: Utxo;
+  utxo: ledger.Utxo; // ledger-v9
   meta: UtxoMeta;
 };
 ```
