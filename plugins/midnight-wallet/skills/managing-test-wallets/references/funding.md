@@ -26,8 +26,8 @@ funds the address manually via the faucet web page.
 
 | Network | Faucet URL |
 |---------|------------|
-| preprod | https://faucet.preprod.midnight.network/ |
-| preview | https://faucet.preview.midnight.network/ |
+| preprod | https://midnight-tmnight-preprod.nethermind.dev/ |
+| preview | https://midnight-tmnight-preview.nethermind.dev/ |
 
 The funding pattern is "print the address and the URL, watch for the
 balance to arrive":

@@ -79,7 +79,7 @@ const NETWORK_CONFIG: Record<
     get indexerWsUrl() {
       return withBlockfrostKey("wss://midnight-preprod.blockfrost.io/api/v0/ws");
     },
-    faucetUrl: "https://faucet.preprod.midnight.network/",
+    faucetUrl: "https://midnight-tmnight-preprod.nethermind.dev/",
     networkId: "preprod",
   },
   preview: {
@@ -88,7 +88,7 @@ const NETWORK_CONFIG: Record<
       "https://indexer.preview.midnight.network/api/v4/graphql",
     indexerWsUrl:
       "wss://indexer.preview.midnight.network/api/v4/graphql/ws",
-    faucetUrl: "https://faucet.preview.midnight.network/",
+    faucetUrl: "https://midnight-tmnight-preview.nethermind.dev/",
     networkId: "preview",
   },
 };
