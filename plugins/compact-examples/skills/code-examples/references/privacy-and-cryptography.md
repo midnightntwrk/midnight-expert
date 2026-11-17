@@ -8,8 +8,8 @@ This is a routing-only reference. There is no `examples/privacy-and-cryptography
 
 | Pattern | Location | Description |
 |---|---|---|
-| Schnorr signature verification (Jubjub) | `modules/crypto/schnorr.compact` | Schnorr verification over the Jubjub curve. Polyfill for `jubjubSchnorrVerify` (not yet in CompactStandardLibrary). `schnorrVerify<#n>(msg, signature, pk)` uses `ecMulGenerator`/`ecMul`/`ecAdd`. A `getSchnorrReduction` witness truncates the 255-bit challenge hash to 248 bits to satisfy Jubjub's scalar field constraint. |
-| Generic EC primitives (Jubjub curve) | `modules/crypto/crypto.compact` | Sign/verify over `JubjubPoint` using generic credentials `SignedCredential<T>`. Exports `derive_pk`, `sign<T>`, `verify<T>`, `computeChallenge<T>`, `deterministicK<T>`. Used when the credential type is parameterized (e.g., passport data). |
+| Schnorr signature verification (Jubjub) | `modules/crypto/schnorr.compact` | Schnorr verification over the Jubjub curve. Polyfill written before CompactStandardLibrary had `jubjubSchnorrVerify`. `schnorrVerify<#n>(msg, signature, pk)` uses `ecMulGenerator`/`ecMul`/`ecAdd`. A `getSchnorrReduction` witness truncates the 255-bit challenge hash to 248 bits to satisfy Jubjub's scalar field constraint, and the circuit bounds its quotient so the challenge can't be chosen by the prover. |
+| Generic EC primitives (Jubjub curve) | `modules/crypto/crypto.compact` | Verify over `JubjubPoint` using generic credentials `SignedCredential<T>`; signing happens off-chain modulo the Jubjub order. Exports `derive_pk`, `verify<T>`, `computeChallenge<T>`, `deterministicK<T>`. Used when the credential type is parameterized (e.g., passport data). |
 | Hash-based NFT identity (owner privacy) | `modules/token/NftZk.compact` | Owner identity stored as a `Field` hash of `(userPubKey.bytes, localSecret)` via `generateHashKey`, so raw keys are never stored in token ownership maps. The `userPubKey` is itself witness-derived: identity for **authorization** comes from `deriveUserPublicKey(getUserSecret())` / `deriveAdminPublicKey(getUserSecret())` (domain-separated `persistentHash`), never `ownPublicKey()`. Balance lookups still require the caller to provide `getLocalSecret()` (self) or `getSharedSecret()` (peer) for the **privacy** blinding. Two orthogonal concerns: witness-derived identity gates *who* may act; the local/shared secrets blind *where* ownership is recorded. |
 | Shielded token minting and transfer | `tokens/ShieldedERC20.compact` | Uses `mintShieldedToken` and `sendImmediateShielded` from `CompactStandardLibrary`. Tokens are native Midnight shielded coins — balances are hidden from the public ledger. **Archived; not for production** due to inability to enforce custom spend logic or guarantee total supply accounting. |
 | Shielded coin with nonce evolution | `tokens/tbtc.compact`, `applications/tbtc/tbtc.compact` | Demonstrates `mintShieldedToken` with `evolveNonce(counter, nonce)` to derive fresh nonces per mint. Coin color is a domain-separated `Bytes<32>` constant (`"brick-towers:coin:tbtc"`). |
@@ -32,13 +32,12 @@ Most privacy in Compact is implemented via witnesses — values computed off-cha
 | `getUserSecret(): UserSecretKey` | `nft-zk.compact`, `nft.compact`, `zkloan` callers | Identity secret — derives the caller's `UserPublicKey`/`AdminPublicKey` for **authorization** (never `ownPublicKey()`) |
 | `getLocalSecret(): Bytes<32>` | `NftZk` callers | **Privacy** blinder combined with the derived user key into the owner hash (self-queries) |
 | `getSharedSecret(): Bytes<32>` | `NftZk` callers | **Privacy** blinder combined with the derived user key into the owner hash (peer queries) |
-| `getSchnorrReduction(hash): [Field, Uint<248>]` | `schnorr.compact` | Truncates 255-bit challenge to Jubjub 248-bit scalar |
+| `getSchnorrReduction(hash): [Uint<7>, Uint<248>]` | `schnorr.compact` | Truncates 255-bit challenge to Jubjub 248-bit scalar |
 | `getAttestedScoringWitness()` | `zkloan-credit-scorer.compact` | Returns private applicant data + provider signature |
 | `localSecretKey(): Bytes<32>` | `midnight-rwa`, `bboard` | Issuer's private key for on-chain issuer-key derivation |
 | `getUserSecret(): UserSecretKey` | `midnight-rwa` callers | User authorization secret — derives the caller's `UserPublicKey` for the `authorizations` tree (never `ownPublicKey()`) |
 | `findIssuerPath(pk)` | `midnight-rwa` | Merkle proof for issuer authorization |
 | `findAuthorizationPath(pk: UserPublicKey)` | `midnight-rwa` | Merkle proof for the caller's witness-derived user authorization identity |
-| `reduceChallenge(r): Field` | `midnight-rwa` | Schnorr challenge reduction workaround |
 
 ---
 

@@ -1,5 +1,5 @@
 // Copyright 2025 Brick Towers
-pragma language_version 0.23;
+pragma language_version 0.28;
 
 // SECURE PATTERN — witness-derived identity (auth); ownPublicKey() retained
 // ONLY for safe token routing to the caller. Authorization gates (the
@@ -31,12 +31,11 @@ export { SignedCredential };
 
 export { PassportData };
 
-// We are exporting these signing primitives instead of the pure sign circuit due to broken ecMulGenerator in CompactRuntime
+// The identity provider signs off-chain (Crypto has no in-circuit sign), and uses
+// these two circuits to get the nonce and the challenge.
 export { computeChallengeForCredential };
 
 export { generateDeterministicK };
-
-// export { sign };
 
 // Every browser/CLI instance holds a single 32-byte secret in private state.
 // The caller's AUTHORIZATION identity is derived from that secret in-circuit
@@ -57,9 +56,6 @@ witness getUserSecret(): UserSecretKey;
 witness findIssuerPath(pk: Bytes<32>): MerkleTreePath<32, Bytes<32>>;
 
 witness findAuthorizationPath(pk: UserPublicKey): MerkleTreePath<32, UserPublicKey>;
-
-// Helper witness functions for workarounds
-witness reduceChallenge(r: Field): Field;
 
 export ledger counter: Counter;
 
@@ -237,11 +233,7 @@ export circuit sellTHF(inputCoin: ShieldedCoinInfo): [] {
 }
 
 circuit assertIdentity(identity: SignedCredential<PassportData>): [] {
-  const challenge: Field =
-          reduceChallenge(
-            computeChallengeForCredential(identity.signature.r, identity.pk, identity.credential)
-            );
-  assert(verify<PassportData>(identity, challenge),
+  assert(verify<PassportData>(identity),
          "The supplied identity is not signed by the supplied public key"
          );
   assert(identity.pk == identityProviderPublicKey,
