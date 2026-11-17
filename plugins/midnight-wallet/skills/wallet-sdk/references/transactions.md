@@ -133,31 +133,37 @@ const feeEstimate: bigint = await wallet.estimateTransactionFee(tx, {
 
 ## Dust Registration
 
-Dust registration enables NIGHT UTXOs to generate DUST tokens for paying transaction fees. Registration pays its own fee from the DUST the UTXOs being registered have generated, so it works from a zero DUST balance — but in 2.0.0 a **first registration** has to wait until those UTXOs have generated enough to cover the fee. Estimate, wait, then register:
+Dust registration enables NIGHT UTXOs to generate DUST tokens for paying transaction fees. Registration pays its own fee from the DUST the UTXOs being registered have generated, so it works from a zero DUST balance — but in 2.0.0 a **first registration** has to wait until those UTXOs have generated enough to cover the fee. Try to register, and if it throws because the fee isn't covered yet, wait as long as the error estimates and retry (the pattern from the SDK's own docs):
 
 ```typescript
+const NIGHT = ledger.unshieldedToken().raw;
 const nightUtxos = state.unshielded.availableCoins.filter(
-  (coin) => !coin.meta.registeredForDustGeneration,
+  (coin) => coin.utxo.type === NIGHT && !coin.meta.registeredForDustGeneration,
 );
 
 // Don't call this with an empty list — it fails with
 // "No guaranteedUnshieldedOffer found in intent".
 if (nightUtxos.length > 0) {
-  const { fee } = await wallet.estimateRegistration(nightUtxos);
-  await wallet.waitForGeneratedDust(nightUtxos, fee); // optional { timeoutMs }
-
-  const recipe = await wallet.registerNightUtxosForDustGeneration(
-    nightUtxos,                         // readonly UtxoWithMeta[]
-    unshieldedKeystore.getPublicKey(),  // SignatureVerifyingKey
-    unshieldedKeystore.signDataAsync,   // SignSegment (async)
-    // dustReceiverAddress?             // defaults to the wallet's own dust address
-  );
+  const register = () =>
+    wallet.registerNightUtxosForDustGeneration(
+      nightUtxos,                         // readonly UtxoWithMeta[]
+      unshieldedKeystore.getPublicKey(),  // SignatureVerifyingKey
+      unshieldedKeystore.signDataAsync,   // SignSegment (async)
+      // dustReceiverAddress?             // defaults to the wallet's own dust address
+    );
+  const recipe = await register().catch(async (error: unknown) => {
+    // Only a reachable fee is worth waiting for.
+    if (!isInsufficientDustForFeeError(error) || error.estimate._tag !== 'Reachable') throw error;
+    const timeoutMs = Number(error.estimate.seconds) * 1000 + 60_000;
+    await wallet.waitForGeneratedDust(nightUtxos, error.fee, { timeoutMs });
+    return register();
+  });
   // UnprovenTransactionRecipe -- still needs finalizeRecipe + submitTransaction
   await wallet.submitTransaction(await wallet.finalizeRecipe(recipe));
 }
 ```
 
-Skip the wait and the registration throws `InsufficientDustForFeeError` (`_tag: 'Wallet.InsufficientDustForFee'`, from `@midnightntwrk/wallet-sdk-dust-wallet`). It carries `fee`, `claimableFeePayment`, `shortfall` and an `estimate` (`{ _tag: 'Reachable', at, seconds }` or `{ _tag: 'Unreachable', reason: 'NoGeneration' | 'ExceedsCap' }`); test for it with `isInsufficientDustForFeeError(err)`. How long the wait takes depends on how much NIGHT is being registered. On a local devnet, 5 NIGHT had not covered the fee after five minutes, while 1000 NIGHT was ready within the minute; fund test wallets generously.
+The error is `InsufficientDustForFeeError` (`_tag: 'Wallet.InsufficientDustForFee'`, from `@midnightntwrk/wallet-sdk-dust-wallet`). It carries `fee`, `claimableFeePayment`, `shortfall` and an `estimate` (`{ _tag: 'Reachable', at, seconds }` or `{ _tag: 'Unreachable', reason: 'NoGeneration' | 'ExceedsCap' }`); test for it with `isInsufficientDustForFeeError(err)`. How long the wait takes depends on how much NIGHT is being registered. On a local devnet, 5 NIGHT had not covered the fee after five minutes, while 1000 NIGHT was ready within the minute; fund test wallets generously. Calling `estimateRegistration` then `waitForGeneratedDust(utxos, fee)` up front also works, but `waitForGeneratedDust` gives up after 5 minutes by default, so the catch-and-retry form above is safer for small amounts.
 
 `estimateRegistration(nightUtxos)` returns `{ fee, dustGenerationEstimations }` — the registration fee and per-UTXO dust generation details.
 

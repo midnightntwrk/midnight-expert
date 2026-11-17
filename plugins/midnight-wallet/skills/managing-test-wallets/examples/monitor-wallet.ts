@@ -1,5 +1,5 @@
 // Verified against the package versions pinned in
-// midnight-wallet:sdk-regression-check/versions.lock.json on 2026-06-02.
+// midnight-wallet:sdk-regression-check/versions.lock.json on 2026-11-17.
 // If your installed @midnightntwrk/wallet-sdk-* versions differ,
 // run scripts/drift-check.sh in that skill before trusting this template.
 

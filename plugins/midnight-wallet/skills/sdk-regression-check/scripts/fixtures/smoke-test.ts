@@ -6,8 +6,8 @@ import WebSocket from "ws";
 (globalThis as any).WebSocket = WebSocket;
 
 import { Buffer } from "buffer";
-import { firstValueFrom as rxFirstValueFrom, filter as rxFilter } from "rxjs";
-import { WalletSeeds, type WalletSeeds as Seeds } from "@midnightntwrk/wallet-sdk-hd";
+import { firstValueFrom, filter } from "rxjs";
+import { WalletSeeds } from "@midnightntwrk/wallet-sdk-hd";
 import {
   WalletFacade,
   type FacadeState,
@@ -30,8 +30,8 @@ import * as ledger from "@midnightntwrk/ledger-v9";
 // sub-wallet catches up, and a transaction built then can fail with
 // ProtocolVersionMismatchError, so wait for "Settled" before building one.
 function waitForSettled(wallet: WalletFacade): Promise<FacadeState> {
-  return rxFirstValueFrom(
-    wallet.state().pipe(rxFilter((s) => s.isSynced && s.protocol._tag === "Settled"))
+  return firstValueFrom(
+    wallet.state().pipe(filter((s) => s.isSynced && s.protocol._tag === "Settled"))
   );
 }
 
@@ -52,7 +52,7 @@ function fail(step: Step, err: unknown): never {
 }
 
 async function main() {
-  let seeds: Seeds;
+  let seeds: WalletSeeds;
   try {
     // Same HD path as wallet SDK 1.x (account 0, roles Zswap / NightExternal /
     // Dust, index 0), so the genesis seed gives the same pre-funded wallet.

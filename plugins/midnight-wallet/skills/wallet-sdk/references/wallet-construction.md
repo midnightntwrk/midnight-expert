@@ -105,8 +105,8 @@ compact-cli-dev template uses `300_000_000_000_000n`. (compact-core's basic-star
 > self-funding — its fee is paid by the DUST the NIGHT UTXOs being registered
 > have generated, not from the wallet's existing DUST balance — so it works from
 > a `0` DUST balance. In 2.0.0 a first registration has to wait until those UTXOs
-> have generated the fee: call `estimateRegistration` then `waitForGeneratedDust`
-> first, or it throws `InsufficientDustForFeeError` (see
+> have generated the fee, or it throws `InsufficientDustForFeeError` with an
+> estimate of how long to wait before retrying (see
 > [transactions.md](transactions.md#dust-registration)). Set
 > `additionalFeeOverhead` on the wallets that submit **transfers or contract
 > calls**. See

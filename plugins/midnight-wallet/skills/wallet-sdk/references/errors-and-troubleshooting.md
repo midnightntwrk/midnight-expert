@@ -129,7 +129,7 @@ try {
 }
 ```
 
-Avoid it by calling `estimateRegistration` then `waitForGeneratedDust(utxos, fee)` before registering (see [transactions.md](transactions.md#dust-registration)).
+When `estimate._tag` is `'Reachable'`, wait `estimate.seconds` (plus a margin) with `waitForGeneratedDust(utxos, error.fee, { timeoutMs })` and retry (see [transactions.md](transactions.md#dust-registration)).
 
 ---
 
@@ -229,7 +229,7 @@ Wraps errors thrown by ledger (`@midnightntwrk/ledger-v8` / `@midnightntwrk/ledg
 | Transaction submit throws or rejects | `SubmissionError` (capability-level), `TransactionInvalidError` (node-level) | Inspect rejection reason; check ledger version compatibility |
 | Transfer fails with insufficient funds | `InsufficientFundsError` (`_tag: 'Wallet.InsufficientFunds'`) | Check `tokenType` and `amount` fields for which token is short |
 | DUST-related failure | `InsufficientFundsError` from the dust wallet (`tokenType` will be the DUST token type) | Ensure DUST has been registered and accrued |
-| First DUST registration throws "Insufficient generated dust…" | `InsufficientDustForFeeError` (`'Wallet.InsufficientDustForFee'`) | Call `estimateRegistration` + `waitForGeneratedDust` first; register more NIGHT if `estimate` is `Unreachable` |
+| First DUST registration throws "Insufficient generated dust…" | `InsufficientDustForFeeError` (`'Wallet.InsufficientDustForFee'`) | Wait `estimate.seconds` with `waitForGeneratedDust` and retry; register more NIGHT if `estimate` is `Unreachable` |
 | Registration fails with "No guaranteedUnshieldedOffer found in intent" | `TransactingError` (`'Wallet.Transacting'`) | The UTXO list was empty (e.g. everything is already registered); skip registration |
 | Transaction fails around the ledger 9 fork, or right after a fresh sync | `ProtocolVersionMismatchError` | Wait for `protocol._tag === 'Settled'`; rebuild the transaction |
 | Unshielded sign fails with a scheme error | `'Wallet.SchemeMismatch'` (v2) | Keystore scheme (`kind`) doesn't match the key the wallet was started with |

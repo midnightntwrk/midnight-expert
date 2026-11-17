@@ -1,5 +1,5 @@
 // Verified against the package versions pinned in
-// midnight-wallet:sdk-regression-check/versions.lock.json on 2026-06-02.
+// midnight-wallet:sdk-regression-check/versions.lock.json on 2026-11-17.
 // If your installed @midnightntwrk/wallet-sdk-* versions differ,
 // run scripts/drift-check.sh in that skill before trusting this template.
 
@@ -7,7 +7,7 @@ import WebSocket from "ws";
 (globalThis as any).WebSocket = WebSocket;
 
 import { Buffer } from "buffer";
-import { firstValueFrom as rxFirstValueFrom, filter as rxFilter } from "rxjs";
+import { firstValueFrom, filter } from "rxjs";
 import {
   WalletSeeds,
   generateRandomSeed,
@@ -37,8 +37,8 @@ import { mnemonicToSeedSync } from "@scure/bip39";
 // sub-wallet catches up, and a transaction built then can fail with
 // ProtocolVersionMismatchError, so wait for "Settled" before building one.
 function waitForSettled(wallet: WalletFacade): Promise<FacadeState> {
-  return rxFirstValueFrom(
-    wallet.state().pipe(rxFilter((s) => s.isSynced && s.protocol._tag === "Settled"))
+  return firstValueFrom(
+    wallet.state().pipe(filter((s) => s.isSynced && s.protocol._tag === "Settled"))
   );
 }
 

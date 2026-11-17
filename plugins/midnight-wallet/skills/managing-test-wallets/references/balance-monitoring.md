@@ -12,7 +12,7 @@ is true only when all three sub-wallets report strictly complete sync.
 import * as ledger from '@midnightntwrk/ledger-v9';
 import { Subscription } from 'rxjs';
 
-const NIGHT_TOKEN_TYPE = ledger.nativeToken().raw;
+const NIGHT_TOKEN_TYPE = ledger.unshieldedToken().raw;
 
 const sub: Subscription = wallet.state().subscribe((state) => {
   if (!state.isSynced) return;
@@ -46,7 +46,7 @@ resolves on `isSynced` alone. Before building a transaction, also wait for
 |-------|------|-------|
 | `state.isSynced` | `boolean` | Guard balance reads with this — until true, balances are incomplete |
 | `state.protocol._tag` | `'Settled'` \| `'Crossing'` | `Crossing` while a sub-wallet is still behind the ledger 9 boundary; wait for `Settled` before building transactions |
-| `state.unshielded.balances[ledger.nativeToken().raw]` | `bigint` | Native NIGHT balance. The key is the token's raw bytes (64 hex zeros), NOT `""` |
+| `state.unshielded.balances[ledger.unshieldedToken().raw]` | `bigint` | Native NIGHT balance. The key is the token's raw bytes (64 hex zeros), NOT `""` |
 | `state.shielded.balances[<tokenId>]` | `bigint` | Per-token shielded balance |
 | `state.dust.balance(new Date())` | `bigint` | DUST balance at the given time (DUST has expiry) |
 | `state.unshielded.progress` | `SyncProgress` | For diagnostics when sync stalls |

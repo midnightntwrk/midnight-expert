@@ -1,5 +1,5 @@
 // Verified against the package versions pinned in
-// midnight-wallet:sdk-regression-check/versions.lock.json on 2026-06-02.
+// midnight-wallet:sdk-regression-check/versions.lock.json on 2026-11-17.
 // If your installed @midnightntwrk/wallet-sdk-* versions differ,
 // run scripts/drift-check.sh in that skill before trusting this template.
 
@@ -7,7 +7,6 @@ import WebSocket from "ws";
 (globalThis as any).WebSocket = WebSocket;
 
 import { Buffer } from "buffer";
-import { firstValueFrom as rxFirstValueFrom, filter as rxFilter } from "rxjs";
 import { WalletSeeds } from "@midnightntwrk/wallet-sdk-hd";
 import {
   WalletFacade,
@@ -23,7 +22,7 @@ import {
   createKeystore,
   PublicKey,
 } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
-import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
+import { DustWallet, isInsufficientDustForFeeError } from "@midnightntwrk/wallet-sdk-dust-wallet";
 import { InMemoryTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
 import * as ledger from "@midnightntwrk/ledger-v9";
 import { MidnightBech32m } from "@midnightntwrk/wallet-sdk-address-format";
@@ -35,8 +34,8 @@ import { filter, timeout } from "rxjs/operators";
 // sub-wallet catches up, and a transaction built then can fail with
 // ProtocolVersionMismatchError, so wait for "Settled" before building one.
 function waitForSettled(wallet: WalletFacade): Promise<FacadeState> {
-  return rxFirstValueFrom(
-    wallet.state().pipe(rxFilter((s) => s.isSynced && s.protocol._tag === "Settled"))
+  return firstValueFrom(
+    wallet.state().pipe(filter((s) => s.isSynced && s.protocol._tag === "Settled"))
   );
 }
 
@@ -167,18 +166,26 @@ async function main() {
   // verifying key and a sign callback that returns a Promise (signDataAsync).
   // No separate signRecipe step.
 
-  // A first registration pays its own fee from the DUST the NIGHT would have
-  // generated since it arrived. Registering NIGHT that hasn't generated it yet
-  // throws "Insufficient generated dust to cover registration fee", so wait.
-  await wallet.waitForGeneratedDust(nightUtxos, estimateResult.fee);
-
-  let registrationRecipe;
-  try {
-    registrationRecipe = await wallet.registerNightUtxosForDustGeneration(
+  // A first registration pays its own fee from the DUST the NIGHT has
+  // generated since it arrived. If that doesn't cover the fee yet, the call
+  // throws InsufficientDustForFeeError with an estimate of when it will; wait
+  // that long (plus a margin) and retry. An unreachable fee is a real error.
+  const register = () =>
+    wallet.registerNightUtxosForDustGeneration(
       nightUtxos,
       unshieldedKeystore.getPublicKey(),
       unshieldedKeystore.signDataAsync
     );
+
+  let registrationRecipe;
+  try {
+    registrationRecipe = await register().catch(async (error: unknown) => {
+      if (!isInsufficientDustForFeeError(error) || error.estimate._tag !== "Reachable") throw error;
+      const timeoutMs = Number(error.estimate.seconds) * 1000 + 60_000;
+      console.log(`Waiting ~${Math.ceil(timeoutMs / 1000)}s for the NIGHT to generate the fee...`);
+      await wallet.waitForGeneratedDust(nightUtxos, error.fee, { timeoutMs });
+      return register();
+    });
   } catch (err) {
     console.error(`Error: registerNightUtxosForDustGeneration failed: ${err}`);
     await wallet.stop();

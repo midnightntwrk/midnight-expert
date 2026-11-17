@@ -1,5 +1,5 @@
 // Verified against the package versions pinned in
-// midnight-wallet:sdk-regression-check/versions.lock.json on 2026-06-02.
+// midnight-wallet:sdk-regression-check/versions.lock.json on 2026-11-17.
 // If your installed @midnightntwrk/wallet-sdk-* versions differ,
 // run scripts/drift-check.sh in that skill before trusting this template.
 
@@ -7,7 +7,6 @@ import WebSocket from "ws";
 (globalThis as any).WebSocket = WebSocket;
 
 import { Buffer } from "buffer";
-import { firstValueFrom as rxFirstValueFrom, filter as rxFilter } from "rxjs";
 import {
   WalletSeeds,
   generateRandomSeed,
@@ -27,7 +26,7 @@ import {
   createKeystore,
   PublicKey,
 } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
-import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
+import { DustWallet, isInsufficientDustForFeeError } from "@midnightntwrk/wallet-sdk-dust-wallet";
 import { InMemoryTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
 import * as ledger from "@midnightntwrk/ledger-v9";
 import {
@@ -42,8 +41,8 @@ import { filter, timeout } from "rxjs/operators";
 // sub-wallet catches up, and a transaction built then can fail with
 // ProtocolVersionMismatchError, so wait for "Settled" before building one.
 function waitForSettled(wallet: WalletFacade): Promise<FacadeState> {
-  return rxFirstValueFrom(
-    wallet.state().pipe(rxFilter((s) => s.isSynced && s.protocol._tag === "Settled"))
+  return firstValueFrom(
+    wallet.state().pipe(filter((s) => s.isSynced && s.protocol._tag === "Settled"))
   );
 }
 
@@ -55,8 +54,8 @@ const GENESIS_SEED_HEX =
   "0000000000000000000000000000000000000000000000000000000000000001";
 
 // 1000 NIGHT (6 decimal places). A first DUST registration waits until the
-// new UTXO has generated its own fee, and a few NIGHT take over an hour to
-// get there; 1000 gets there in seconds.
+// new UTXO has generated its own fee; a few NIGHT take over an hour to get
+// there, 1000 gets there in seconds.
 const DEFAULT_FUND_AMOUNT = 1_000_000_000n;
 const BALANCE_WAIT_MS = 60_000; // 60 seconds
 const FAUCET_WAIT_MS = 5 * 60 * 1000; // 5 minutes
@@ -214,7 +213,7 @@ async function initWallet(
 
 async function registerDust(
   wallet: WalletFacade,
-  state: Awaited<ReturnType<typeof wallet.waitForSyncedState>>,
+  state: FacadeState,
   unshieldedKeystore: ReturnType<typeof createKeystore>,
   NIGHT_TOKEN_TYPE: string
 ): Promise<string> {
@@ -233,19 +232,25 @@ async function registerDust(
     );
   }
 
-  // A first registration pays its own fee from the DUST the NIGHT would have
-  // generated since it arrived. NIGHT that just arrived hasn't generated it
-  // yet, and registering then throws "Insufficient generated dust to cover
-  // registration fee", so wait until it has.
-  const { fee } = await wallet.estimateRegistration(nightUtxos);
-  await wallet.waitForGeneratedDust(nightUtxos, fee);
-
-  const registrationRecipe =
-    await wallet.registerNightUtxosForDustGeneration(
+  // A first registration pays its own fee from the DUST the NIGHT has
+  // generated since it arrived. NIGHT that just arrived (from genesis or a
+  // faucet, in whatever amount) may not cover it yet, and the call throws
+  // InsufficientDustForFeeError with an estimate of when it will. Wait that
+  // long plus a margin and retry; an unreachable fee is a real error.
+  const register = () =>
+    wallet.registerNightUtxosForDustGeneration(
       nightUtxos,
       unshieldedKeystore.getPublicKey(),
       unshieldedKeystore.signDataAsync
     );
+
+  const registrationRecipe = await register().catch(async (error: unknown) => {
+    if (!isInsufficientDustForFeeError(error) || error.estimate._tag !== "Reachable") throw error;
+    const timeoutMs = Number(error.estimate.seconds) * 1000 + 60_000;
+    console.log(`Waiting ~${Math.ceil(timeoutMs / 1000)}s for the NIGHT to generate the fee...`);
+    await wallet.waitForGeneratedDust(nightUtxos, error.fee, { timeoutMs });
+    return register();
+  });
 
   const finalizedTx = await wallet.finalizeRecipe(registrationRecipe);
   const txId = await wallet.submitTransaction(finalizedTx);

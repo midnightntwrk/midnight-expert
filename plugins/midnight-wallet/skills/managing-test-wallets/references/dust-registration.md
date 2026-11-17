@@ -12,10 +12,14 @@ start generating DUST once registered, so the sooner the better.
 ## How to register
 
 ```typescript
+import * as ledger from '@midnightntwrk/ledger-v9';
+import { isInsufficientDustForFeeError } from '@midnightntwrk/wallet-sdk-dust-wallet';
+
 // After waitForSettled(wallet) — see wallet-creation.md
 const state = await waitForSettled(wallet);
+const NIGHT = ledger.unshieldedToken().raw;
 const nightUtxos = state.unshielded.availableCoins.filter(
-  (coin) => !coin.meta.registeredForDustGeneration,
+  (coin) => coin.utxo.type === NIGHT && !coin.meta.registeredForDustGeneration,
 );
 
 // registerNightUtxosForDustGeneration throws on an empty list, which is
@@ -25,19 +29,22 @@ if (nightUtxos.length === 0) {
   process.exit(0);
 }
 
-// The fee, plus a per-UTXO projection of DUST generation
-const { fee } = await wallet.estimateRegistration(nightUtxos);
-
-// Wait until these UTXOs have generated enough DUST to pay that fee
-// (default timeout 300_000 ms; pass { timeoutMs } to change it).
-await wallet.waitForGeneratedDust(nightUtxos, fee);
-
 // Builds and signs the registration; the sign callback returns a Promise.
-const recipe = await wallet.registerNightUtxosForDustGeneration(
-  nightUtxos,
-  unshieldedKeystore.getPublicKey(),
-  unshieldedKeystore.signDataAsync,
-);
+const register = () =>
+  wallet.registerNightUtxosForDustGeneration(
+    nightUtxos,
+    unshieldedKeystore.getPublicKey(),
+    unshieldedKeystore.signDataAsync,
+  );
+
+// If the NIGHT hasn't generated the fee yet, the error says when it will.
+// Wait that long plus a margin and retry; an unreachable fee is a real error.
+const recipe = await register().catch(async (error: unknown) => {
+  if (!isInsufficientDustForFeeError(error) || error.estimate._tag !== 'Reachable') throw error;
+  const timeoutMs = Number(error.estimate.seconds) * 1000 + 60_000;
+  await wallet.waitForGeneratedDust(nightUtxos, error.fee, { timeoutMs });
+  return register();
+});
 const finalizedTx = await wallet.finalizeRecipe(recipe);
 const txId = await wallet.submitTransaction(finalizedTx);
 console.log(`Registration tx: ${txId}`);
@@ -56,13 +63,14 @@ arrived**, not from the wallet's DUST balance.
 The catch is that fresh NIGHT may not have generated the fee yet. Registering
 too early throws `InsufficientDustForFeeError` ("Insufficient generated dust to
 cover registration fee", recognised with `isInsufficientDustForFeeError` from
-`@midnightntwrk/wallet-sdk-dust-wallet`). Pairing `estimateRegistration` with
-`waitForGeneratedDust` as above avoids that.
+`@midnightntwrk/wallet-sdk-dust-wallet`). The error's `estimate` says when the
+fee will be covered, so the snippet above waits that long and retries. Waiting
+up front with `estimateRegistration` and `waitForGeneratedDust(utxos, fee)` also
+works, but that wait gives up after 5 minutes by default.
 
 How long the wait takes depends on how much NIGHT the UTXOs hold. On a local
 devnet a ~0.2 DUST fee is covered within seconds by 1000 NIGHT, but takes over
-an hour at 5 NIGHT — longer than `waitForGeneratedDust`'s default timeout. That
-is why `examples/fund-wallet-undeployed.ts` and
+an hour at 5 NIGHT. That is why `examples/fund-wallet-undeployed.ts` and
 `examples/full-test-wallet-setup.ts` fund 1000 NIGHT by default.
 
 Two consequences:
