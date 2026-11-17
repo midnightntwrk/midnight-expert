@@ -1,14 +1,19 @@
 /**
- * Complete wallet construction from seed to synced state.
- * Covers: seed generation, HD derivation, key conversion, configuration,
- * WalletFacade initialization, and waiting for sync.
+ * Complete wallet construction from seed to synced state (wallet SDK 2.0.0).
+ * Covers: seed generation, per-wallet seed derivation, configuration,
+ * WalletFacade initialization, and waiting until the wallet is synced and
+ * its three sub-wallets agree on the protocol version.
  */
 import WebSocket from "ws";
 (globalThis as any).WebSocket = WebSocket;
 
-import { HDWallet, Roles, generateRandomSeed } from "@midnightntwrk/wallet-sdk-hd";
-import { WalletFacade, WalletEntrySchema } from "@midnightntwrk/wallet-sdk-facade";
-import type { DefaultConfiguration } from "@midnightntwrk/wallet-sdk-facade";
+import { WalletSeeds, generateRandomSeed } from "@midnightntwrk/wallet-sdk-hd";
+import {
+  WalletFacade,
+  WalletEntrySchema,
+  mergeWalletEntries,
+  type DefaultConfiguration,
+} from "@midnightntwrk/wallet-sdk-facade";
 import { ShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
 import {
   UnshieldedWallet,
@@ -17,45 +22,27 @@ import {
 } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
 import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
 import { InMemoryTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
-import * as ledger from "@midnight-ntwrk/ledger-v8";
+import { firstValueFrom } from "rxjs";
+import { filter } from "rxjs/operators";
 import { Buffer } from "buffer";
 
 // ---------------------------------------------------------------------------
-// Step 1 - Generate a random seed (or use a known one for testing)
+// Step 1 - Generate a random master seed (or use a known one for testing)
 // ---------------------------------------------------------------------------
-const seed = Buffer.from(generateRandomSeed());
+const masterSeed = Buffer.from(generateRandomSeed());
 // For deterministic testing you can use a fixed hex seed instead:
-// const seed = Buffer.from("0000000000000000000000000000000000000000000000000000000000000001", "hex");
+// const masterSeed = Buffer.from("0000000000000000000000000000000000000000000000000000000000000001", "hex");
 
 // ---------------------------------------------------------------------------
-// Step 2 - Derive keys via the HD wallet
+// Step 2 - Derive the three wallets' seeds
 // ---------------------------------------------------------------------------
-const hdWallet = HDWallet.fromSeed(seed);
-
-if (hdWallet.type !== "seedOk") {
-  throw new Error("Failed to initialize HDWallet");
-}
-
-const derivationResult = hdWallet.hdWallet
-  .selectAccount(0)
-  .selectRoles([Roles.Zswap, Roles.NightExternal, Roles.Dust])
-  .deriveKeysAt(0);
-
-if (derivationResult.type !== "keysDerived") {
-  throw new Error("Failed to derive keys");
-}
-
-// Clear the HD wallet from memory after derivation
-hdWallet.hdWallet.clear();
+// WalletSeeds.fromMasterSeed walks the same HD path the 1.x HDWallet code did
+// (account 0, roles Zswap / NightExternal / Dust, index 0), so a master seed
+// from wallet SDK 1.x restores the same wallet and the same addresses.
+const seeds = WalletSeeds.fromMasterSeed(masterSeed);
 
 // ---------------------------------------------------------------------------
-// Step 3 - Convert derived bytes into typed secret keys
-// ---------------------------------------------------------------------------
-const shieldedSecretKeys = ledger.ZswapSecretKeys.fromSeed(derivationResult.keys[Roles.Zswap]);
-const dustSecretKey = ledger.DustSecretKey.fromSeed(derivationResult.keys[Roles.Dust]);
-
-// ---------------------------------------------------------------------------
-// Step 4 - Build configuration
+// Step 3 - Build configuration
 // ---------------------------------------------------------------------------
 const INDEXER_PORT = Number.parseInt(process.env["INDEXER_PORT"] ?? "8088", 10);
 const NODE_PORT = Number.parseInt(process.env["NODE_PORT"] ?? "9944", 10);
@@ -76,35 +63,40 @@ const configuration: DefaultConfiguration = {
     indexerHttpUrl: `http://localhost:${INDEXER_PORT}/api/v4/graphql`,
     indexerWsUrl: `ws://localhost:${INDEXER_PORT}/api/v4/graphql/ws`,
   },
-  txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
+  txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema, mergeWalletEntries),
 };
 
 // ---------------------------------------------------------------------------
-// Step 5 - Create the unshielded keystore and initialize WalletFacade
+// Step 4 - Create the unshielded keystore and initialize WalletFacade
 // ---------------------------------------------------------------------------
+// The keystore signs for the unshielded wallet. "schnorr" is the scheme that
+// works on both sides of the ledger 9 boundary.
 const unshieldedKeystore = createKeystore(
-  derivationResult.keys[Roles.NightExternal],
+  { kind: "schnorr", secret: seeds.unshielded },
   configuration.networkId,
 );
 
 const wallet: WalletFacade = await WalletFacade.init({
   configuration,
-  shielded: (config) => ShieldedWallet(config).startWithSecretKeys(shieldedSecretKeys),
+  shielded: (config) => ShieldedWallet(config).startWithSeed(seeds.shielded),
   unshielded: (config) =>
     UnshieldedWallet(config).startWithPublicKey(PublicKey.fromKeyStore(unshieldedKeystore)),
-  dust: (config) =>
-    DustWallet(config).startWithSecretKey(
-      dustSecretKey,
-      ledger.LedgerParameters.initialParameters().dust,
-    ),
+  dust: (config) => DustWallet(config).startWithSeed(seeds.dust),
 });
 
 // ---------------------------------------------------------------------------
-// Step 6 - Start the wallet and wait for sync
+// Step 5 - Start the wallet and wait until it is synced and settled
 // ---------------------------------------------------------------------------
-await wallet.start(shieldedSecretKeys, dustSecretKey);
+// start() takes the seeds, not key objects: a seed is the only key material
+// that crosses the ledger 8 / ledger 9 boundary.
+await wallet.start(seeds);
 
-const syncedState = await wallet.waitForSyncedState();
+// isSynced alone isn't enough to build transactions. While a sub-wallet is
+// still behind the protocol boundary the facade reports protocol "Crossing",
+// and a transaction built then can fail with ProtocolVersionMismatchError.
+const syncedState = await firstValueFrom(
+  wallet.state().pipe(filter((s) => s.isSynced && s.protocol._tag === "Settled")),
+);
 
 console.log("Wallet synced successfully");
 console.log("Shielded balances:", syncedState.shielded.balances);
