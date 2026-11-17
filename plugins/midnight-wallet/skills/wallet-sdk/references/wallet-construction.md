@@ -87,7 +87,7 @@ that as **NotNormalized (error 117)**. This bites the **first contract call** in
 particular (a `ContractDeploy` is accepted, the next call fails). Setting a small
 positive `additionalFeeOverhead` forces a real DUST fee so the transaction
 normalizes. Any positive amount the wallet can cover in DUST works; the
-basic-start tutorial and the compact-cli-dev template use `300_000_000_000_000n`.
+compact-cli-dev template uses `300_000_000_000_000n`. (compact-core's basic-start builds its wallets with testkit's `FluentWalletBuilder`, whose default overhead is `0n`.)
 
 > **DUST registration does not need `additionalFeeOverhead`.** Registration is
 > self-funding — its fee is paid by the DUST the registered NIGHT UTXOs generate,

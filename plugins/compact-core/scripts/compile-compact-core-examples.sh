@@ -17,7 +17,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # The compact-tokens examples used to be skipped because their OpenZeppelin /
 # security building-block imports were not present alongside them; those modules
 # are now vendored into skills/compact-tokens/{security,utils,crypto}/ (from
-# OpenZeppelin/compact-contracts v0.3.0-alpha.2), so the examples compile here.
+# OpenZeppelin/compact-contracts v0.4.0), so the examples compile here.
 SKIP=(
   "skills/compact-init-project/templates/example/contract/__name__.compact"
 )

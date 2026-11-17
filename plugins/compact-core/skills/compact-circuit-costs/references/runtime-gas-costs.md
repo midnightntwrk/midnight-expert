@@ -144,31 +144,43 @@ const costModel = CostModel.initialCostModel();
 Every ledger query during circuit execution is measured against the cost model:
 
 ```typescript
-const result = circuitContext.currentQueryContext.query(
+// compact-runtime 0.21.0, queryLedgerState
+const res = circuitContext.callContext.currentQueryContext.query(
   program,
   circuitContext.costModel,
   circuitContext.gasLimit,
 );
-circuitContext.gasCost = result.gasCost;
+circuitContext.callContext.currentQueryContext = res.context;
+circuitContext.callContext.currentGasCost = addRunningCost(circuitContext.callContext.currentGasCost, res.gasCost);
 ```
 
 The cost model is a protocol parameter that can change through governance. Contract developers should design for cost efficiency regardless of current pricing, as costs may change over time.
 
 ## Gas Limits
 
-Circuits can have a `gasLimit` set to cap total gas consumption. If the limit is exceeded during execution, the transaction fails:
+Circuits can have a `gasLimit` set to cap total gas consumption. If the limit is exceeded during execution, the call fails with `ran out of gas budget`:
 
 ```typescript
-// Set a gas limit for the circuit context
-context.gasLimit = {
-  readTime: 1000n,
-  computeTime: 5000n,
-  bytesWritten: 2000n,
-  bytesDeleted: 500n,
-};
+// Set a gas limit when creating the circuit context (compact-runtime 0.21.0)
+const context = createCircuitContext({
+  circuitId: 'expensiveOperation',
+  contractAddress,
+  coinPublicKeyOrZswapState: coinPublicKey,
+  contractState,
+  privateState,
+  // For scale: one trivial ledger write costs about 85,000,000 readTime and
+  // 1,233,942,932 computeTime on compact-runtime 0.21.0.
+  gasLimit: {
+    readTime: 1_000_000_000n,
+    computeTime: 20_000_000_000n,
+    bytesWritten: 10_000n,
+    bytesDeleted: 10_000n,
+  },
+});
 
-// This will throw if gas exceeds the limit
-contract.circuits.expensiveOperation(context);
+// Circuits return a Promise on the ledger 9 runtimes; this rejects with
+// "ran out of gas budget" if the call goes over the limit
+await contract.circuits.expensiveOperation(context);
 ```
 
 Gas limits protect against:

@@ -7,18 +7,18 @@ Compact organizes code through pragmas, include files, modules, imports, and top
 Every Compact source file should begin with a pragma declaring the language version it targets. The pragma must be the first statement in the file (after any comments).
 
 ```compact
-pragma language_version 0.23;
+pragma language_version 0.28;
 ```
 
 > **Tip:** Run `compact compile --language-version` to find the language version supported by your installed compiler. Use that version in your pragma declaration.
 
-A lower bound (`>= 0.22`), a patch version (`>= 0.22.0`), and an exact version (`0.23`) all compile. Pinning the exact version you verified against (e.g. `0.23`) is a choice, not a compiler requirement: an open-ended lower bound like `>= 0.22` also accepts future compiler versions the contract was never tested against.
+A lower bound (`>= 0.22`), a patch version (`>= 0.22.0`), and an exact version (`0.28`) all compile on compiler 0.36.0; an exact version other than the compiler's language version (`0.23`) fails with `language version 0.28.0 mismatch`. Pinning the exact version you verified against (e.g. `0.28`) is a choice, not a compiler requirement: an open-ended lower bound like `>= 0.22` also accepts future compiler versions the contract was never tested against.
 
 Common mistakes:
 
 | Wrong | Correct | Error |
 |-------|---------|-------|
-| `pragma >= 0.22;` | `pragma language_version >= 0.22;` | `parse error: found ">=" looking for an identifier` |
+| `pragma >= 0.22;` | `pragma language_version 0.28;` | `parse error: found ">=" looking for an identifier` |
 
 ## Include Files
 
@@ -260,7 +260,7 @@ export { Maybe, Either, ShieldedCoinInfo };
 For small contracts, keep everything in one file. This is the simplest approach:
 
 ```compact
-pragma language_version 0.23;
+pragma language_version 0.28;
 import CompactStandardLibrary;
 
 export ledger counter: Counter;
@@ -281,7 +281,7 @@ project/
 
 ```compact
 // main.compact
-pragma language_version 0.23;
+pragma language_version 0.28;
 import CompactStandardLibrary;
 
 include "types";
@@ -308,7 +308,7 @@ module Auth {
 
 ```compact
 // main.compact
-pragma language_version 0.23;
+pragma language_version 0.28;
 import CompactStandardLibrary;
 import "Auth" prefix Auth_;
 

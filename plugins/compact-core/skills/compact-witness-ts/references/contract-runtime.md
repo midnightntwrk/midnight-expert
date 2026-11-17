@@ -17,10 +17,13 @@ export interface Witnesses<PS> {
   myWitness(context: __compactRuntime.WitnessContext<Ledger, PS>): [PS, Uint8Array];
 }
 
-// 3. Circuits type
+// 3. Circuits type. Each circuit takes a CircuitContext first and, on the
+// ledger 9 runtimes (compiler 0.34+, compact-runtime 0.19+), returns a Promise.
 export type Circuits<PS> = {
-  myCircuit(arg: bigint): [];
-  pureCompute(x: bigint, y: bigint): bigint;
+  myCircuit(context: __compactRuntime.CircuitContext<PS>,
+            arg: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
+  pureCompute(context: __compactRuntime.CircuitContext<PS>,
+              x: bigint, y: bigint): Promise<__compactRuntime.CircuitResults<PS, bigint>>;
 };
 
 // 4. Contract class
@@ -28,8 +31,9 @@ export declare class Contract<PS = any, W extends Witnesses<PS> = Witnesses<PS>>
   witnesses: W;
   circuits: Circuits<PS>;
   impureCircuits: ImpureCircuits<PS>;
+  provableCircuits: ProvableCircuits<PS>;
   constructor(witnesses: W);
-  initialState(context: __compactRuntime.ConstructorContext<PS>): __compactRuntime.ConstructorResult<PS>;
+  initialState(context: __compactRuntime.ConstructorContext<PS>): Promise<__compactRuntime.ConstructorResult<PS>>;
 }
 
 // 5. Ledger type and function
@@ -38,7 +42,7 @@ export type Ledger = {
   readonly owner: Uint8Array;
 };
 
-export declare function ledger(state: __compactRuntime.StateValue): Ledger;
+export declare function ledger(state: __compactRuntime.StateValue | __compactRuntime.ChargedState): Ledger;
 ```
 
 ## The Contract Class
@@ -60,24 +64,28 @@ The `Witnesses` interface type-checks your implementations at compile time — i
 
 ### Constructor Arguments
 
-If the Compact contract has a `constructor(arg1: T1, arg2: T2)`, the generated Contract constructor takes witnesses first, then the constructor arguments:
+The generated `Contract` class only takes witnesses. If the Compact contract has a `constructor(arg1: T1, arg2: T2)`, its arguments go to `initialState`, after the context (checked on compiler 0.36.0):
 
 ```typescript
-// Compact: constructor(value: Field)
-const instance = new MyContract.Contract(witnesses, 42n);
+// Compact: constructor(value: Uint<64>)
+const instance = new MyContract.Contract(witnesses);
+const { currentContractState } = await instance.initialState(constructorContext, 42n);
 
 // Compact: constructor() — no args
-const instance = new MyContract.Contract(witnesses);
+const result = await instance.initialState(constructorContext);
 ```
+
+When deploying through midnight-js, pass them as `args` instead (see below).
 
 ## Circuits vs ImpureCircuits vs PureCircuits
 
-The Contract class exposes three circuit interfaces:
+The Contract class exposes three circuit interfaces, and the module exports the pure ones:
 
 | Interface | Contains | Proof Generated? | Modifies State? |
 |-----------|----------|-------------------|-----------------|
 | `circuits` | All circuits | Yes (for impure) | Impure: yes, Pure: no |
 | `impureCircuits` | Only circuits that touch state/witnesses | Yes | Yes |
+| `provableCircuits` | The circuits that get proving keys (the exported impure ones) | Yes | Yes |
 | `pureCircuits` (module-level export) | Only `pure circuit` declarations | **No** | **No** |
 
 ### impureCircuits
@@ -126,7 +134,8 @@ The compiler generates a `ledger()` function that parses raw on-chain contract s
 ```typescript
 import { MyContract } from "@midnight-ntwrk/mycontract-contract";
 
-// Parse raw contract state into typed ledger object
+// Parse a contract's state into a typed ledger object. ledger() takes a
+// StateValue or a ChargedState, e.g. contractState.data, not the ContractState itself
 const state = MyContract.ledger(contractState.data);
 
 // Access typed fields
@@ -142,11 +151,13 @@ Only `export ledger` fields are accessible through the `ledger()` function. Non-
 In a DApp context, you typically query the indexer for contract state, then parse it:
 
 ```typescript
-const contractState = await providers.publicDataProvider
-  .queryContractState(contractAddress);
+// midnight-js 5: the result carries a serialized state tagged with its ledger era
+import { ContractState } from "@midnight-ntwrk/midnight-js-protocol/v9/compact-runtime";
 
-if (contractState != null) {
-  const ledgerState = MyContract.ledger(contractState.data);
+const read = await providers.publicDataProvider.queryContractState(contractAddress);
+
+if (read != null && read.contractState.era === "v9") {
+  const ledgerState = MyContract.ledger(read.contractState.deserialize({ v9: ContractState }).data);
   console.log(`Current round: ${ledgerState.round}`);
 }
 ```
@@ -156,8 +167,8 @@ if (contractState != null) {
 When deploying or joining a contract, you provide a string identifier for the private state store. This lets the runtime persist and retrieve private state across sessions:
 
 ```typescript
-// Build a CompiledContract with CompiledContract.make + .pipe (compact-js 2.5.x)
-import { CompiledContract } from "@midnight-ntwrk/compact-js";
+// Build a CompiledContract with CompiledContract.make + .pipe (midnight-js 5 / compact-js 3)
+import { CompiledContract } from "@midnight-ntwrk/midnight-js-protocol/v9/compact-js";
 import { MyContract } from "@midnight-ntwrk/mycontract-contract";
 
 const compiledContract = CompiledContract.make('mycontract', MyContract.Contract).pipe(
@@ -186,7 +197,7 @@ const found = await findDeployedContract(providers, {
 });
 ```
 
-> `CompiledContract` is a module exposing the factory `make(tag, Contract)` plus pipeable combinators (`withWitnesses` / `withVacantWitnesses`, `withCompiledFileAssets`). It is **not** a constructable class — `new CompiledContract(...)` is not valid in compact-js 2.5.x.
+> `CompiledContract` is a module exposing the factory `make(tag, Contract)` plus pipeable combinators (`withWitnesses` / `withVacantWitnesses`, `withCompiledFileAssets`). It is **not** a constructable class — `new CompiledContract(...)` is not valid.
 
 The `privateStateId` is a string key used by the private state provider to store and retrieve state. Use a descriptive, unique name per contract type.
 

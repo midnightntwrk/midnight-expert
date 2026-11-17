@@ -7,7 +7,7 @@ After running the scaffolder (`node <plugin>/skills/compact-init-project/scripts
 ```
 <name>/
 ├── contract/
-│   ├── <name>.compact                # Contract source stub (pragma language_version 0.23) — you write this
+│   ├── <name>.compact                # Contract source stub (pragma language_version 0.28) — you write this
 │   └── index.ts                      # Exports the compiled contract + zkConfigPath
 │   └── witnesses.ts                  # ONLY when scaffolded with --witnesses (private-state + witness stubs)
 ├── src/
@@ -47,7 +47,7 @@ The scaffolded `contract/<name>.compact` is a TODO placeholder with a commented 
 replace it with your contract, for example:
 
 ```compact
-pragma language_version 0.23;
+pragma language_version 0.28;
 
 import CompactStandardLibrary;
 
@@ -104,8 +104,8 @@ newer releases.
 
 | Component | Version | Notes |
 |-----------|---------|-------|
-| Compact language | 0.23 | `pragma language_version 0.23` in the contract stub |
-| Compact compiler | 0.31.1 | `compact update` to change |
+| Compact language | 0.28 | `pragma language_version 0.28` in the contract stub |
+| Compact compiler | 0.36.0 | `compact update 0.36.0` to change |
 | Node.js | 22+ required | https://nodejs.org/ |
 | Yarn | 4 (via Corepack) | `npm install` also works |
 
@@ -117,10 +117,11 @@ newer releases.
 | Indexer | `midnightntwrk/indexer-standalone:4.3.3` | 8088 |
 | Node | `midnightntwrk/midnight-node:1.0.0` (`CFG_PRESET=dev`) | 9944 |
 
-> Note: this local network runs `midnight-node:1.0.0` and `indexer-standalone:4.3.3` (the indexer is
-> supplied a dummy `BLOCKFROST_ID` so it runs key-less). These are **newer** than the caps the
-> `midnight-tooling:devnet` version resolver applies for its shared devnet — see that skill's
-> `version-resolution.md`.
+> Note: this local network still runs the ledger 8-era images (`midnight-node:1.0.0`,
+> `indexer-standalone:4.3.3`), one ledger behind the `midnight-tooling:devnet` resolver (node
+> `2.1.x`, indexer `4.4.x`, proof server `9.0.x`; see that skill's `version-resolution.md`). The
+> template, including these images and its midnight-js 4.1.1 packages, moves to the ledger 9 stack
+> in a follow-up to #296.
 
 ## Network Endpoints
 

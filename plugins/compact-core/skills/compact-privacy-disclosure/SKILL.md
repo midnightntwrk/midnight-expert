@@ -133,7 +133,8 @@ assert(inA || inB, "not a member of either");
 ```
 
 `inA || inB` is never disclosed, but each result reached the transcript
-separately. Reading `proofData.publicTranscript` for two callers, one enrolled
+separately. Reading the call's `publicTranscript` (in `context.callProofDataTrace` on
+compact-runtime 0.21.0, `proofData.publicTranscript` on 0.16.0) for two callers, one enrolled
 only in tree A and one only in tree B:
 
 | Caller | check vs `treeA` | check vs `treeB` |

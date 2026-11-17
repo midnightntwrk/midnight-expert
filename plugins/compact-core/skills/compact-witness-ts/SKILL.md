@@ -139,10 +139,10 @@ import { Contract, pureCircuits, ledger } from "./managed/mycontract/contract/in
 // Local testing only — instantiate Contract directly with witnesses
 const contractInstance = new Contract(witnesses);
 
-// Production — use CompiledContract.make() from @midnight-ntwrk/compact-js.
+// Production — use CompiledContract.make(), exported by midnight-js 5 at @midnight-ntwrk/midnight-js-protocol/v9/compact-js.
 // make() takes a tag and the Contract CLASS (not an instance); attach witnesses
 // and ZK assets via .pipe(). It is synchronous — do NOT `await` it.
-import { CompiledContract } from "@midnight-ntwrk/compact-js";
+import { CompiledContract } from "@midnight-ntwrk/midnight-js-protocol/v9/compact-js";
 const compiledContract = CompiledContract.make("mycontract", Contract).pipe(
   // Attach witness implementations (or CompiledContract.withVacantWitnesses if the
   // contract declares no witnesses — note: it is a value used bare in .pipe(...), NOT called as withVacantWitnesses())
