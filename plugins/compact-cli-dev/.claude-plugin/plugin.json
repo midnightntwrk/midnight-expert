@@ -1,6 +1,6 @@
 {
   "name": "compact-cli-dev",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Scaffold and develop Oclif CLIs for Midnight Compact smart contracts. Includes a complete CLI template with wallet management, contract deployment, devnet control, and an AI agent for ongoing development.",
   "author": {
     "name": "Midnight Foundation"
