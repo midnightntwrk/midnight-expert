@@ -1,37 +1,78 @@
-import { unshieldedToken } from "@midnight-ntwrk/ledger-v8";
-import { getNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
-import { MidnightBech32m, UnshieldedAddress } from "@midnightntwrk/wallet-sdk-address-format";
-import type { WalletFacade } from "@midnightntwrk/wallet-sdk-facade";
-import type { UnshieldedKeystore } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
+import {
+	type FacadeState,
+	MidnightBech32m,
+	Token,
+	UnshieldedAddress,
+	type UnshieldedKeystore,
+	type UtxoWithMeta,
+	type WalletFacade,
+	isInsufficientDustForFeeError,
+} from "@midnightntwrk/wallet-sdk";
 import * as Rx from "rxjs";
+import { DEVNET_CONFIG } from "./config.js";
 import {
 	DUST_GENERATION_TIMEOUT,
+	DUST_MIN_REQUIREMENT,
 	DUST_POLL_INTERVAL,
-	FUND_POLL_INTERVAL,
+	FUND_TIMEOUT,
 	GENESIS_SEED,
+	TX_TTL_SECONDS,
 } from "./constants.js";
 import { withSpinner } from "./progress.js";
-import { buildFacade } from "./wallet.js";
+import { buildFacade, isSettled, waitForSettled } from "./wallet.js";
 
-export async function waitForFunds(facade: WalletFacade): Promise<bigint> {
+const NIGHT = Token.night;
+
+export function nightBalance(state: FacadeState): bigint {
+	return state.unshielded.balances[NIGHT] ?? 0n;
+}
+
+// Wait until the wallet holds at least `minimum` NIGHT. Pass the balance you
+// expect after a transfer, so an older balance doesn't count as the new funds.
+export async function waitForFunds(facade: WalletFacade, minimum = 1n): Promise<bigint> {
 	return Rx.firstValueFrom(
 		facade.state().pipe(
-			Rx.throttleTime(FUND_POLL_INTERVAL),
-			Rx.filter((state) => state.isSynced),
-			Rx.map((s) => s.unshielded.balances[unshieldedToken().raw] ?? 0n),
-			Rx.filter((balance) => balance > 0n),
+			Rx.filter(isSettled),
+			Rx.map(nightBalance),
+			Rx.filter((balance) => balance >= minimum),
+			Rx.timeout({
+				first: FUND_TIMEOUT,
+				with: () =>
+					Rx.throwError(
+						() =>
+							new Error(
+								`No NIGHT arrived within ${String(FUND_TIMEOUT / 1000)} s (expected at least ${minimum.toString()}).`,
+							),
+					),
+			}),
 		),
 	);
 }
 
-export async function waitForDust(facade: WalletFacade): Promise<bigint> {
+// DUST accrues after registration, so a freshly registered wallet holds a coin
+// worth almost nothing. Wait until it can pay for a deploy. The balance grows
+// with time, not with new wallet state, so re-read it on a timer.
+export async function waitForDust(
+	facade: WalletFacade,
+	minimum = DUST_MIN_REQUIREMENT,
+): Promise<bigint> {
 	return Rx.firstValueFrom(
-		facade.state().pipe(
-			Rx.throttleTime(DUST_POLL_INTERVAL),
-			Rx.filter((s) => s.isSynced),
-			Rx.map((s) => s.dust.balance(new Date())),
-			Rx.filter((balance) => balance > 0n),
-			Rx.timeout(DUST_GENERATION_TIMEOUT),
+		Rx.combineLatest([
+			facade.state().pipe(Rx.filter((s) => s.isSynced)),
+			Rx.timer(0, DUST_POLL_INTERVAL),
+		]).pipe(
+			Rx.map(([s]) => s.dust.balance(new Date())),
+			Rx.filter((balance) => balance >= minimum),
+			Rx.timeout({
+				first: DUST_GENERATION_TIMEOUT,
+				with: () =>
+					Rx.throwError(
+						() =>
+							new Error(
+								`DUST is still accruing: below ${minimum.toString()} specks after ${String(DUST_GENERATION_TIMEOUT / 60_000)} minutes. The registration is on chain; check dust:status and retry later.`,
+							),
+					),
+			}),
 		),
 	);
 }
@@ -40,48 +81,22 @@ export async function airdropFromGenesis(targetAddress: string, amount: bigint):
 	return withSpinner("Airdropping from genesis wallet...", async () => {
 		const genesis = await buildFacade(GENESIS_SEED);
 		try {
-			await Rx.firstValueFrom(
-				genesis.facade.state().pipe(
-					Rx.throttleTime(FUND_POLL_INTERVAL),
-					Rx.filter((s) => s.isSynced),
-					Rx.map((s) => s.unshielded.balances[unshieldedToken().raw] ?? 0n),
-					Rx.filter((b) => b > 0n),
-				),
-			);
+			await waitForFunds(genesis.facade, amount);
 
-			const ttl = new Date(Date.now() + 10 * 60 * 1000);
-			// Addresses are branded types in the 4.x SDK: decode the bech32m
-			// string into a typed UnshieldedAddress for the transfer output.
+			// Addresses are branded types: decode the bech32m string into a typed
+			// UnshieldedAddress for the transfer output.
 			const receiverAddress = MidnightBech32m.parse(targetAddress).decode(
 				UnshieldedAddress,
-				getNetworkId(),
+				DEVNET_CONFIG.networkId,
 			);
 			const recipe = await genesis.facade.transferTransaction(
-				[
-					{
-						type: "unshielded",
-						outputs: [
-							{
-								amount,
-								receiverAddress,
-								type: unshieldedToken().raw,
-							},
-						],
-					},
-				],
-				{
-					shieldedSecretKeys: genesis.shieldedSecretKeys,
-					dustSecretKey: genesis.dustSecretKey,
-				},
-				{ ttl, payFees: true },
+				[{ type: "unshielded", outputs: [{ amount, receiverAddress, type: NIGHT }] }],
+				{ ttl: new Date(Date.now() + TX_TTL_SECONDS * 1000), payFees: true },
 			);
 
-			const signed = await genesis.facade.signRecipe(recipe, (msg) =>
-				genesis.keystore.signData(msg),
-			);
+			const signed = await genesis.facade.signRecipe(recipe, genesis.keystore.signDataAsync);
 			const finalized = await genesis.facade.finalizeRecipe(signed);
-			const txHash = await genesis.facade.submitTransaction(finalized);
-			return txHash;
+			return await genesis.facade.submitTransaction(finalized);
 		} finally {
 			await genesis.facade.stop();
 		}
@@ -93,46 +108,38 @@ export async function registerDust(
 	keystore: UnshieldedKeystore,
 ): Promise<string | null> {
 	return withSpinner("Registering for DUST generation...", async () => {
-		const state = await Rx.firstValueFrom(facade.state().pipe(Rx.filter((s) => s.isSynced)));
+		const state = await waitForSettled(facade);
 
-		if (state.dust.availableCoins.length > 0) {
-			return null; // Already has DUST
-		}
-
-		const nightUtxos = state.unshielded.availableCoins.filter(
-			(coin) => !coin.meta.registeredForDustGeneration,
+		const nightUtxos: readonly UtxoWithMeta[] = state.unshielded.availableCoins.filter(
+			(coin) => coin.utxo.type === NIGHT && !coin.meta.registeredForDustGeneration,
 		);
 
 		if (nightUtxos.length === 0) {
+			if (state.dust.availableCoins.length > 0) {
+				return null; // Every NIGHT UTXO already generates DUST
+			}
 			throw new Error("No unregistered NIGHT UTXOs available for DUST generation.");
 		}
 
-		const dustState = state.dust;
-		const ttl = new Date(Date.now() + 10 * 60 * 1000);
+		// A first registration pays its own fee from the DUST the NIGHT has
+		// generated since it arrived. NIGHT that just arrived may not cover it
+		// yet, and the call throws InsufficientDustForFeeError with an estimate of
+		// when it will. Wait that long plus a margin and retry; an unreachable fee
+		// is a real error.
+		const register = () =>
+			facade.registerNightUtxosForDustGeneration(
+				nightUtxos,
+				keystore.getPublicKey(),
+				keystore.signDataAsync,
+			);
+		const recipe = await register().catch(async (error: unknown) => {
+			if (!isInsufficientDustForFeeError(error) || error.estimate._tag !== "Reachable") throw error;
+			const timeoutMs = Number(error.estimate.seconds) * 1000 + 60_000;
+			await facade.waitForGeneratedDust(nightUtxos, error.fee, { timeoutMs });
+			return register();
+		});
 
-		// createDustGenerationTransaction expects the Dust wallet's UtxoWithMeta
-		// shape (the ledger Utxo flattened with its `ctime`). `ctime` is already a
-		// Date on the unshielded wallet's UtxoWithMeta.
-		const recipe = await facade.dust.createDustGenerationTransaction(
-			new Date(),
-			ttl,
-			nightUtxos.map((u) => ({
-				...u.utxo,
-				ctime: u.meta.ctime,
-				registeredForDustGeneration: u.meta.registeredForDustGeneration,
-			})),
-			keystore.getPublicKey(),
-			dustState.address,
-		);
-
-		const intent = recipe.intents?.get(1);
-		if (!intent) {
-			throw new Error("Failed to create DUST generation intent.");
-		}
-		const sig = keystore.signData(intent.signatureData(1));
-		const signed = await facade.dust.addDustGenerationSignature(recipe, sig);
-		const finalized = await facade.finalizeTransaction(signed);
-		const txHash = await facade.submitTransaction(finalized);
-		return txHash;
+		const finalized = await facade.finalizeRecipe(recipe);
+		return await facade.submitTransaction(finalized);
 	});
 }

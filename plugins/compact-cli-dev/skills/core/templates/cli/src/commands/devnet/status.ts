@@ -10,7 +10,10 @@ interface ServiceStatus {
 async function checkService(name: string, url: string): Promise<ServiceStatus> {
 	try {
 		const response = await fetch(url, { signal: AbortSignal.timeout(5_000) });
-		return { name, url, healthy: response.ok || response.status === 400 };
+		// The indexer's /ready answers 503 while it catches up with the node.
+		return response.ok
+			? { name, url, healthy: true }
+			: { name, url, healthy: false, error: `HTTP ${String(response.status)}` };
 	} catch (err) {
 		return {
 			name,
@@ -25,10 +28,12 @@ export default class DevnetStatus extends BaseCommand {
 	static override description = "Check health of devnet services";
 
 	async run(): Promise<void> {
+		// Each service's health endpoint. A plain GET on the node's RPC port or
+		// the indexer's GraphQL path answers 405, so those can't be used.
 		const services = await Promise.all([
-			checkService("node", "http://127.0.0.1:9944"),
-			checkService("indexer", "http://127.0.0.1:8088/api/v4/graphql"),
-			checkService("proof-server", "http://127.0.0.1:6300"),
+			checkService("node", "http://127.0.0.1:9944/health"),
+			checkService("indexer", "http://127.0.0.1:8088/ready"),
+			checkService("proof-server", "http://127.0.0.1:6300/health"),
 		]);
 
 		const result = {

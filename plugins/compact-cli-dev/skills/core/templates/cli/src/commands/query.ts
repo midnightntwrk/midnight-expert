@@ -25,19 +25,21 @@ export default class Query extends BaseCommand {
 		//
 		// Example pattern (using the counter contract):
 		//
-		//   import { createProviders } from "../lib/providers.js";
 		//   import { loadDeployedContracts } from "../lib/contract.js";
 		//   import { DEVNET_CONFIG } from "../lib/config.js";
 		//   import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
-		//   import { Counter } from "@midnight-ntwrk/counter-contract";
+		//   import { ContractState } from "@midnight-ntwrk/midnight-js-protocol/v9/compact-runtime";
+		//   import { ledger } from "@midnight-ntwrk/counter-contract";
 		//
-		//   const contracts = loadDeployedContracts();
-		//   const address = flags.address ?? contracts["counter"].address;
+		//   const address = flags.address ?? loadDeployedContracts().counter?.address;
+		//   if (!address) throw new Error("No contract address. Pass --address or run `deploy` first.");
 		//   const publicDataProvider = indexerPublicDataProvider(DEVNET_CONFIG.indexer, DEVNET_CONFIG.indexerWS);
-		//   const state = await publicDataProvider.queryContractState(address);
+		//   const read = await publicDataProvider.queryContractState(address);
 		//
-		//   if (state) {
-		//     const ledgerState = Counter.ledger(state.data);
+		//   // Midnight.js 5 returns the serialized state tagged with the ledger era
+		//   // that wrote it. A contract deployed on ledger 9 decodes with v9.
+		//   if (read) {
+		//     const ledgerState = ledger(read.contractState.deserialize({ v9: ContractState }).data);
 		//     this.log(`Counter value: ${ledgerState.round}`);
 		//   }
 

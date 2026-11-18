@@ -17,8 +17,8 @@ Covers patterns for building Oclif CLIs that interact with Midnight Compact smar
 | Name | Description | When it is used |
 |------|-------------|-----------------|
 | [oclif-patterns](skills/core/references/oclif-patterns.md) | Command structure, BaseCommand, --json support, and topic grouping | When understanding how commands are structured and organized |
-| [wallet-management](skills/core/references/wallet-management.md) | HD derivation, WalletFacade, seed format, persistence, and key functions | When working with wallet creation, storage, or derivation |
-| [provider-setup](skills/core/references/provider-setup.md) | The 6-provider bundle, createProviders(), and network config | When connecting to a Midnight network |
+| [wallet-management](skills/core/references/wallet-management.md) | seed derivation, WalletFacade, seed format, persistence, and key functions | When working with wallet creation, storage, or derivation |
+| [provider-setup](skills/core/references/provider-setup.md) | The provider bundle, createProviders(), and network config | When connecting to a Midnight network |
 | [contract-lifecycle](skills/core/references/contract-lifecycle.md) | CompiledContract, deploy, join, calling circuits, and querying state | When deploying or interacting with contracts from the CLI |
 | [error-handling](skills/core/references/error-handling.md) | Error classification, ErrorCode enum, formatError, and adding new codes | When handling or extending CLI error reporting |
 

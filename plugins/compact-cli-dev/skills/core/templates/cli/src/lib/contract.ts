@@ -64,20 +64,29 @@ export async function deploy(
 	});
 }
 
+// When `initialPrivateState` is given, findDeployedContract stores it under the
+// private state ID, replacing whatever is stored there. Pass it only the first
+// time a wallet joins a contract. Leave it out to reuse the private state saved
+// at deploy or at an earlier join, as `call` does.
 export async function join(
 	providers: Providers,
 	contractAddress: string,
-	initialPrivateState: Record<string, unknown>,
+	initialPrivateState?: Record<string, unknown>,
 ) {
 	return withSpinner("Joining contract...", async () => {
 		const compiledContract = await loadCompiledContract();
+		const privateStateId = `${CONTRACT_NAME}PrivateState`;
 
-		return findDeployedContract(providers, {
-			contractAddress,
-			compiledContract,
-			privateStateId: `${CONTRACT_NAME}PrivateState`,
-			initialPrivateState,
-		});
+		// Midnight.js checks whether the initialPrivateState key is present, not
+		// whether it's defined, so leave the key out entirely.
+		return initialPrivateState === undefined
+			? findDeployedContract(providers, { contractAddress, compiledContract, privateStateId })
+			: findDeployedContract(providers, {
+					contractAddress,
+					compiledContract,
+					privateStateId,
+					initialPrivateState,
+				});
 	});
 }
 

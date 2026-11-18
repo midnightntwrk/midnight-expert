@@ -72,8 +72,8 @@ When the CLI already exists:
 1. **Read the existing code** to understand the current state. Start with `package.json` for dependencies and config, then `src/base-command.ts` for the shared patterns, then the relevant files for the user's request.
 2. **Consult skill references** for the specific area of work. The `compact-cli-dev:core` skill lists reference docs:
    - `references/oclif-patterns.md` — command structure, BaseCommand, `--json`, topic grouping
-   - `references/wallet-management.md` — HD derivation, WalletFacade, seed format, persistence
-   - `references/provider-setup.md` — the 6-provider bundle, `createProviders()`, network config
+   - `references/wallet-management.md` — seed derivation, WalletFacade, seed format, persistence
+   - `references/provider-setup.md` — the provider bundle, `createProviders()`, network config
    - `references/contract-lifecycle.md` — CompiledContract, deploy, join, calling circuits, querying state
    - `references/error-handling.md` — error classification, ErrorCode enum, formatError, adding new codes
 3. **Follow the patterns** established in the existing codebase. Every command extends `BaseCommand`. Every command uses `Args` and `Flags` from `@oclif/core`. Topic grouping is determined by directory structure under `src/commands/`.

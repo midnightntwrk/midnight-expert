@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Command } from "@oclif/core";
-import { initializeNetwork } from "./lib/config.js";
 import { INIT_MARKER, STATE_DIR } from "./lib/constants.js";
 import { classifyError, formatError } from "./lib/errors.js";
 import { setJsonMode } from "./lib/progress.js";
@@ -23,7 +22,6 @@ export abstract class BaseCommand extends Command {
 	override async init(): Promise<void> {
 		await super.init();
 		setJsonMode(this.jsonEnabled());
-		initializeNetwork();
 		this.showWelcomeBanner();
 	}
 

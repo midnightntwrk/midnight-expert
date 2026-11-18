@@ -1,54 +1,73 @@
 import type { ProvableCircuitId } from "@midnight-ntwrk/compact-js";
-import type * as ledger from "@midnight-ntwrk/ledger-v8";
 import type { ContractProviders } from "@midnight-ntwrk/midnight-js-contracts";
 import { httpClientProofProvider } from "@midnight-ntwrk/midnight-js-http-client-proof-provider";
 import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
 import { levelPrivateStateProvider } from "@midnight-ntwrk/midnight-js-level-private-state-provider";
 import { NodeZkConfigProvider } from "@midnight-ntwrk/midnight-js-node-zk-config-provider";
-import type { MidnightProvider, WalletProvider } from "@midnight-ntwrk/midnight-js-types";
-import type { WalletFacade } from "@midnightntwrk/wallet-sdk-facade";
-import type { UnshieldedKeystore } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
-import * as Rx from "rxjs";
+import {
+	type MidnightProvider,
+	type WalletProvider,
+	createLedger9MidnightProvider,
+	createLedger9WalletProvider,
+} from "@midnight-ntwrk/midnight-js-types";
+import {
+	type UnshieldedKeystore,
+	type WalletFacade,
+	WalletTransaction,
+} from "@midnightntwrk/wallet-sdk";
 import { DEVNET_CONFIG } from "./config.js";
-import { LOCAL_PRIVATE_STATE_PASSWORD, ZK_CONFIG_PATH } from "./constants.js";
+import { LOCAL_PRIVATE_STATE_PASSWORD, TX_TTL_SECONDS, ZK_CONFIG_PATH } from "./constants.js";
 import type { AppContract } from "./contract.js";
+import { waitForSettled } from "./wallet.js";
 
 // The full provider set deployContract / findDeployedContract require for this
 // contract. ContractProviders ties the zkConfigProvider's circuit-id set to the
 // contract's circuits, so the providers are accepted without casting.
 export type Providers = ContractProviders<AppContract>;
 
-export async function createWalletProvider(
-	facade: WalletFacade,
-	shieldedSecretKeys: ledger.ZswapSecretKeys,
-	dustSecretKey: ledger.DustSecretKey,
-): Promise<WalletProvider & MidnightProvider> {
-	const state = await Rx.firstValueFrom(facade.state().pipe(Rx.filter((s) => s.isSynced)));
+// The wallet's answer goes back to Midnight.js as the transaction's bytes.
+function toBytes(handle: WalletTransaction): Uint8Array {
+	return Buffer.from(WalletTransaction.toWire(handle).transaction, "hex");
+}
 
-	return {
-		getCoinPublicKey: () => state.shielded.coinPublicKey.toHexString(),
-		getEncryptionPublicKey: () => state.shielded.encryptionPublicKey.toHexString(),
+// Midnight.js hands the providers its own transaction handles, and the wallet
+// takes its own, so a transaction crosses between them as bytes.
+// facade.adoptTransaction reads the bytes and stamps them with the protocol
+// version the wallet is acting at.
+//
+// The devnet runs ledger 9, so these providers serve ledger 9 only. A ledger 8
+// transaction is refused with ProviderEraUnsupportedError.
+export async function createWalletProviders(
+	facade: WalletFacade,
+	keystore: UnshieldedKeystore,
+): Promise<{ walletProvider: WalletProvider; midnightProvider: MidnightProvider }> {
+	const { shielded } = await waitForSettled(facade);
+
+	const walletProvider = createLedger9WalletProvider({
+		getCoinPublicKey: () => shielded.coinPublicKey.toHexString(),
+		getEncryptionPublicKey: () => shielded.encryptionPublicKey.toHexString(),
 		async balanceTx(tx, ttl) {
 			const recipe = await facade.balanceUnboundTransaction(
-				tx,
-				{ shieldedSecretKeys, dustSecretKey },
-				{ ttl: ttl ?? new Date(Date.now() + 30 * 60 * 1000) },
+				facade.adoptTransaction(tx.serialize(), "Unbound"),
+				{ ttl: ttl ?? new Date(Date.now() + TX_TTL_SECONDS * 1000) },
 			);
-			const finalized = await facade.finalizeRecipe(recipe);
-			return finalized;
+			const signed = await facade.signRecipe(recipe, keystore.signDataAsync);
+			return toBytes(await facade.finalizeRecipe(signed));
 		},
-		submitTx: (tx) => facade.submitTransaction(tx),
-	} as WalletProvider & MidnightProvider;
+	});
+	const midnightProvider = createLedger9MidnightProvider((tx) =>
+		facade.submitTransaction(facade.adoptTransaction(tx.serialize(), "Finalized")),
+	);
+
+	return { walletProvider, midnightProvider };
 }
 
 export async function createProviders(
 	facade: WalletFacade,
-	shieldedSecretKeys: ledger.ZswapSecretKeys,
-	dustSecretKey: ledger.DustSecretKey,
 	keystore: UnshieldedKeystore,
 	privateStateStoreName: string,
 ): Promise<Providers> {
-	const walletProvider = await createWalletProvider(facade, shieldedSecretKeys, dustSecretKey);
+	const { walletProvider, midnightProvider } = await createWalletProviders(facade, keystore);
 
 	const zkConfigProvider = new NodeZkConfigProvider<ProvableCircuitId<AppContract>>(ZK_CONFIG_PATH);
 
@@ -65,6 +84,9 @@ export async function createProviders(
 		zkConfigProvider,
 		proofProvider: httpClientProofProvider(DEVNET_CONFIG.proofServer, zkConfigProvider),
 		walletProvider,
-		midnightProvider: walletProvider,
+		midnightProvider,
+		// Midnight.js 5 takes the network ID and the transaction lifetime here,
+		// for every transaction built with this provider set.
+		config: { networkId: DEVNET_CONFIG.networkId, ttlSeconds: TX_TTL_SECONDS },
 	};
 }

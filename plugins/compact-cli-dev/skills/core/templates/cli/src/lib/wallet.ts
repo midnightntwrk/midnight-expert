@@ -1,19 +1,23 @@
 import fs from "node:fs";
 import path from "node:path";
-import * as ledger from "@midnight-ntwrk/ledger-v8";
-import { getNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
-import { InMemoryTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
-import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
-import { WalletEntrySchema, WalletFacade } from "@midnightntwrk/wallet-sdk-facade";
-import { HDWallet, Roles, generateRandomSeed } from "@midnightntwrk/wallet-sdk-hd";
-import { ShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
 import {
+	DustWallet,
+	type FacadeState,
+	InMemoryTransactionHistoryStorage,
 	PublicKey,
+	ShieldedWallet,
 	type UnshieldedKeystore,
 	UnshieldedWallet,
+	WalletEntrySchema,
+	WalletFacade,
+	WalletSeeds,
 	createKeystore,
-} from "@midnightntwrk/wallet-sdk-unshielded-wallet";
+	generateRandomSeed,
+	mergeWalletEntries,
+} from "@midnightntwrk/wallet-sdk";
+import * as Rx from "rxjs";
 import { WebSocket } from "ws";
+import { DEVNET_CONFIG } from "./config.js";
 import {
 	ADDITIONAL_FEE_OVERHEAD,
 	DIR_MODE,
@@ -22,6 +26,7 @@ import {
 	SEED_LENGTH,
 	STATE_DIR,
 	WALLETS_FILE,
+	WALLET_SYNC_TIMEOUT,
 } from "./constants.js";
 
 // Required for GraphQL subscriptions in Node.js
@@ -42,8 +47,6 @@ export interface WalletStore {
 
 export interface WalletContext {
 	facade: WalletFacade;
-	shieldedSecretKeys: ledger.ZswapSecretKeys;
-	dustSecretKey: ledger.DustSecretKey;
 	keystore: UnshieldedKeystore;
 }
 
@@ -53,78 +56,79 @@ export function newSeed(): string {
 	return Buffer.from(generateRandomSeed()).toString("hex");
 }
 
-export function deriveKeys(seed: string): {
-	zswap: Uint8Array;
-	nightExternal: Uint8Array;
-	dust: Uint8Array;
-} {
+// WalletSeeds.fromMasterSeed derives the shielded, unshielded and dust seeds on
+// the same HD path wallet SDK 1.x used (account 0, index 0), so a seed saved by
+// an older version of this CLI gives the same wallet and addresses.
+export function deriveSeeds(seed: string): WalletSeeds {
 	if (seed.length !== SEED_LENGTH) {
 		throw new Error(
 			`Invalid seed length: expected ${String(SEED_LENGTH)} hex chars, got ${String(seed.length)}`,
 		);
 	}
-	const hdWallet = HDWallet.fromSeed(Buffer.from(seed, "hex"));
-	if (hdWallet.type !== "seedOk") {
-		throw new Error("Invalid seed: HD wallet derivation failed");
+	// Buffer.from(_, "hex") stops at the first non-hex character, so check first.
+	if (!/^[0-9a-fA-F]+$/.test(seed)) {
+		throw new Error("Invalid seed: expected hex characters only (0-9, a-f)");
 	}
-	const result = hdWallet.hdWallet
-		.selectAccount(0)
-		.selectRoles([Roles.Zswap, Roles.NightExternal, Roles.Dust])
-		.deriveKeysAt(0);
-	if (result.type !== "keysDerived") {
-		throw new Error("Key derivation failed");
-	}
-	hdWallet.hdWallet.clear();
-	return {
-		zswap: result.keys[Roles.Zswap],
-		nightExternal: result.keys[Roles.NightExternal],
-		dust: result.keys[Roles.Dust],
-	};
+	return WalletSeeds.fromMasterSeed(Buffer.from(seed, "hex"));
+}
+
+export function createWalletKeystore(seeds: WalletSeeds): UnshieldedKeystore {
+	return createKeystore({ kind: "schnorr", secret: seeds.unshielded }, DEVNET_CONFIG.networkId);
 }
 
 // --- WalletFacade Building ---
 
 export async function buildFacade(seed: string): Promise<WalletContext> {
-	const keys = deriveKeys(seed);
-	const networkId = getNetworkId();
-
-	const shieldedSecretKeys = ledger.ZswapSecretKeys.fromSeed(keys.zswap);
-	const dustSecretKey = ledger.DustSecretKey.fromSeed(keys.dust);
-	const keystore = createKeystore(keys.nightExternal, networkId);
-
-	const walletConfig = {
-		networkId,
-		indexerClientConnection: {
-			indexerHttpUrl: "http://127.0.0.1:8088/api/v4/graphql",
-			indexerWsUrl: "ws://127.0.0.1:8088/api/v4/graphql/ws",
-		},
-		// The default submission service submits via the node's RPC relay.
-		relayURL: new URL("http://127.0.0.1:9944"),
-		costParameters: {
-			additionalFeeOverhead: ADDITIONAL_FEE_OVERHEAD,
-			feeBlocksMargin: FEE_BLOCKS_MARGIN,
-		},
-		// In the 4.x SDK the in-memory storage lives in wallet-sdk-abstractions
-		// and takes the entry schema (WalletEntrySchema) so it can serialize.
-		txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
-	};
+	const seeds = deriveSeeds(seed);
+	const keystore = createWalletKeystore(seeds);
 
 	const facade = await WalletFacade.init({
-		configuration: walletConfig,
-		shielded: (cfg) => ShieldedWallet(cfg).startWithSecretKeys(shieldedSecretKeys),
-		unshielded: (cfg) =>
-			UnshieldedWallet({
-				...cfg,
-				txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
-			}).startWithPublicKey(PublicKey.fromKeyStore(keystore)),
-		dust: (cfg) =>
-			DustWallet(cfg).startWithSecretKey(
-				dustSecretKey,
-				ledger.LedgerParameters.initialParameters().dust,
+		configuration: {
+			networkId: DEVNET_CONFIG.networkId,
+			indexerClientConnection: {
+				indexerHttpUrl: DEVNET_CONFIG.indexer,
+				indexerWsUrl: DEVNET_CONFIG.indexerWS,
+			},
+			relayURL: new URL(DEVNET_CONFIG.nodeWS),
+			provingServerUrl: new URL(DEVNET_CONFIG.proofServer),
+			costParameters: {
+				additionalFeeOverhead: ADDITIONAL_FEE_OVERHEAD,
+				feeBlocksMargin: FEE_BLOCKS_MARGIN,
+			},
+			txHistoryStorage: new InMemoryTransactionHistoryStorage(
+				WalletEntrySchema,
+				mergeWalletEntries,
 			),
+		},
+		shielded: (cfg) => ShieldedWallet(cfg).startWithSeed(seeds.shielded),
+		unshielded: (cfg) => UnshieldedWallet(cfg).startWithPublicKey(PublicKey.fromKeyStore(keystore)),
+		dust: (cfg) => DustWallet(cfg).startWithSeed(seeds.dust),
 	});
+	// start() takes the seeds rather than key objects: seeds are the only key
+	// material that works on both sides of the ledger 8 / ledger 9 boundary.
+	// Callers stop the facade in a finally block once this returns; if start()
+	// throws, stop it here so its open connections don't keep the process alive.
+	try {
+		await facade.start(seeds);
+	} catch (error) {
+		await facade.stop().catch(() => undefined);
+		throw error;
+	}
 
-	return { facade, shieldedSecretKeys, dustSecretKey, keystore };
+	return { facade, keystore };
+}
+
+// Synced, and all three sub-wallets on the same protocol version. Until a
+// wallet has caught up past the ledger 9 fork it reports protocol "Crossing",
+// and a transaction built then can fail with ProtocolVersionMismatchError.
+export function isSettled(state: FacadeState): boolean {
+	return state.isSynced && state.protocol._tag === "Settled";
+}
+
+export function waitForSettled(facade: WalletFacade): Promise<FacadeState> {
+	return Rx.firstValueFrom(
+		facade.state().pipe(Rx.filter(isSettled), Rx.timeout(WALLET_SYNC_TIMEOUT)),
+	);
 }
 
 // --- Persistence ---

@@ -90,29 +90,26 @@ import { findDeployedContract } from "@midnight-ntwrk/midnight-js-contracts";
 export async function join(
   providers: Providers,
   contractAddress: string,
-  initialPrivateState: Record<string, unknown>,
+  initialPrivateState?: Record<string, unknown>,
 ) {
   const compiledContract = await loadCompiledContract();
+  const privateStateId = `${CONTRACT_NAME}PrivateState`;
 
-  return findDeployedContract(providers, {
-    contractAddress,
-    compiledContract,
-    privateStateId: `${CONTRACT_NAME}PrivateState`,
-    initialPrivateState,
-  });
+  return initialPrivateState === undefined
+    ? findDeployedContract(providers, { contractAddress, compiledContract, privateStateId })
+    : findDeployedContract(providers, { contractAddress, compiledContract, privateStateId, initialPrivateState });
 }
 ```
 
-The returned `FoundContract` object has the same `callTx` interface as a deployed contract. The `initialPrivateState` should match what the joining party's private state should be initialized to.
+The returned `FoundContract` object has the same `callTx` interface as a deployed contract.
+
+When the options include `initialPrivateState`, `findDeployedContract` stores it under `privateStateId`, **replacing** whatever is stored there. Midnight.js checks whether the key is present, not whether its value is defined, so `initialPrivateState: undefined` overwrites too. Pass it only the first time a wallet joins a contract. Leave the key out to reuse the private state saved at deploy or at an earlier join; Midnight.js throws if nothing is stored yet.
 
 Full command usage:
 
 ```typescript
 const ctx = await buildFacade(walletData.seed);
-const providers = await createProviders(
-  ctx.facade, ctx.shieldedSecretKeys, ctx.dustSecretKey,
-  ctx.keystore, `${CONTRACT_NAME}-private-state`,
-);
+const providers = await createProviders(ctx.facade, ctx.keystore, `${CONTRACT_NAME}-private-state`);
 await join(providers, args.address, {});
 ```
 
@@ -124,7 +121,10 @@ After deploying or joining, call contract circuits via the `callTx` proxy:
 
 ```typescript
 // From the call.ts command stub:
-const contract = await join(providers, contracts["counter"].address, { privateCounter: 0 });
+const deployed = loadDeployedContracts().counter;
+if (!deployed) throw new Error("No deployed counter contract. Run `deploy` first.");
+// No initial private state: reuse the one saved at deploy or join.
+const contract = await join(providers, deployed.address);
 
 const txData = await contract.callTx.increment();
 // txData.public.txId      — transaction hash
@@ -147,18 +147,19 @@ Read-only queries use the `publicDataProvider` to fetch contract state from the 
 ```typescript
 // From the query.ts command stub:
 import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
-import { Counter } from "@midnight-ntwrk/counter-contract";
+import { ContractState } from "@midnight-ntwrk/midnight-js-protocol/v9/compact-runtime";
+import { ledger } from "@midnight-ntwrk/counter-contract";
 
 const publicDataProvider = indexerPublicDataProvider(DEVNET_CONFIG.indexer, DEVNET_CONFIG.indexerWS);
-const state = await publicDataProvider.queryContractState(address);
+const read = await publicDataProvider.queryContractState(address);
 
-if (state) {
-  const ledgerState = Counter.ledger(state.data);
+if (read) {
+  const ledgerState = ledger(read.contractState.deserialize({ v9: ContractState }).data);
   // Access ledger fields: ledgerState.round, ledgerState.owner, etc.
 }
 ```
 
-The `Contract.ledger(state.data)` call deserializes the raw on-chain data into the typed ledger structure defined in the Compact contract. Each `export ledger` field becomes a property on the returned object.
+Midnight.js 5 returns the contract state still serialized, tagged with the ledger era that wrote it (`read.contractState.era`). `deserialize({ v9: ContractState })` decodes a ledger 9 state; a contract deployed on ledger 8 needs a `v8` decoder instead. The compiled contract's `ledger()` function then turns the state's data into the typed ledger structure defined in the Compact contract. Each `export ledger` field becomes a property on the returned object.
 
 ---
 

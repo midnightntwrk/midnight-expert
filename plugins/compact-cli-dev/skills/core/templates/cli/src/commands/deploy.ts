@@ -27,13 +27,7 @@ export default class Deploy extends BaseCommand {
 			await withSpinner("Syncing...", () => waitForFunds(ctx.facade));
 
 			const providers = await withSpinner("Configuring providers...", () =>
-				createProviders(
-					ctx.facade,
-					ctx.shieldedSecretKeys,
-					ctx.dustSecretKey,
-					ctx.keystore,
-					`${CONTRACT_NAME}-private-state`,
-				),
+				createProviders(ctx.facade, ctx.keystore, `${CONTRACT_NAME}-private-state`),
 			);
 
 			const result = await deploy(providers, {});

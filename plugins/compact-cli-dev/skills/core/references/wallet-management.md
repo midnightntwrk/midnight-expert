@@ -2,55 +2,38 @@
 
 > For comprehensive Wallet SDK API reference, see `midnight-wallet:wallet-sdk`. This document covers wallet construction patterns specific to the CLI context.
 
-Covers HD key derivation, the three sub-wallets, seed format, WalletFacade construction, persistence, and key utility functions.
+Covers seed derivation, the three sub-wallets, seed format, WalletFacade construction, persistence, and key utility functions. The template uses wallet SDK 2.0.1 through the single `@midnightntwrk/wallet-sdk` package.
 
 ---
 
-## HD Derivation Flow
+## Seed Derivation
 
-The Midnight wallet uses hierarchical deterministic (HD) key derivation from a hex seed:
+The wallet derives one seed per sub-wallet from a 32-byte master seed:
 
 ```
-Seed (64 hex chars = 32 bytes)
-  └─ HDWallet.fromSeed(buffer)
-       └─ selectAccount(0)
-            └─ selectRoles([Zswap, NightExternal, Dust])
-                 └─ deriveKeysAt(0)
-                      ├─ keys[Roles.Zswap]          → ShieldedWallet
-                      ├─ keys[Roles.NightExternal]   → UnshieldedWallet (keystore)
-                      └─ keys[Roles.Dust]            → DustWallet
+Master seed (64 hex chars = 32 bytes)
+  └─ WalletSeeds.fromMasterSeed(buffer)
+       ├─ seeds.shielded    → ShieldedWallet
+       ├─ seeds.unshielded  → UnshieldedWallet (keystore)
+       └─ seeds.dust        → DustWallet
 ```
+
+`WalletSeeds.fromMasterSeed` walks the same HD path wallet SDK 1.x used (account 0, roles Zswap / NightExternal / Dust, index 0), so a seed saved by an older version of the CLI restores the same wallet and addresses.
 
 Implementation from `wallet.ts`:
 
 ```typescript
-import { HDWallet, Roles, generateRandomSeed } from "@midnightntwrk/wallet-sdk-hd";
+import { WalletSeeds, createKeystore } from "@midnightntwrk/wallet-sdk";
 
-export function deriveKeys(seed: string): {
-  zswap: Uint8Array;
-  nightExternal: Uint8Array;
-  dust: Uint8Array;
-} {
+export function deriveSeeds(seed: string): WalletSeeds {
   if (seed.length !== SEED_LENGTH) {
-    throw new Error(`Invalid seed length: expected ${String(SEED_LENGTH)} hex chars`);
+    throw new Error(`Invalid seed length: expected ${String(SEED_LENGTH)} hex chars, got ${String(seed.length)}`);
   }
-  const hdWallet = HDWallet.fromSeed(Buffer.from(seed, "hex"));
-  if (hdWallet.type !== "seedOk") {
-    throw new Error("Invalid seed: HD wallet derivation failed");
-  }
-  const result = hdWallet.hdWallet
-    .selectAccount(0)
-    .selectRoles([Roles.Zswap, Roles.NightExternal, Roles.Dust])
-    .deriveKeysAt(0);
-  if (result.type !== "keysDerived") {
-    throw new Error("Key derivation failed");
-  }
-  hdWallet.hdWallet.clear();
-  return {
-    zswap: result.keys[Roles.Zswap],
-    nightExternal: result.keys[Roles.NightExternal],
-    dust: result.keys[Roles.Dust],
-  };
+  return WalletSeeds.fromMasterSeed(Buffer.from(seed, "hex"));
+}
+
+export function createWalletKeystore(seeds: WalletSeeds): UnshieldedKeystore {
+  return createKeystore({ kind: "schnorr", secret: seeds.unshielded }, DEVNET_CONFIG.networkId);
 }
 ```
 
@@ -58,31 +41,46 @@ export function deriveKeys(seed: string): {
 
 ## Three Sub-Wallets
 
-Each derived key produces a specialized wallet:
-
-| Sub-wallet | Role | Purpose |
+| Sub-wallet | Seed | Purpose |
 |------------|------|---------|
-| `ShieldedWallet` | `Roles.Zswap` | Privacy-preserving transactions (ZK proofs) |
-| `UnshieldedWallet` | `Roles.NightExternal` | Public NIGHT transfers, keystore for signing |
-| `DustWallet` | `Roles.Dust` | DUST fee token management |
+| `ShieldedWallet` | `seeds.shielded` | Privacy-preserving transactions (ZK proofs) |
+| `UnshieldedWallet` | `seeds.unshielded` | Public NIGHT transfers, keystore for signing |
+| `DustWallet` | `seeds.dust` | DUST fee token management |
 
-All three are combined into a single `WalletFacade`:
+All three are combined into a single `WalletFacade`, then started with the seeds:
 
 ```typescript
 const facade = await WalletFacade.init({
-  configuration: walletConfig,
-  shielded: (cfg) => ShieldedWallet(cfg).startWithSecretKeys(shieldedSecretKeys),
-  unshielded: (cfg) =>
-    UnshieldedWallet({
-      ...cfg,
-      txHistoryStorage: new InMemoryTransactionHistoryStorage(),
-    }).startWithPublicKey(PublicKey.fromKeyStore(keystore)),
-  dust: (cfg) =>
-    DustWallet(cfg).startWithSecretKey(
-      dustSecretKey,
-      ledger.LedgerParameters.initialParameters().dust,
-    ),
+  configuration: {
+    networkId: DEVNET_CONFIG.networkId,
+    indexerClientConnection: { indexerHttpUrl: DEVNET_CONFIG.indexer, indexerWsUrl: DEVNET_CONFIG.indexerWS },
+    relayURL: new URL(DEVNET_CONFIG.nodeWS),
+    provingServerUrl: new URL(DEVNET_CONFIG.proofServer),
+    costParameters: { additionalFeeOverhead: ADDITIONAL_FEE_OVERHEAD, feeBlocksMargin: FEE_BLOCKS_MARGIN },
+    txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema, mergeWalletEntries),
+  },
+  shielded: (cfg) => ShieldedWallet(cfg).startWithSeed(seeds.shielded),
+  unshielded: (cfg) => UnshieldedWallet(cfg).startWithPublicKey(PublicKey.fromKeyStore(keystore)),
+  dust: (cfg) => DustWallet(cfg).startWithSeed(seeds.dust),
 });
+await facade.start(seeds);
+```
+
+`start()` takes the seeds rather than key objects, because seeds are the only key material that works on both sides of the ledger 8 / ledger 9 boundary.
+
+### Wait for "Settled", not just synced
+
+Before building a transaction, wait until the wallet is synced **and** all three sub-wallets agree on the protocol version. Until a wallet has caught up past the ledger 9 fork it reports protocol `Crossing`, and a transaction built then can fail with `ProtocolVersionMismatchError`:
+
+```typescript
+export function waitForSettled(facade: WalletFacade): Promise<FacadeState> {
+  return Rx.firstValueFrom(
+    facade.state().pipe(
+      Rx.filter((s) => s.isSynced && s.protocol._tag === "Settled"),
+      Rx.timeout(WALLET_SYNC_TIMEOUT),
+    ),
+  );
+}
 ```
 
 ---
@@ -90,7 +88,7 @@ const facade = await WalletFacade.init({
 ## Seed Format
 
 - **Length:** 64 hex characters (32 bytes)
-- **Generation:** `generateRandomSeed()` from `@midnightntwrk/wallet-sdk-hd`
+- **Generation:** `generateRandomSeed()` from `@midnightntwrk/wallet-sdk`
 - **Genesis seed:** `000...001` (64 chars, pre-funded on local devnet)
 
 ```typescript
@@ -106,13 +104,11 @@ export function newSeed(): string {
 
 ## WalletContext Type
 
-The `buildFacade()` function returns a `WalletContext` bundling everything needed for provider construction:
+`buildFacade()` returns a started `WalletFacade` and the unshielded keystore that signs for it. The facade holds the shielded and DUST keys itself, so nothing else is needed to build providers:
 
 ```typescript
 export interface WalletContext {
   facade: WalletFacade;
-  shieldedSecretKeys: ledger.ZswapSecretKeys;
-  dustSecretKey: ledger.DustSecretKey;
   keystore: UnshieldedKeystore;
 }
 ```
@@ -123,7 +119,8 @@ Usage in commands:
 const walletData = getWallet(flags.wallet);
 const ctx = await buildFacade(walletData.seed);
 try {
-  // Use ctx.facade, ctx.shieldedSecretKeys, ctx.dustSecretKey, ctx.keystore
+  const providers = await createProviders(ctx.facade, ctx.keystore, `${CONTRACT_NAME}-private-state`);
+  // ...
 } finally {
   await ctx.facade.stop();
 }
@@ -156,8 +153,10 @@ Wallets are stored in `.dapp-state/wallets.json` relative to the project working
 | Function | Signature | Purpose |
 |----------|-----------|---------|
 | `newSeed()` | `() => string` | Generate a random 64-char hex seed |
-| `deriveKeys(seed)` | `(string) => { zswap, nightExternal, dust }` | HD-derive role keys from seed |
-| `buildFacade(seed)` | `(string) => Promise<WalletContext>` | Full wallet construction from seed |
+| `deriveSeeds(seed)` | `(string) => WalletSeeds` | Derive the three sub-wallet seeds from a master seed |
+| `createWalletKeystore(seeds)` | `(WalletSeeds) => UnshieldedKeystore` | Build the unshielded signing keystore |
+| `buildFacade(seed)` | `(string) => Promise<WalletContext>` | Build and start the wallet from a seed |
+| `waitForSettled(facade)` | `(WalletFacade) => Promise<FacadeState>` | Wait until synced and on one protocol version |
 | `loadWallets()` | `() => WalletStore` | Read all wallets from disk |
 | `saveWallet(name, wallet)` | `(string, StoredWallet) => void` | Persist a single wallet |
 | `saveWallets(store)` | `(WalletStore) => void` | Write entire wallet store to disk |

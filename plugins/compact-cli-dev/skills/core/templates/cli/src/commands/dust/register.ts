@@ -18,20 +18,17 @@ export default class DustRegister extends BaseCommand {
 		const ctx = await withSpinner("Building wallet...", () => buildFacade(wallet.seed));
 		try {
 			await withSpinner("Syncing...", () => waitForFunds(ctx.facade));
+			// null when every NIGHT UTXO already generates DUST. Either way, wait
+			// until the wallet holds enough DUST to deploy.
 			const txId = await registerDust(ctx.facade, ctx.keystore);
+			await withSpinner("Waiting for DUST...", () => waitForDust(ctx.facade));
 
-			if (txId) {
-				await withSpinner("Waiting for DUST...", () => waitForDust(ctx.facade));
-				if (!this.jsonEnabled()) {
-					this.log(`  DUST registered. tx: ${txId}`);
-				}
-				this.outputResult({ txId, registered: true });
-			} else {
-				if (!this.jsonEnabled()) {
-					this.log("  DUST already available.");
-				}
-				this.outputResult({ txId: null, registered: false });
+			if (!this.jsonEnabled()) {
+				this.log(
+					txId ? `  DUST registered. tx: ${txId}` : "  NIGHT already registered; DUST available.",
+				);
 			}
+			this.outputResult({ txId, registered: txId !== null });
 		} finally {
 			await ctx.facade.stop();
 		}

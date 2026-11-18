@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { loadWallets, saveWallet, saveWallets, getWallet } from "../../src/lib/wallet.js";
+import { deriveSeeds, getWallet, loadWallets, saveWallet, saveWallets } from "../../src/lib/wallet.js";
 import { STATE_DIR, WALLETS_FILE } from "../../src/lib/constants.js";
 
 describe("wallet persistence", () => {
@@ -42,5 +42,13 @@ describe("wallet persistence", () => {
 
 	it("throws when getting nonexistent wallet", () => {
 		expect(() => getWallet("nobody")).toThrow('Wallet "nobody" not found');
+	});
+
+	it("rejects a seed that isn't 32 bytes of hex", () => {
+		expect(() => deriveSeeds("abcd")).toThrow("Invalid seed length");
+	});
+
+	it("rejects a 64-character seed that isn't hex", () => {
+		expect(() => deriveSeeds(`${"0".repeat(63)}g`)).toThrow("Invalid seed");
 	});
 });
