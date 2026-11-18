@@ -4,7 +4,8 @@ import type { MidnightProviders } from "@midnight-ntwrk/midnight-js-types";
  * Replace these placeholder types with your contract's actual types.
  *
  * ContractState — the shape of your contract's public ledger state,
- *   parsed from the indexer via YourContract.ledger(state.data).
+ *   parsed from the indexer with your contract's generated ledger() function
+ *   (see contractStateData in index.ts).
  *
  * PrivateState — the shape of your off-chain state stored locally,
  *   typically containing secret keys or user-specific data.

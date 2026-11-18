@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { WalletProvider } from "../providers/wallet-context";
@@ -20,7 +20,7 @@ function TestConsumer() {
 describe("WalletContext", () => {
   beforeEach(() => {
     localStorage.clear();
-    delete (window as Record<string, unknown>).midnight;
+    delete (window as unknown as Record<string, unknown>).midnight;
   });
 
   it("starts disconnected", () => {
@@ -44,7 +44,7 @@ describe("WalletContext", () => {
     await user.click(screen.getByText("connect"));
 
     expect(screen.getByTestId("status")).toHaveTextContent("error");
-    expect(screen.getByTestId("error")).toHaveTextContent("Lace wallet");
+    expect(screen.getByTestId("error")).toHaveTextContent("No Midnight wallet");
   });
 
   it("connects successfully with mock wallet", async () => {
@@ -62,10 +62,10 @@ describe("WalletContext", () => {
       }),
     };
 
-    (window as Record<string, unknown>).midnight = {
+    (window as unknown as Record<string, unknown>).midnight = {
       mnLace: {
         name: "Lace",
-        apiVersion: "4.0.0",
+        apiVersion: "4.1.0",
         icon: "",
         rdns: "lace",
         connect: vi.fn().mockResolvedValue(mockApi),
