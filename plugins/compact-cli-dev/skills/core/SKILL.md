@@ -44,7 +44,7 @@ src/
     providers.ts           6-provider bundle factory
     funding.ts             Genesis airdrop, DUST registration, balance polling
     contract.ts            CompiledContract loading, deploy, join, persistence
-    config.ts              Network config (DEVNET_CONFIG), initializeNetwork()
+    config.ts              Network config (DEVNET_CONFIG)
     errors.ts              Error classification and formatting
     progress.ts            Ora spinner helpers, JSON-mode silence
     constants.ts           File paths, seeds, timeouts, fee parameters

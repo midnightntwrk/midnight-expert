@@ -47,7 +47,6 @@ All commands in this template extend `BaseCommand` instead of the raw Oclif `Com
 |---------|-------------|
 | `--json` flag | Automatically parsed; sets `this.jsonEnabled` |
 | JSON-mode spinners | Spinners are silenced when `--json` is active |
-| Network init | Calls `initializeNetwork()` to set the network ID at startup |
 | Welcome banner | Shown once per project (tracked via `.dapp-state/.initialized`) |
 | Error classification | `catch()` is overridden to classify errors and format output |
 | `outputResult()` | Outputs structured JSON when `--json` is enabled |
@@ -70,7 +69,6 @@ export abstract class BaseCommand extends Command {
     const { flags } = await this.parse(this.constructor as typeof BaseCommand);
     this.jsonEnabled = flags.json;
     setJsonMode(this.jsonEnabled);
-    initializeNetwork();
     this.showWelcomeBanner();
   }
 

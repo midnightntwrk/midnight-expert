@@ -15,15 +15,26 @@ interface ClassifiedError {
   action: string;
 }
 
+function messageChain(err: unknown): string[] {
+  const messages: string[] = [];
+  let current: unknown = err;
+  for (let depth = 0; current !== undefined && current !== null && depth < 8; depth++) {
+    messages.push(current instanceof Error ? current.message : String(current));
+    current = current instanceof Error ? current.cause : undefined;
+  }
+  return messages;
+}
+
 export function classifyError(err: unknown): ClassifiedError {
-  const message = err instanceof Error ? err.message : String(err);
+  const chain = messageChain(err);
+  const message = chain.join("\n  caused by: ");
   const lower = message.toLowerCase();
 
-  if (lower.includes("dust") || lower.includes("no dust") || lower.includes("insufficient fee")) {
+  if (lower.includes("dust") || lower.includes("insufficient fee")) {
     return {
       code: ErrorCode.DUST_REQUIRED,
       message,
-      action: `Run \`${CLI_NAME} dust:register <wallet>\` to generate DUST tokens.`,
+      action: `Run \`${CLI_NAME} dust:status <wallet>\`. If no NIGHT is registered, run \`${CLI_NAME} dust:register <wallet>\`; if it is, DUST is still accruing, so wait a minute and retry.`,
     };
   }
 
@@ -37,7 +48,9 @@ export function classifyError(err: unknown): ClassifiedError {
 }
 ```
 
-Classification works by substring matching on the lowercased error message. The first matching pattern wins.
+Classification works by substring matching on the lowercased error messages. The first matching pattern wins.
+
+Midnight.js 5 wraps a provider's failure in a `ProviderFailedError` whose own message is generic ("balanceTx rejected the transaction. The provider's own failure is on `cause` ..."). The wallet's actual error, such as `Insufficient Funds: could not balance dust`, is on `cause`, so `messageChain()` walks the `cause` chain and the classifier matches against every message in it.
 
 ---
 
@@ -45,13 +58,13 @@ Classification works by substring matching on the lowercased error message. The 
 
 | Code | Triggers When | Suggested Action |
 |------|--------------|-----------------|
-| `DUST_REQUIRED` | Message contains "dust", "no dust", or "insufficient fee" | Run `dust:register <wallet>` |
+| `DUST_REQUIRED` | A message in the chain contains "dust" or "insufficient fee" | Check `dust:status <wallet>`; register NIGHT or wait for DUST to accrue |
 | `SERVICE_DOWN` | Connection refused to port 6300 (proof server) | Run `devnet:start` |
 | `SERVICE_DOWN` | Connection refused to port 8088 (indexer) or 9944 (node) | Run `devnet:status` to check services |
 | `CONTRACT_NOT_FOUND` | Message contains "contract" and "not found" | Verify contract address and devnet status |
 | `SYNC_TIMEOUT` | Message contains "timeout" or "timed out" | Wait for devnet to start, then retry |
 | `WALLET_NOT_FOUND` | Thrown by `getWallet()` when name not in store | Run `wallet:create <name>` |
-| `INVALID_SEED` | Thrown by `deriveKeys()` on bad seed length | Check seed is exactly 64 hex characters |
+| `INVALID_SEED` | Thrown by `deriveSeeds()` on bad seed length | Check seed is exactly 64 hex characters |
 | `STALE_UTXO` | Transaction fails due to spent inputs | Retry — wallet state is stale |
 | `UNKNOWN` | No pattern matches | Check devnet logs |
 
@@ -157,7 +170,8 @@ export enum ErrorCode {
 }
 
 export function classifyError(err: unknown): ClassifiedError {
-  const message = err instanceof Error ? err.message : String(err);
+  const chain = messageChain(err);
+  const message = chain.join("\n  caused by: ");
   const lower = message.toLowerCase();
 
   // ... existing patterns ...

@@ -109,10 +109,7 @@ Full command usage:
 
 ```typescript
 const ctx = await buildFacade(walletData.seed);
-const providers = await createProviders(
-  ctx.facade, ctx.shieldedSecretKeys, ctx.dustSecretKey,
-  ctx.keystore, `${CONTRACT_NAME}-private-state`,
-);
+const providers = await createProviders(ctx.facade, ctx.keystore, `${CONTRACT_NAME}-private-state`);
 await join(providers, args.address, {});
 ```
 
@@ -124,7 +121,9 @@ After deploying or joining, call contract circuits via the `callTx` proxy:
 
 ```typescript
 // From the call.ts command stub:
-const contract = await join(providers, contracts["counter"].address, { privateCounter: 0 });
+const deployed = loadDeployedContracts().counter;
+if (!deployed) throw new Error("No deployed counter contract. Run `deploy` first.");
+const contract = await join(providers, deployed.address, {});
 
 const txData = await contract.callTx.increment();
 // txData.public.txId      — transaction hash
@@ -147,18 +146,19 @@ Read-only queries use the `publicDataProvider` to fetch contract state from the 
 ```typescript
 // From the query.ts command stub:
 import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
-import { Counter } from "@midnight-ntwrk/counter-contract";
+import { ContractState } from "@midnight-ntwrk/midnight-js-protocol/v9/compact-runtime";
+import { ledger } from "@midnight-ntwrk/counter-contract";
 
 const publicDataProvider = indexerPublicDataProvider(DEVNET_CONFIG.indexer, DEVNET_CONFIG.indexerWS);
-const state = await publicDataProvider.queryContractState(address);
+const read = await publicDataProvider.queryContractState(address);
 
-if (state) {
-  const ledgerState = Counter.ledger(state.data);
+if (read) {
+  const ledgerState = ledger(read.contractState.deserialize({ v9: ContractState }).data);
   // Access ledger fields: ledgerState.round, ledgerState.owner, etc.
 }
 ```
 
-The `Contract.ledger(state.data)` call deserializes the raw on-chain data into the typed ledger structure defined in the Compact contract. Each `export ledger` field becomes a property on the returned object.
+Midnight.js 5 returns the contract state still serialized, tagged with the ledger era that wrote it (`read.contractState.era`). `deserialize({ v9: ContractState })` decodes a ledger 9 state; a contract deployed on ledger 8 needs a `v8` decoder instead. The compiled contract's `ledger()` function then turns the state's data into the typed ledger structure defined in the Compact contract. Each `export ledger` field becomes a property on the returned object.
 
 ---
 
