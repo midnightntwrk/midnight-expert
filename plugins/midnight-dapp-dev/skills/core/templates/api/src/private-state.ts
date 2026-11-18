@@ -34,11 +34,15 @@ export function inMemoryPrivateStateProvider<
     );
   };
 
-  const forContract = (address: ContractAddress): ContractPrivateStates<PSI, PS> => {
-    // The same checks the persistent store makes: 32 bytes of hex, compared
-    // in lower case.
+  // The same checks the persistent store makes, for private state and signing
+  // keys alike: 32 bytes of hex, compared in lower case.
+  const normalize = (address: ContractAddress): ContractAddress => {
     assertIsContractAddress(address);
-    const contractAddress = address.toLowerCase();
+    return address.toLowerCase();
+  };
+
+  const forContract = (address: ContractAddress): ContractPrivateStates<PSI, PS> => {
+    const contractAddress = normalize(address);
     const scoped = (): Map<PSI, PS> => {
       let m = states.get(contractAddress);
       if (m === undefined) states.set(contractAddress, (m = new Map()));
@@ -68,11 +72,11 @@ export function inMemoryPrivateStateProvider<
       states.clear();
     },
     setSigningKey: async (address: ContractAddress, signingKey: SigningKey) => {
-      signingKeys.set(address, signingKey);
+      signingKeys.set(normalize(address), signingKey);
     },
-    getSigningKey: async (address: ContractAddress) => signingKeys.get(address) ?? null,
+    getSigningKey: async (address: ContractAddress) => signingKeys.get(normalize(address)) ?? null,
     removeSigningKey: async (address: ContractAddress) => {
-      signingKeys.delete(address);
+      signingKeys.delete(normalize(address));
     },
     clearSigningKeys: async () => {
       signingKeys.clear();

@@ -70,7 +70,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     try {
       // The network the wallet must be on: "undeployed" (local devnet),
       // "preview", "preprod" or "mainnet". Set VITE_NETWORK_ID in .env.
-      const api = await wallet.connect(import.meta.env.VITE_NETWORK_ID ?? "undeployed");
+      const api = await wallet.connect(import.meta.env.VITE_NETWORK_ID || "undeployed");
       const config = await api.getConfiguration();
       const addresses = await api.getShieldedAddresses();
 

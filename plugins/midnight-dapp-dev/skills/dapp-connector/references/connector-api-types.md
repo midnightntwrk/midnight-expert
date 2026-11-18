@@ -489,7 +489,7 @@ try {
 
 The package types the global for you. Since 4.1.0 it declares `var midnight: { [key: string]: InitialAPI } | undefined` in the global scope (earlier versions augmented `Window` instead), so once anything is imported from `@midnightntwrk/dapp-connector-api`, both `window.midnight` and `globalThis.midnight` are typed. Most projects need **no** manual declaration.
 
-If you add your own `Window` declaration (the UI template's `vite-env.d.ts` does, to keep `window.midnight` typed project-wide), use the same index signature as the package, `[key: string]: InitialAPI`, so `window.midnight` has one consistent type:
+The UI template's `vite-env.d.ts` adds no `Window` declaration and relies on the package's global. If you add your own, use the same index signature as the package, `[key: string]: InitialAPI`, so `window.midnight` has one consistent type:
 
 ```typescript
 // types/midnight.d.ts

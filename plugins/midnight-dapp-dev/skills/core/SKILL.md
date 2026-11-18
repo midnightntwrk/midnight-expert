@@ -29,18 +29,19 @@ the ledger every Midnight network runs.
 
 ```
 WalletProvider (React Context)
-  → connect(import.meta.env.VITE_NETWORK_ID ?? "undeployed") → ConnectedAPI
+  → connect(import.meta.env.VITE_NETWORK_ID || "undeployed") → ConnectedAPI
   → getConfiguration() → { indexerUri, indexerWsUri, substrateNodeUri, networkId }
 
-MidnightProvidersProvider (React Context) → createProviders(api)
-  → publicDataProvider   ← indexerPublicDataProvider(indexerUri, indexerWsUri, globalThis.WebSocket)
-  → zkConfigProvider     ← new FetchZkConfigProvider(window.location.origin, { fetchFunc })
+MidnightProvidersProvider (React Context) → createProviders(api, { zkAssetsUrl })
+  → publicDataProvider   ← indexerPublicDataProvider({ queryURL, subscriptionURL, webSocket })
+  → zkConfigProvider     ← new FetchZkConfigProvider(zkAssetsUrl, { fetchFunc })  (the UI passes Vite's BASE_URL)
   → proofProvider        ← dappConnectorProofProvider(api, ...) (wallet proves, the default)
                            or httpClientProofProvider(proofServerUrl, zkConfigProvider)
-  → walletProvider       ← createLedger9WalletProvider({ getCoinPublicKey, getEncryptionPublicKey, balanceTx })
-  → midnightProvider     ← createLedger9MidnightProvider(submit)
+  → walletProvider       ← dappConnectorWalletProviders(api), keys converted to hex
+  → midnightProvider     ← dappConnectorWalletProviders(api)
   → privateStateProvider ← in-memory, scoped per contract address
   → config               ← { networkId: config.networkId, ttlSeconds }
+  → dispose()            ← closes the indexer connection; the UI calls it on disconnect
 ```
 
 Set `VITE_NETWORK_ID` in `.env` to `preview`, `preprod` or `mainnet` to target

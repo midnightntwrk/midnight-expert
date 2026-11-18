@@ -5,11 +5,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { createProviders, type AppProviders } from "{{API_PACKAGE_NAME}}";
+import { createProviders, type ConnectedProviders } from "{{API_PACKAGE_NAME}}";
 import { useWallet } from "@/hooks/use-wallet";
 
 interface MidnightProvidersContextValue {
-  providers: AppProviders | null;
+  providers: ConnectedProviders | null;
   isReady: boolean;
   error: string | null;
 }
@@ -23,7 +23,7 @@ export function MidnightProvidersProvider({
   children: ReactNode;
 }) {
   const { connectedApi, status } = useWallet();
-  const [providers, setProviders] = useState<AppProviders | null>(null);
+  const [providers, setProviders] = useState<ConnectedProviders | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -34,13 +34,21 @@ export function MidnightProvidersProvider({
     }
 
     let cancelled = false;
+    let created: ConnectedProviders | null = null;
 
-    createProviders(connectedApi)
+    // The keys, ZKIR and contract manifest are served next to the page, under
+    // Vite's base path (copy them into public/ with copy-contract-keys).
+    const zkAssetsUrl = new URL(import.meta.env.BASE_URL, window.location.origin).toString();
+
+    createProviders(connectedApi, { zkAssetsUrl })
       .then((p) => {
-        if (!cancelled) {
-          setProviders(p);
-          setError(null);
+        created = p;
+        if (cancelled) {
+          void p.dispose();
+          return;
         }
+        setProviders(p);
+        setError(null);
       })
       .catch((err) => {
         if (!cancelled) {
@@ -52,6 +60,8 @@ export function MidnightProvidersProvider({
 
     return () => {
       cancelled = true;
+      // Close the old providers' indexer connection on reconnect or disconnect.
+      void created?.dispose();
     };
   }, [connectedApi, status]);
 

@@ -24,16 +24,24 @@ for real-time state subscriptions) and, in the browser, the `WebSocket`
 constructor.
 
 ```typescript
-import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
+import {
+  indexerPublicDataProvider,
+  type IndexerProviderConfig,
+} from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
 
-const publicDataProvider = indexerPublicDataProvider(
-  config.indexerUri,
-  config.indexerWsUri,
+const publicDataProvider = indexerPublicDataProvider({
+  queryURL: config.indexerUri,
+  subscriptionURL: config.indexerWsUri,
   // The default comes from isomorphic-ws, whose browser build has no named
   // WebSocket export, so it is undefined once bundled. Pass the browser's own.
-  globalThis.WebSocket as unknown as Parameters<typeof indexerPublicDataProvider>[2],
-);
+  webSocket: globalThis.WebSocket as unknown as IndexerProviderConfig['webSocket'],
+});
 ```
+
+The positional form `indexerPublicDataProvider(queryURL, subscriptionURL, webSocket)`
+still works but is deprecated in 5.0.1. The provider holds a WebSocket open:
+call `publicDataProvider.dispose()` when the wallet disconnects or the providers
+are rebuilt.
 
 The WebSocket connection enables `contractStateObservable()`, which pushes
 state updates whenever a transaction modifies the contract's public ledger.
@@ -107,56 +115,41 @@ Midnight SDK's transaction pipeline.
 
 **Interface:** `WalletProvider` from `@midnight-ntwrk/midnight-js-types`.
 
-**Browser implementation:** Built with `createLedger9WalletProvider` from
-`@midnight-ntwrk/midnight-js-types`, around the `ConnectedAPI` returned by the
-wallet extension. The helper hands your code ledger 9 transaction handles and
-declares `supportedEras: ['v9']`.
+**Browser implementation:** `dappConnectorWalletProviders(connectedApi)` from
+`@midnight-ntwrk/midnight-js-dapp-connector-proof-provider` builds the wallet
+provider and the midnight provider (section 5) from the `ConnectedAPI` the
+wallet extension returns. Both serve ledger 8 and ledger 9. It returns the
+connector's keys as the wallet reports them, in Bech32m, while the ledger works
+with hex, so override the two key getters:
 
 ```typescript
-import { createLedger9WalletProvider } from '@midnight-ntwrk/midnight-js-types';
-import {
-  fromHex,
-  parseCoinPublicKeyToHex,
-  parseEncPublicKeyToHex,
-  toHex,
-} from '@midnight-ntwrk/midnight-js-utils';
-import { Transaction, type FinalizedTransaction } from '@midnight-ntwrk/midnight-js-protocol/v9';
+import { dappConnectorWalletProviders } from '@midnight-ntwrk/midnight-js-dapp-connector-proof-provider';
+import type { WalletProvider } from '@midnight-ntwrk/midnight-js-types';
+import { parseCoinPublicKeyToHex, parseEncPublicKeyToHex } from '@midnight-ntwrk/midnight-js-utils';
 
-// getShieldedAddresses() returns Bech32m keys. The ledger works with hex, so
-// convert them once, before building the provider.
+const connector = await dappConnectorWalletProviders(connectedApi);
+
+// getShieldedAddresses() returns Bech32m keys; convert them to hex once.
 const { shieldedCoinPublicKey, shieldedEncryptionPublicKey } =
   await connectedApi.getShieldedAddresses();
 const coinPublicKey = parseCoinPublicKeyToHex(shieldedCoinPublicKey, config.networkId);
 const encryptionPublicKey = parseEncPublicKeyToHex(shieldedEncryptionPublicKey, config.networkId);
 
-const walletProvider = createLedger9WalletProvider({
+const walletProvider: WalletProvider = {
+  supportedEras: connector.walletProvider.supportedEras,
+  balanceTx: (tx, ttl) => connector.walletProvider.balanceTx(tx, ttl),
   // getCoinPublicKey / getEncryptionPublicKey are synchronous.
   getCoinPublicKey: () => coinPublicKey,
   getEncryptionPublicKey: () => encryptionPublicKey,
-  // The connector speaks hex strings and has no ttl parameter, so the wallet
-  // picks its own TTL.
-  balanceTx: async (tx, _ttl) => {
-    const { tx: balancedHex } = await connectedApi.balanceUnsealedTransaction(
-      toHex(tx.serialize()),
-    );
-    // A finalized tx is Transaction<SignatureEnabled, Proof, Binding>; pass the
-    // three instance markers for those type parameters.
-    return Transaction.deserialize(
-      'signature',
-      'proof',
-      'binding',
-      fromHex(balancedHex),
-    ) satisfies FinalizedTransaction;
-  },
-});
+};
 ```
 
-The `balanceTx` method is critical: it takes a proven (unbound) transaction,
-sends it to the wallet, which adds DUST fee inputs, signs and binds
-(finalizes) it. Because the DApp Connector exchanges transactions as
-serialized hex strings, `balanceTx` must `toHex(tx.serialize())` on the way
-in and `Transaction.deserialize(...)` the returned hex string on the way out.
-It must not return the raw string.
+The `balanceTx` method is critical: it takes a proven (unbound) transaction
+and sends its bytes, hex-encoded, to the wallet's `balanceUnsealedTransaction`.
+The wallet adds DUST fee inputs, signs and binds (finalizes) it. The connector
+takes no TTL, so the wallet picks the expiry and the `ttl` argument is not
+forwarded. The library checks that the wallet's answer is a finalized
+transaction of the right ledger before handing it back.
 
 ### 5. midnightProvider
 
@@ -165,28 +158,18 @@ network.
 
 **Interface:** `MidnightProvider` from `@midnight-ntwrk/midnight-js-types`.
 
-**Browser implementation:** Built with `createLedger9MidnightProvider`,
-delegating to the wallet's `submitTransaction` method.
+**Browser implementation:** The `midnightProvider` that
+`dappConnectorWalletProviders` returns, used as is:
 
 ```typescript
-import { createLedger9MidnightProvider } from '@midnight-ntwrk/midnight-js-types';
-import { toHex } from '@midnight-ntwrk/midnight-js-utils';
-import { Transaction } from '@midnight-ntwrk/midnight-js-protocol/v9';
-
-const midnightProvider = createLedger9MidnightProvider(async (handle) => {
-  const bytes = handle.serialize();
-  await connectedApi.submitTransaction(toHex(bytes));
-  // submitTransaction resolves to void, so read the ID off the transaction.
-  const [txId] = Transaction.deserialize('signature', 'proof', 'binding', bytes).identifiers();
-  if (!txId) throw new Error('Submitted transaction has no identifier');
-  return txId;
-});
+const midnightProvider = connector.midnightProvider;
 ```
 
-After the transaction is proven and the wallet balances it, `submitTx`
-broadcasts it through the wallet, which handles the network communication.
-`submitTransaction` returns `void`, so the `TransactionId` is read from the
-transaction's own `identifiers()` (the same ID the indexer reports).
+Its `submitTx` reads the transaction ID from the transaction's own
+`identifiers()` (the same ID the indexer reports) and refuses a transaction
+without one, before anything is broadcast. Then it hands the bytes to the
+wallet's `submitTransaction`, which resolves to `void` and handles the network
+communication.
 
 ### 6. privateStateProvider
 
@@ -426,69 +409,134 @@ The recommended pattern is a single factory function that takes a
 template's version:
 
 ```typescript
-import type { ConnectedAPI } from '@midnightntwrk/dapp-connector-api';
-import { dappConnectorProofProvider } from '@midnight-ntwrk/midnight-js-dapp-connector-proof-provider';
-import { FetchZkConfigProvider } from '@midnight-ntwrk/midnight-js-fetch-zk-config-provider';
-import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
-import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
+import type { ConnectedAPI } from "@midnightntwrk/dapp-connector-api";
 import {
-  CostModel,
-  Transaction,
-  type FinalizedTransaction,
-} from '@midnight-ntwrk/midnight-js-protocol/v9';
+  dappConnectorProofProvider,
+  dappConnectorWalletProviders,
+} from "@midnight-ntwrk/midnight-js-dapp-connector-proof-provider";
+import { FetchZkConfigProvider } from "@midnight-ntwrk/midnight-js-fetch-zk-config-provider";
+import { httpClientProofProvider } from "@midnight-ntwrk/midnight-js-http-client-proof-provider";
 import {
-  createLedger9MidnightProvider,
-  createLedger9WalletProvider,
-  type ProofProvider,
-} from '@midnight-ntwrk/midnight-js-types';
+  indexerPublicDataProvider,
+  type IndexerProviderConfig,
+} from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
+import { CostModel } from "@midnight-ntwrk/midnight-js-protocol/v9";
 import {
-  fromHex,
+  ContractState as LedgerContractState,
+  type ChargedState,
+} from "@midnight-ntwrk/midnight-js-protocol/v9/compact-runtime";
+import type {
+  ContractStateRead,
+  ProofProvider,
+  WalletProvider,
+} from "@midnight-ntwrk/midnight-js-types";
+import {
   parseCoinPublicKeyToHex,
   parseEncPublicKeyToHex,
-  toHex,
-} from '@midnight-ntwrk/midnight-js-utils';
-import { inMemoryPrivateStateProvider } from './private-state.js';
-import type { AppProviders, ImpureCircuitKeys, PrivateState } from './types.js';
-import { PRIVATE_STATE_ID } from './types.js';
+} from "@midnight-ntwrk/midnight-js-utils";
+import { combineLatest, from, map, Observable, retry } from "rxjs";
+import { inMemoryPrivateStateProvider } from "./private-state.js";
+import type {
+  AppProviders,
+  ContractState,
+  DerivedState,
+  ImpureCircuitKeys,
+  PrivateState,
+} from "./types.js";
+import { PRIVATE_STATE_ID } from "./types.js";
 
+export { inMemoryPrivateStateProvider } from "./private-state.js";
+export type {
+  AppProviders,
+  ContractState,
+  DerivedState,
+  ImpureCircuitKeys,
+  PrivateState,
+} from "./types.js";
+export { PRIVATE_STATE_ID } from "./types.js";
+
+/**
+ * Where ZK proofs get generated.
+ *  - "wallet": the connected wallet proves (ConnectedAPI.getProvingProvider).
+ *    Nothing else to run, and witness data never leaves the wallet.
+ *  - "local": a proof server you run yourself, such as
+ *    `docker run -p 6300:6300 midnightntwrk/proof-server:9.0.2`.
+ * Avoid public or hosted proof servers: whoever runs one sees your proof inputs.
+ */
 export type ProvingOptions =
-  | { mode: 'wallet' }
-  | { mode: 'local'; proofServerUrl: string };
+  | { mode: "wallet" }
+  | { mode: "local"; proofServerUrl: string };
 
+export const DEFAULT_PROOF_SERVER_URL = "http://127.0.0.1:6300";
+
+/**
+ * How long a built transaction stays valid (Midnight.js 5's
+ * `config.ttlSeconds`). The wallet behind the DApp Connector picks its own TTL
+ * for what it adds; this one covers the contract call Midnight.js builds.
+ */
 const TX_TTL_SECONDS = 3600;
 
 export interface CreateProvidersOptions {
   proving?: ProvingOptions;
-  /** Where keys/, zkir/ and compiler/ are served from. Defaults to the page's origin. */
+  /**
+   * Where the compiled contract's `keys/`, `zkir/` and `compiler/` directories
+   * are served from. Defaults to the page's own origin, so copy them into the
+   * UI's `public/` folder (see the UI's `copy-contract-keys` script).
+   */
   zkAssetsUrl?: string;
 }
 
+/**
+ * The providers, plus dispose() to close the indexer connection. Call it when
+ * the wallet disconnects or the providers are rebuilt.
+ */
+export type ConnectedProviders = AppProviders & { dispose(): Promise<void> };
+
 export async function createProviders(
   api: ConnectedAPI,
-  { proving = { mode: 'wallet' }, zkAssetsUrl = window.location.origin }: CreateProvidersOptions = {},
-): Promise<AppProviders> {
+  { proving = { mode: "wallet" }, zkAssetsUrl = window.location.origin }: CreateProvidersOptions = {},
+): Promise<ConnectedProviders> {
+  // The wallet decides which network the DApp is on. Everything below (indexer
+  // endpoints, network ID for address decoding and the providers' config)
+  // follows from its configuration. Midnight.js 5 has no global network ID.
   const config = await api.getConfiguration();
 
-  const publicDataProvider = indexerPublicDataProvider(
-    config.indexerUri,
-    config.indexerWsUri,
-    globalThis.WebSocket as unknown as Parameters<typeof indexerPublicDataProvider>[2],
-  );
+  // Pass the browser's WebSocket explicitly: the provider's default comes from
+  // isomorphic-ws, whose browser build has no named WebSocket export, so it is
+  // undefined once bundled.
+  const publicDataProvider = indexerPublicDataProvider({
+    queryURL: config.indexerUri,
+    subscriptionURL: config.indexerWsUri,
+    webSocket: globalThis.WebSocket as unknown as IndexerProviderConfig["webSocket"],
+  });
 
   const privateStateProvider = inMemoryPrivateStateProvider<
     typeof PRIVATE_STATE_ID,
     PrivateState
   >();
 
+  // Fetches keys/<circuit>.{prover,verifier} and zkir/<circuit>.bzkir, and
+  // checks them against compiler/contract-manifest.json.
   const zkConfigProvider = new FetchZkConfigProvider<ImpureCircuitKeys>(zkAssetsUrl, {
     fetchFunc: fetch.bind(globalThis),
   });
 
   const proofProvider: ProofProvider =
-    proving.mode === 'local'
+    proving.mode === "local"
       ? httpClientProofProvider(proving.proofServerUrl, zkConfigProvider)
-      : await dappConnectorProofProvider(api, zkConfigProvider, CostModel.initialCostModel());
+      : // httpClientProofProvider uses CostModel.initialCostModel() internally,
+        // so the wallet gets the same one.
+        await dappConnectorProofProvider(api, zkConfigProvider, CostModel.initialCostModel());
 
+  // Midnight.js builds the wallet and midnight providers from the connector:
+  // balanceTx sends the transaction's bytes to balanceUnsealedTransaction (the
+  // wallet adds DUST fee inputs, signs and binds it; the connector takes no
+  // TTL, so the wallet picks the expiry) and submitTx reads the transaction ID
+  // before handing the bytes to submitTransaction. Both serve ledger 8 and 9.
+  const connector = await dappConnectorWalletProviders(api);
+
+  // The connector reports Bech32m-encoded keys; the ledger works with hex, so
+  // normalize both. parse*ToHex passes hex through unchanged.
   const { shieldedCoinPublicKey, shieldedEncryptionPublicKey } =
     await api.getShieldedAddresses();
   const coinPublicKey = parseCoinPublicKeyToHex(shieldedCoinPublicKey, config.networkId);
@@ -496,28 +544,12 @@ export async function createProviders(
     shieldedEncryptionPublicKey,
     config.networkId,
   );
-
-  const walletProvider = createLedger9WalletProvider({
+  const walletProvider: WalletProvider = {
+    supportedEras: connector.walletProvider.supportedEras,
+    balanceTx: (tx, ttl) => connector.walletProvider.balanceTx(tx, ttl),
     getCoinPublicKey: () => coinPublicKey,
     getEncryptionPublicKey: () => encryptionPublicKey,
-    balanceTx: async (tx, _ttl) => {
-      const { tx: balancedHex } = await api.balanceUnsealedTransaction(toHex(tx.serialize()));
-      return Transaction.deserialize(
-        'signature',
-        'proof',
-        'binding',
-        fromHex(balancedHex),
-      ) satisfies FinalizedTransaction;
-    },
-  });
-
-  const midnightProvider = createLedger9MidnightProvider(async (handle) => {
-    const bytes = handle.serialize();
-    await api.submitTransaction(toHex(bytes));
-    const [txId] = Transaction.deserialize('signature', 'proof', 'binding', bytes).identifiers();
-    if (!txId) throw new Error('Submitted transaction has no identifier');
-    return txId;
-  });
+  };
 
   return {
     privateStateProvider,
@@ -525,8 +557,9 @@ export async function createProviders(
     zkConfigProvider,
     proofProvider,
     walletProvider,
-    midnightProvider,
+    midnightProvider: connector.midnightProvider,
     config: { networkId: config.networkId, ttlSeconds: TX_TTL_SECONDS },
+    dispose: () => publicDataProvider.dispose(),
   };
 }
 ```
@@ -552,23 +585,20 @@ wallet, which:
 4. Returns the balanced, bound transaction
 
 The DApp Connector exchanges transactions as serialized hex strings.
-`balanceTx` therefore hex-encodes the transaction with
-`toHex(tx.serialize())` before calling `balanceUnsealedTransaction`, and
-deserializes the returned `{ tx }` string with
-`Transaction.deserialize('signature', 'proof', 'binding', fromHex(tx))` to
-produce the `FinalizedTransaction` it must return. `Transaction` comes from
-`@midnight-ntwrk/midnight-js-protocol/v9`; `toHex`/`fromHex` from
-`@midnight-ntwrk/midnight-js-utils`. Midnight.js passes a `ttl` as the second
-argument, but the connector has no ttl parameter, so the wallet uses its own.
+`dappConnectorWalletProviders` hex-encodes the transaction's bytes for
+`balanceUnsealedTransaction`, checks that the `{ tx }` the wallet returns is
+even-length hex for a finalized transaction of the same ledger, and hands it
+back to Midnight.js. Midnight.js passes a `ttl` as the second argument, but the
+connector has no ttl parameter, so the wallet uses its own.
 
 ## MidnightProvider and submitTx
 
-The `midnightProvider.submitTx` method wraps the wallet's `submitTransaction`.
-After balancing and binding, the transaction is ready for broadcast. The
-handler serializes it (`toHex(handle.serialize())`) and sends it to the
-wallet, which forwards it to the node. `submitTransaction` resolves to `void`,
-so the handler reads the `TransactionId` from the transaction's
-`identifiers()` and returns that for tracking confirmation via the indexer.
+The `midnightProvider` comes from `dappConnectorWalletProviders` unchanged. Its
+`submitTx` reads the `TransactionId` from the transaction's own `identifiers()`
+first, and refuses a transaction without one before anything is broadcast.
+Then it sends the hex-encoded bytes to the wallet's `submitTransaction`, which
+forwards them to the node and resolves to `void`. The ID is what you track for
+confirmation through the indexer.
 
 ## Browser vs Node.js Differences
 
@@ -578,8 +608,8 @@ Several providers have different implementations depending on the runtime:
 | -------------------- | ------------------------------ | --------------------------------- |
 | `zkConfigProvider`   | `FetchZkConfigProvider` (HTTP) | `NodeZkConfigProvider` (file system) |
 | `privateStateProvider` | In-memory, or `levelPrivateStateProvider` on IndexedDB | `levelPrivateStateProvider` on disk |
-| `walletProvider`     | Wallet extension (`createLedger9WalletProvider`) | Standalone key management |
-| `midnightProvider`   | Wallet extension (`createLedger9MidnightProvider`) | Direct node submission |
+| `walletProvider`     | Wallet extension (`dappConnectorWalletProviders`, keys converted to hex) | WalletFacade, with `createLedger9WalletProvider` |
+| `midnightProvider`   | Wallet extension (`dappConnectorWalletProviders`) | WalletFacade, with `createLedger9MidnightProvider` |
 | `publicDataProvider` | `indexerPublicDataProvider`, with the browser `WebSocket` passed in | `indexerPublicDataProvider` |
 | `proofProvider`      | Wallet (`dappConnectorProofProvider`) or local proof server | `httpClientProofProvider` |
 | `config`             | `networkId` from `getConfiguration()` | `networkId` from your own settings |

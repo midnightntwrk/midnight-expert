@@ -95,8 +95,8 @@ import { vi } from 'vitest';
 import type { InitialAPI, ConnectedAPI, Configuration } from '@midnightntwrk/dapp-connector-api';
 
 export const mockConfiguration: Configuration = {
-  indexerUri: 'http://localhost:8088/api/v3/graphql',
-  indexerWsUri: 'ws://localhost:8088/api/v3/graphql/ws',
+  indexerUri: 'http://localhost:8088/api/v4/graphql',
+  indexerWsUri: 'ws://localhost:8088/api/v4/graphql/ws',
   substrateNodeUri: 'http://localhost:9944',
   networkId: 'undeployed',
 };
