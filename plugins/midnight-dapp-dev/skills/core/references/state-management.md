@@ -9,83 +9,104 @@ using RxJS and exposes the result to React components via hooks and contexts.
 
 The core pattern uses RxJS `combineLatest` to merge the on-chain state stream
 from the indexer with the local private state. This produces a single
-observable that emits whenever either source changes.
+observable that emits whenever either source changes. This is
+`createStateObservable` from the API template:
 
 ```typescript
-import { combineLatest, map, retry, type Observable } from 'rxjs';
-import type { ContractState } from '@midnight-ntwrk/midnight-js-types';
+import { combineLatest, from, map, retry, type Observable } from 'rxjs';
+import type { ChargedState } from '@midnight-ntwrk/midnight-js-protocol/v9/compact-runtime';
+import { contractStateData } from './index.js';
+import { PRIVATE_STATE_ID, type AppProviders, type ContractState, type DerivedState } from './types.js';
 
-export interface DAppState<L, P> {
-  ledgerState: L;
-  privateState: P;
-}
+export function createStateObservable(
+  providers: Pick<AppProviders, 'publicDataProvider' | 'privateStateProvider'>,
+  contractAddress: string,
+  // Your compiled contract's generated ledger(): pass (data) => ledger(data).
+  parseLedger: (data: ChargedState) => ContractState,
+): Observable<DerivedState> {
+  const public$ = providers.publicDataProvider
+    .contractStateObservable(contractAddress, { type: 'latest' })
+    // Each emission is a PositionedRecord: { value, blockHeight, blockHash }.
+    .pipe(map(({ value }) => parseLedger(contractStateData(value))));
 
-export function createStateObservable<L, P>(
-  publicDataProvider: PublicDataProvider,
-  contractAddress: ContractAddress,
-  privateState$: Observable<P>,
-  parseLedger: (state: ContractState) => L,
-): Observable<DAppState<L, P>> {
-  const ledger$ = publicDataProvider
-    .contractStateObservable(contractAddress, { type: "latest" })
-    .pipe(
-      map((state) => parseLedger(state)),
-      retry({ delay: 500 }),
-    );
+  // Private state is scoped by contract address.
+  const private$ = from(
+    providers.privateStateProvider.forContract(contractAddress).get(PRIVATE_STATE_ID),
+  );
 
-  return combineLatest([ledger$, privateState$]).pipe(
-    map(([ledgerState, privateState]) => ({
-      ledgerState,
-      privateState,
-    })),
+  return combineLatest([public$, private$]).pipe(
+    map(([contractState, privateState]) => ({ contractState, privateState })),
+    retry({ delay: 500 }),
   );
 }
 ```
 
 The `publicDataProvider.contractStateObservable()` method returns an RxJS
-Observable that emits the contract's current public state whenever it changes
-on-chain. Under the hood, this uses a WebSocket connection to the Midnight
-indexer.
+Observable that emits whenever the contract's public state changes on-chain.
+Under the hood, this uses a WebSocket connection to the Midnight indexer. In
+Midnight.js 5 each emission is a `PositionedRecord<ContractStateRead>`: the
+state read in `value`, plus the `blockHeight` and `blockHash` of the block
+that carried it, so a stream can resume from there.
 
 ## The createStateObservable() Helper
 
 The `createStateObservable()` function is the standard pattern used in the API
-template. It takes four arguments:
+template. It takes three arguments:
 
-1. **publicDataProvider** — The indexer-backed provider that streams on-chain
-   state.
-2. **contractAddress** — The deployed contract's address on the ledger.
-3. **privateState$** — An observable of the local private state. For simple
-   cases, this can be a `BehaviorSubject` that emits the current private state
-   whenever it changes.
-4. **parseLedger** — A function that converts raw `ContractState` bytes into a
-   typed ledger structure. Typically this is `YourContract.ledger(state.data)`.
+1. **providers**: the `publicDataProvider` (streams on-chain state) and the
+   `privateStateProvider` (holds the local private state).
+2. **contractAddress**: the deployed contract's address on the ledger.
+3. **parseLedger**: a function that turns the decoded state data into a
+   typed ledger structure. Pass your compiled contract's generated `ledger()`
+   function.
 
-The helper returns `Observable<DAppState<L, P>>` where `L` is the typed ledger
-state and `P` is the private state type. Components subscribe to this
-observable and receive updates whenever either the on-chain state or the local
-private state changes.
+The helper returns `Observable<DerivedState>`, where `DerivedState` is
+`{ contractState, privateState }` from the template's `types.ts`. Components
+subscribe to this observable and receive updates whenever the on-chain state
+changes. The private state is read once, through
+`privateStateProvider.forContract(contractAddress)`; if your DApp changes it,
+merge a stream of those changes in instead of `from(...)`.
 
 ## Contract State Parsing
 
-Raw contract state from the indexer is an opaque `ContractState` object
-containing serialized bytes. Each compiled Compact contract generates a
-`ledger()` function that deserializes these bytes into a typed structure:
+Midnight.js 5 serves contract state still serialized, tagged with the ledger
+era that wrote it (`read.contractState.era`). Decode it with the ledger 9
+`ContractState` from `@midnight-ntwrk/midnight-js-protocol/v9/compact-runtime`,
+then pass its `data` to the `ledger()` function the Compact compiler generates.
+The template's helper:
 
 ```typescript
-import { Contract as MyContract } from '@myproject/contract';
+import {
+  ContractState as LedgerContractState,
+  type ChargedState,
+} from '@midnight-ntwrk/midnight-js-protocol/v9/compact-runtime';
+import type { ContractStateRead } from '@midnight-ntwrk/midnight-js-types';
 
-// Parse raw indexer state into typed ledger
-const ledgerState = MyContract.ledger(contractState.data);
+export function contractStateData(read: ContractStateRead): ChargedState {
+  if (read.contractState.era !== 'v9') throw new Error('Expected a ledger 9 contract state');
+  return read.contractState.deserialize({ v9: LedgerContractState }).data;
+}
+```
 
-// Access typed fields
-console.log(ledgerState.owner);
-console.log(ledgerState.totalSupply);
+A one-off read uses the same helper. `queryContractState` returns `null` when
+the contract does not exist:
+
+```typescript
+import { ledger } from '@myproject/contract';
+
+const read = await providers.publicDataProvider.queryContractState(contractAddress);
+if (read !== null) {
+  const ledgerState = ledger(contractStateData(read));
+  console.log(ledgerState.owner);
+  console.log(ledgerState.totalSupply);
+}
 ```
 
 The `ledger()` function is generated by the Compact compiler and lives in
-the contract package. It is the only safe way to extract typed data from raw
-contract state. Never attempt to parse the bytes manually.
+the contract package. It is the only safe way to extract typed data from
+contract state. Never attempt to parse the bytes manually, and do not call
+`Contract.ledger(state.data)` on what the provider returns: the provider no
+longer hands back a decoded `ContractState`.
 
 ## useContractState Hook
 
@@ -148,9 +169,9 @@ observable after a 500ms delay when an error occurs:
 
 ```typescript
 const ledger$ = publicDataProvider
-  .contractStateObservable(contractAddress, { type: "latest" })
+  .contractStateObservable(contractAddress, { type: 'latest' })
   .pipe(
-    map((state) => parseLedger(state)),
+    map(({ value }) => parseLedger(contractStateData(value))),
     retry({ delay: 500 }),
   );
 ```
@@ -191,7 +212,7 @@ the outermost provider because all other providers depend on the wallet
 connection.
 
 **MidnightProvidersProvider** calls `createProviders()` with the
-`ConnectedAPI` from `WalletProvider` and stores the resulting 6 providers in
+`ConnectedAPI` from `WalletProvider` and stores the resulting providers in
 context. It depends on `WalletProvider` and must wrap any components that
 interact with contracts.
 
@@ -202,41 +223,49 @@ state observable for components to consume.
 
 ## In-Memory vs Persistent Private State
 
-**In-memory (browser):** Browser DApps use a `Map` for private state storage.
-This state is lost when the user closes the tab or refreshes the page. For
-most DApps this is acceptable because the relevant state can be reconstructed
-from the public ledger. When the DApp reconnects to a deployed contract, it
-reads the current public state and initializes a fresh private state.
+**In-memory (browser):** The API template's `inMemoryPrivateStateProvider`
+keeps private state in `Map`s keyed by contract address, for the lifetime of
+the page. It is lost when the user closes the tab or refreshes. That is fine
+when the private state can be recreated. It is not fine when the private state
+is the user's on-chain identity (a secret key whose public key the contract
+stores), because a new key means a new identity.
 
 ```typescript
-const privateStates = new Map<ContractAddress, PrivateState>();
+// Inside the template's provider: one Map of private states per contract.
+const states = new Map<ContractAddress, Map<PSI, PS>>();
 ```
 
-**LevelDB (CLI/Node.js):** Integration tests and CLI tools use LevelDB for
-persistent private state. This is provided by the SDK's
-`levelPrivateStateProvider` and stores state on disk so it survives process
-restarts.
+**Persistent (browser or Node.js):** Midnight.js's `levelPrivateStateProvider`
+stores private state encrypted under a password. In Node.js it uses LevelDB on
+disk; in the browser it runs on IndexedDB with `cryptoBackend: 'webcrypto'`.
 
 ```typescript
 import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
 
 const privateStateProvider = levelPrivateStateProvider({
+  cryptoBackend: 'webcrypto', // in the browser
   privateStateStoreName: 'private-states',
   signingKeyStoreName: 'signing-keys',
-  accountId: walletAddress, // required: scopes LevelDB storage per account
-  privateStoragePasswordProvider: () => process.env.PRIVATE_STATE_PASSWORD!,
+  // For a new store, the wallet's coin public key as is. Keep the value an
+  // existing store was created with, or it opens a different, empty store.
+  accountId: coinPublicKey,
+  privateStoragePasswordProvider: () => getUserPassphrase(),
 });
 ```
 
-The LevelDB-backed encryption is async under the hood (Web Crypto + PBKDF2 as of
-midnight-js 4.1.0); the password from `privateStoragePasswordProvider` is subject to a
-strict policy: it must be at least 16 characters and contain at least 3 of the 4
-character classes (lowercase, uppercase, digits, symbols), or the SDK throws a
-`PasswordValidationError`. A short value like a bare `process.env.PRIVATE_STATE_PASSWORD`
-will fail at runtime unless it satisfies this policy.
+The password from `privateStoragePasswordProvider` must pass `validatePassword`
+from `@midnight-ntwrk/midnight-js-utils`: at least 16 characters, at least 3 of
+the 4 character classes (lowercase, uppercase, digits, symbols), no more than 3
+identical characters in a row, and no sequential runs like `1234` or `abcd`.
+Otherwise the SDK throws a `PasswordValidationError`.
 
-Choose in-memory for browser DApps. Choose LevelDB for long-running processes
-or integration tests where state must persist across runs.
+When joining a deployed contract, `findDeployedContract` decides which private
+state is used. If the options object has an `initialPrivateState` key (even
+`undefined`), it is stored under `privateStateId` and replaces what is there.
+Leave the key out to reuse the private state already stored for the contract.
+
+Choose in-memory when losing the private state on reload is acceptable.
+Choose `levelPrivateStateProvider` when it must persist.
 
 ## Derived State Pattern
 
@@ -280,13 +309,12 @@ dependencies.
 
 ```typescript
 const uiState$ = createStateObservable(
-  publicDataProvider,
+  providers,
   contractAddress,
-  privateState$,
-  parseLedger,
+  (data) => ledger(data),
 ).pipe(
-  map(({ ledgerState, privateState }) =>
-    deriveBoardUIState(ledgerState, privateState),
+  map(({ contractState, privateState }) =>
+    deriveBoardUIState(contractState, privateState),
   ),
 );
 ```
@@ -319,7 +347,7 @@ indexer:
 
 ```typescript
 const shared$ = publicDataProvider
-  .contractStateObservable(contractAddress, { type: "latest" })
+  .contractStateObservable(contractAddress, { type: 'latest' })
   .pipe(shareReplay(1));
 ```
 

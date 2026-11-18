@@ -9,93 +9,119 @@ Reference for assembling the full `MidnightProviders` object in a browser-based 
 | `walletProvider` | Built from `WalletFacade` | Built from `ConnectedAPI` methods |
 | `midnightProvider` | Built from `WalletFacade` | Built from `ConnectedAPI.submitTransaction` |
 | `zkConfigProvider` | `NodeZkConfigProvider` (filesystem) | `FetchZkConfigProvider` (HTTP fetch) |
-| `privateStateProvider` | `levelPrivateStateProvider` (LevelDB) | In-memory or IndexedDB implementation |
-| `publicDataProvider` | Same (`indexerPublicDataProvider`) | Same (`indexerPublicDataProvider`) |
-| `proofProvider` | Same (`httpClientProofProvider`) | Same, or use `getProvingProvider()` for wallet-delegated proving |
+| `privateStateProvider` | `levelPrivateStateProvider` (LevelDB) | In-memory, or `levelPrivateStateProvider` on IndexedDB |
+| `publicDataProvider` | Same (`indexerPublicDataProvider`) | Same, but pass the browser `WebSocket` as the third argument |
+| `proofProvider` | Same (`httpClientProofProvider`) | Wallet proving (`dappConnectorProofProvider`) or a local proof server (`httpClientProofProvider`) |
+| `config` | `{ networkId, ttlSeconds }` | Same, with `networkId` from `api.getConfiguration()` |
+
+Midnight.js 5 has no global network ID: `setNetworkId` and the `@midnight-ntwrk/midnight-js-network-id` package are gone. The network ID goes in the providers' `config` field instead.
 
 ## Complete Browser Provider Assembly
 
-```typescript
-"use client";
+This matches `createProviders` in the API template (`core/templates/api/src/index.ts`):
 
-import { setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
-import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
+```typescript
+import type { ConnectedAPI } from "@midnightntwrk/dapp-connector-api";
+import { dappConnectorProofProvider } from "@midnight-ntwrk/midnight-js-dapp-connector-proof-provider";
 import { FetchZkConfigProvider } from "@midnight-ntwrk/midnight-js-fetch-zk-config-provider";
 import { httpClientProofProvider } from "@midnight-ntwrk/midnight-js-http-client-proof-provider";
-import { toHex, fromHex } from "@midnight-ntwrk/midnight-js-utils";
-import { Transaction } from "@midnight-ntwrk/ledger-v8";
-import type {
-  MidnightProviders,
-  WalletProvider,
-  MidnightProvider,
-  PrivateStateProvider,
+import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
+import {
+  CostModel,
+  Transaction,
+  type FinalizedTransaction,
+} from "@midnight-ntwrk/midnight-js-protocol/v9";
+import {
+  createLedger9MidnightProvider,
+  createLedger9WalletProvider,
+  type MidnightProviders,
+  type PrivateStateProvider,
+  type ProofProvider,
 } from "@midnight-ntwrk/midnight-js-types";
-import type { ConnectedAPI } from "@midnight-ntwrk/dapp-connector-api";
+import {
+  fromHex,
+  parseCoinPublicKeyToHex,
+  parseEncPublicKeyToHex,
+  toHex,
+} from "@midnight-ntwrk/midnight-js-utils";
+
+/**
+ * "wallet": the connected wallet proves; witness data never leaves it.
+ * "local": a proof server you run yourself
+ *   (`docker run -p 6300:6300 midnightntwrk/proof-server:9.0.2`).
+ */
+export type ProvingOptions =
+  | { mode: "wallet" }
+  | { mode: "local"; proofServerUrl: string };
+
+const TX_TTL_SECONDS = 3600;
 
 export async function createBrowserProviders<PCK extends string, PSI extends string, PS>(
   api: ConnectedAPI,
   privateStateProvider: PrivateStateProvider<PSI, PS>,
+  proving: ProvingOptions = { mode: "wallet" },
+  zkAssetsUrl: string = window.location.origin,
 ): Promise<MidnightProviders<PCK, PSI, PS>> {
-  // 1. Read configuration from wallet (respects user's network choice)
+  // 1. The wallet decides the network: endpoints and network ID come from it.
   const config = await api.getConfiguration();
-  setNetworkId(config.networkId);
 
-  // 2. Build public data provider from wallet-provided endpoints
+  // 2. Public data provider. Pass the browser WebSocket explicitly: the default
+  //    comes from isomorphic-ws, whose browser build has no named export, so it
+  //    is undefined once bundled.
   const publicDataProvider = indexerPublicDataProvider(
     config.indexerUri,
     config.indexerWsUri,
+    globalThis.WebSocket as unknown as Parameters<typeof indexerPublicDataProvider>[2],
   );
 
-  // 3. Build ZK config provider for browser (fetches via HTTP)
-  const zkConfigProvider = new FetchZkConfigProvider<PCK>(
-    window.location.origin,
-    fetch.bind(window),
-  );
+  // 3. ZK config provider: fetches keys/, zkir/ and compiler/ over HTTP.
+  const zkConfigProvider = new FetchZkConfigProvider<PCK>(zkAssetsUrl, {
+    fetchFunc: fetch.bind(globalThis),
+  });
 
-  // 4. Build proof provider
-  const proofProvider = httpClientProofProvider(
-    config.substrateNodeUri.replace(/\/rpc$/, "").replace(/:9944$/, ":6300"),
-    zkConfigProvider,
-  );
+  // 4. Proof provider: the wallet, or a proof server you run.
+  const proofProvider: ProofProvider =
+    proving.mode === "local"
+      ? httpClientProofProvider(proving.proofServerUrl, zkConfigProvider)
+      : await dappConnectorProofProvider(api, zkConfigProvider, CostModel.initialCostModel());
 
-  // 5. Build wallet provider from DApp Connector
+  // 5. Wallet provider. The connector returns Bech32m keys; convert to hex.
   const { shieldedCoinPublicKey, shieldedEncryptionPublicKey } =
     await api.getShieldedAddresses();
+  const coinPublicKey = parseCoinPublicKeyToHex(shieldedCoinPublicKey, config.networkId);
+  const encryptionPublicKey = parseEncPublicKeyToHex(
+    shieldedEncryptionPublicKey,
+    config.networkId,
+  );
 
-  const walletProvider: WalletProvider = {
-    getCoinPublicKey: () => shieldedCoinPublicKey,
-    getEncryptionPublicKey: () => shieldedEncryptionPublicKey,
-    // WalletProvider.balanceTx is (tx: UnboundTransaction, ttl?: Date) =>
-    // Promise<FinalizedTransaction>. The DApp Connector speaks serialized hex
-    // strings, so serialize the unbound tx to hex, let Lace select fee inputs
-    // and bind it, then deserialize the returned hex back into a
-    // FinalizedTransaction. options is `{ payFees?: boolean }`; `{}` uses
-    // defaults (payFees: true).
+  // createLedger9WalletProvider hands over ledger 9 transaction handles and
+  // declares supportedEras = ["v9"].
+  const walletProvider = createLedger9WalletProvider({
+    getCoinPublicKey: () => coinPublicKey,
+    getEncryptionPublicKey: () => encryptionPublicKey,
+    // The wallet adds DUST fee inputs, signs and binds the proven transaction.
+    // The connector speaks hex and has no ttl parameter, so the wallet picks
+    // its own TTL.
     balanceTx: async (tx, _ttl) => {
-      const { tx: balancedHex } = await api.balanceUnsealedTransaction(
-        toHex(tx.serialize()),
-        {},
-      );
-      // A finalized tx is Transaction<SignatureEnabled, Proof, Binding>; pass
-      // the three instance markers for those type parameters.
+      const { tx: balancedHex } = await api.balanceUnsealedTransaction(toHex(tx.serialize()));
       return Transaction.deserialize(
         "signature",
         "proof",
         "binding",
         fromHex(balancedHex),
-      );
+      ) satisfies FinalizedTransaction;
     },
-  };
+  });
 
-  // 6. Build midnight provider from DApp Connector
-  const midnightProvider: MidnightProvider = {
-    submitTx: async (tx) => {
-      // submitTransaction takes a serialized hex string and returns void;
-      // recover the tx id from the transaction's identifiers().
-      await api.submitTransaction(toHex(tx.serialize()));
-      return tx.identifiers()[0];
-    },
-  };
+  // 6. Midnight provider. submitTransaction resolves to void, so read the
+  //    transaction ID off the transaction itself.
+  const midnightProvider = createLedger9MidnightProvider(async (handle) => {
+    const bytes = handle.serialize();
+    await api.submitTransaction(toHex(bytes));
+    const [txId] = Transaction.deserialize("signature", "proof", "binding", bytes).identifiers();
+    if (!txId) throw new Error("Submitted transaction has no identifier");
+    return txId;
+  });
 
   return {
     privateStateProvider,
@@ -104,122 +130,125 @@ export async function createBrowserProviders<PCK extends string, PSI extends str
     proofProvider,
     walletProvider,
     midnightProvider,
+    // 7. Network and TTL for every transaction Midnight.js builds.
+    config: { networkId: config.networkId, ttlSeconds: TX_TTL_SECONDS },
   };
 }
 ```
 
 ## FetchZkConfigProvider
 
-In the browser, ZK circuit configurations are loaded via HTTP fetch instead of the filesystem:
+In the browser, ZK artifacts are loaded over HTTP instead of from the filesystem. The second argument is an options object:
 
 ```typescript
 import { FetchZkConfigProvider } from "@midnight-ntwrk/midnight-js-fetch-zk-config-provider";
 
 const zkConfigProvider = new FetchZkConfigProvider<MyCircuits>(
-  window.location.origin,  // Base URL for fetching ZK assets
-  fetch.bind(window),       // Bound fetch function
+  window.location.origin,                // Base URL the assets are served from
+  { fetchFunc: fetch.bind(globalThis) }, // Bound fetch function
 );
 ```
 
-The compiled contract assets (`keys/`, `zkir/`) must be served as static files from the web application. In Next.js 16.x, place them in the `public/` directory:
+For each circuit it fetches `keys/<circuit>.prover`, `keys/<circuit>.verifier` and `zkir/<circuit>.bzkir`, and checks them against `compiler/contract-manifest.json`. So the UI must serve the `keys/`, `zkir/` and `compiler/` directories from the contract's managed output, directly under the base URL. With the base URL at the page's origin, copy them into `public/` (the UI template's `copy-contract-keys` script does this):
 
 ```
 public/
-  managed/
-    mycontract/
-      keys/          # ZK proving/verifying keys
-      zkir/          # ZK intermediate representation
-      compiler/      # Compiler metadata
+  keys/          # ZK proving/verifying keys
+  zkir/          # ZK intermediate representation
+  compiler/      # contract-manifest.json
 ```
 
-The `FetchZkConfigProvider` constructs URLs relative to the base URL to load these assets at runtime.
+To serve them from a subfolder, pass that URL as the base (for example `${window.location.origin}/managed/mycontract`).
 
 ## In-Memory Private State Provider
 
-Browser DApps cannot use LevelDB. Use an in-memory provider for session-scoped private state:
+In Midnight.js 5 the `PrivateStateProvider` is scoped per contract. The framework calls `forContract(address)` and reads and writes through what it returns: `{ contractAddress, get, set, remove, clear, exportPrivateStates, importPrivateStates }`. The top level has `forContract`, `clearAll` and the signing-key methods (`setSigningKey`, `getSigningKey`, `removeSigningKey`, `clearSigningKeys`, `exportSigningKeys`, `importSigningKeys`). There is no `setContractAddress` any more.
 
-`PrivateStateProvider<PSI, PS>` is a ~13-method interface, so a compiling
-in-memory implementation must provide all of them. Private state and signing
-keys are kept in `Map`s; the export/import methods reject because an ephemeral
-store has nothing meaningful to export:
+The API template's in-memory provider keeps both in `Map`s for the life of the page; the export/import methods reject because an ephemeral store has nothing to export:
 
 ```typescript
-import type { PrivateStateProvider } from "@midnight-ntwrk/midnight-js-types";
-import type { ContractAddress, SigningKey } from "@midnight-ntwrk/compact-runtime";
+import type {
+  ContractPrivateStates,
+  PrivateStateProvider,
+} from "@midnight-ntwrk/midnight-js-types";
+import type {
+  ContractAddress,
+  SigningKey,
+} from "@midnight-ntwrk/midnight-js-protocol/v9/compact-runtime";
+import { assertIsContractAddress } from "@midnight-ntwrk/midnight-js-utils";
 
-function inMemoryPrivateStateProvider<PSI extends string, PS>(): PrivateStateProvider<PSI, PS> {
-  const states = new Map<PSI, PS>();
+export function inMemoryPrivateStateProvider<PSI extends string, PS>(): PrivateStateProvider<PSI, PS> {
+  const states = new Map<ContractAddress, Map<PSI, PS>>();
   const signingKeys = new Map<ContractAddress, SigningKey>();
+  const unsupported = (method: string) => async (): Promise<never> => {
+    throw new Error(`inMemoryPrivateStateProvider does not support ${method}`);
+  };
+
+  const forContract = (address: ContractAddress): ContractPrivateStates<PSI, PS> => {
+    assertIsContractAddress(address);
+    const contractAddress = address.toLowerCase();
+    const scoped = (): Map<PSI, PS> => {
+      let m = states.get(contractAddress);
+      if (m === undefined) states.set(contractAddress, (m = new Map()));
+      return m;
+    };
+    return {
+      contractAddress,
+      set: async (id, state) => { scoped().set(id, state); },
+      get: async (id) => states.get(contractAddress)?.get(id) ?? null,
+      remove: async (id) => { states.get(contractAddress)?.delete(id); },
+      clear: async () => { states.delete(contractAddress); },
+      exportPrivateStates: unsupported("exportPrivateStates"),
+      importPrivateStates: unsupported("importPrivateStates"),
+    };
+  };
 
   return {
-    setContractAddress: () => {},
-    set: async (id, state) => { states.set(id, state); },
-    get: async (id) => states.get(id) ?? null,
-    remove: async (id) => { states.delete(id); },
-    clear: async () => { states.clear(); },
+    forContract,
+    clearAll: async () => { states.clear(); },
     setSigningKey: async (address, key) => { signingKeys.set(address, key); },
     getSigningKey: async (address) => signingKeys.get(address) ?? null,
     removeSigningKey: async (address) => { signingKeys.delete(address); },
     clearSigningKeys: async () => { signingKeys.clear(); },
-    exportPrivateStates: async () => { throw new Error("not supported in-memory"); },
-    importPrivateStates: async () => { throw new Error("not supported in-memory"); },
-    exportSigningKeys: async () => { throw new Error("not supported in-memory"); },
-    importSigningKeys: async () => { throw new Error("not supported in-memory"); },
+    exportSigningKeys: unsupported("exportSigningKeys"),
+    importSigningKeys: unsupported("importSigningKeys"),
   };
 }
 ```
 
-For persistent storage across browser sessions, use IndexedDB:
+For private state that survives a reload (a secret key that is the user's on-chain identity, say), use Midnight.js's own `levelPrivateStateProvider`. It runs on IndexedDB in the browser and encrypts under a password:
 
 ```typescript
-import { openDB } from "idb";
-import type { PrivateStateProvider } from "@midnight-ntwrk/midnight-js-types";
+import { levelPrivateStateProvider } from "@midnight-ntwrk/midnight-js-level-private-state-provider";
 
-async function indexedDBPrivateStateProvider<PSI extends string, PS>(
-  dbName: string,
-): Promise<PrivateStateProvider<PSI, PS>> {
-  const db = await openDB(dbName, 1, {
-    upgrade(db) {
-      db.createObjectStore("privateState");
-    },
-  });
-
-  return {
-    get: async (id: PSI) => {
-      const value = await db.get("privateState", id);
-      return value ?? null;
-    },
-    set: async (id: PSI, state: PS) => {
-      await db.put("privateState", state, id);
-    },
-    remove: async (id: PSI) => {
-      await db.delete("privateState", id);
-    },
-    // The private-state methods are shown for brevity. A complete
-    // PrivateStateProvider<PSI, PS> must also implement setContractAddress,
-    // clear, the four signing-key methods (setSigningKey, getSigningKey,
-    // removeSigningKey, clearSigningKeys), and the export/import methods —
-    // back them with an additional IndexedDB object store.
-  };
-}
+const privateStateProvider = levelPrivateStateProvider<PSI, PS>({
+  cryptoBackend: "webcrypto",
+  // For a new store, the wallet's coin public key as is. Keep the value an
+  // existing store was created with, or it opens a different, empty store.
+  accountId: coinPublicKey,
+  // Must pass validatePassword (16+ characters, 3 of the 4 character classes,
+  // no long repeats or runs like "1234"), or it throws PasswordValidationError.
+  privateStoragePasswordProvider: () => getUserPassphrase(),
+});
 ```
 
 ## Wallet-Delegated Proving
 
-Instead of running a local proof server, the wallet can generate proofs. The dedicated `@midnight-ntwrk/midnight-js-dapp-connector-proof-provider` package wraps this into a ready-to-use `ProofProvider`:
+Instead of running a proof server, the wallet can generate proofs. The `@midnight-ntwrk/midnight-js-dapp-connector-proof-provider` package wraps this into a ready-to-use `ProofProvider`. It returns a Promise, so await it:
 
 ```typescript
 import { dappConnectorProofProvider } from "@midnight-ntwrk/midnight-js-dapp-connector-proof-provider";
+import { CostModel } from "@midnight-ntwrk/midnight-js-protocol/v9";
 
-// `api` exposes getProvingProvider; costModel comes from the protocol/ledger types.
+// httpClientProofProvider uses CostModel.initialCostModel() internally, so
+// give the wallet the same one.
 const proofProvider = await dappConnectorProofProvider(
   api,
   zkConfigProvider,
-  costModel,
+  CostModel.initialCostModel(),
 );
-// Use this proofProvider in place of httpClientProofProvider when assembling
-// MidnightProviders — proving is delegated to the Lace wallet, with no separate
-// proof server connection from the browser.
+// Use this in place of httpClientProofProvider when assembling
+// MidnightProviders. Witness data never leaves the wallet.
 ```
 
 Under the hood this calls the DApp Connector's `getProvingProvider(keyMaterialProvider)` to obtain the wallet's proving provider once, then reuses it for every `proveTx`. If you need lower-level access, you can still call `api.getProvingProvider(...)` directly:
@@ -241,56 +270,45 @@ Combining the DApp Connector with contract deployment in a React 19.x component:
 
 import { useCallback } from "react";
 import { deployContract } from "@midnight-ntwrk/midnight-js-contracts";
-import { CompiledContract } from "@midnight-ntwrk/compact-js";
-import { MyContract } from "../managed/mycontract/contract/index.js";
+import { CompiledContract } from "@midnight-ntwrk/midnight-js-protocol/v9/compact-js";
+import { Contract } from "../managed/mycontract/contract/index.js";
 import { witnesses } from "../witnesses.js";
-import type { ConnectedAPI } from "@midnight-ntwrk/dapp-connector-api";
+import type { ConnectedAPI } from "@midnightntwrk/dapp-connector-api";
 import { createBrowserProviders, inMemoryPrivateStateProvider } from "../providers.js";
+
+// withCompiledFileAssets is required by the type. In the browser, Midnight.js
+// reads the keys and ZKIR through providers.zkConfigProvider, not from this path.
+const compiledContract = CompiledContract.make("mycontract", Contract).pipe(
+  CompiledContract.withWitnesses(witnesses),
+  CompiledContract.withCompiledFileAssets("managed/mycontract"),
+);
 
 function useContractDeployment(api: ConnectedAPI) {
   const deploy = useCallback(async (initialSecret: Uint8Array) => {
     const privateStateProvider = inMemoryPrivateStateProvider();
     const providers = await createBrowserProviders(api, privateStateProvider);
 
-    // `withCompiledFileAssets(path)` is the only asset combinator in
-    // compact-js 2.5.1 — its argument is a *path string* to the contract's
-    // compiled output (where `keys/` and `zkir/` live), resolved relative to
-    // each consuming service's base path. There is no URL/fetch-based asset
-    // combinator on CompiledContract. Calling it is required to discharge the
-    // CompiledAssetsPath context so the result is `CompiledContract<C, never>`,
-    // which is what `deployContract`'s `compiledContract` option expects.
-    //
-    // For the BROWSER, the ZK proving/verifying assets are loaded over HTTP at
-    // proving time by the `FetchZkConfigProvider(window.location.origin)` in
-    // your provider assembly above — that is the browser ZK-config mechanism.
-    // The path here just points the verifier-key reader at the same managed
-    // output served as static assets (e.g. `public/managed/mycontract`).
-    const compiledContract = CompiledContract.make("mycontract", MyContract.Contract).pipe(
-      CompiledContract.withWitnesses(witnesses),
-      CompiledContract.withCompiledFileAssets("managed/mycontract"),
-    );
-
-    const deployed = await deployContract(providers, {
+    return deployContract(providers, {
       compiledContract,
       privateStateId: "myContractState",
       initialPrivateState: { secretKey: initialSecret },
     });
-
-    return deployed;
   }, [api]);
 
   return { deploy };
 }
 ```
 
+To join an existing contract, call `findDeployedContract(providers, { contractAddress, compiledContract, privateStateId })`. If the options object has an `initialPrivateState` key (even `undefined`), it is stored under `privateStateId` and replaces what is there. Leave the key out to reuse the private state this browser already holds for the contract.
+
 ## Proof Server Considerations
 
-For browser DApps, the proof server must be accessible from the browser:
+Recommend wallet proving or a proof server the user runs. A proof server sees the proof inputs, including witness data, so do not send them to one someone else runs.
 
-| Scenario | Proof Server URL | Notes |
-|----------|-----------------|-------|
-| Local development | `http://localhost:6300` | Docker proof server on local machine |
-| Preview/Preprod | `https://lace-proof-pub.{network}.midnight.network` | Public proof server (shares proof data with server) |
-| Privacy-sensitive | `http://localhost:6300` | Run proof server locally even for testnet DApps |
+| Scenario | Proving | Notes |
+|----------|---------|-------|
+| Default | Wallet (`dappConnectorProofProvider`) | Nothing else to run; witness data stays in the wallet |
+| Local development or privacy-sensitive | `http://127.0.0.1:6300` | `docker run -p 6300:6300 midnightntwrk/proof-server:9.0.2` |
+| Hosted or public proof server | Avoid | Whoever runs it sees your proof inputs |
 
-The public proof servers on Preview and Preprod expose proof inputs to the server operator. For production DApps handling sensitive data, run the proof server locally or use wallet-delegated proving via `getProvingProvider()`.
+`Configuration.proverServerUri` is deprecated in the connector API in favor of `getProvingProvider`. For a local proof server, pass its URL explicitly (the template's `DEFAULT_PROOF_SERVER_URL` is `http://127.0.0.1:6300`) rather than deriving it from the node URI.

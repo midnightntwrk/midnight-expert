@@ -2,7 +2,7 @@
 
 How to move a contract and DApp that work on `preprod` to Midnight mainnet: the deployment policy, the compiler to use, endpoints and tokens, funding, and a readiness checklist.
 
-> **Last verified:** 2026-10-09. Sources:
+> **Last verified:** 2026-10-09; versions and the ledger 9 rollout dates updated 2026-11-18 against the [compatibility matrix](https://docs.midnight.network/relnotes/support-matrix). Sources:
 > - the Midnight blog post [State of the Network – September 2026](https://midnight.network/blog/state-of-the-network-september-2026), dated 2026-09-28
 > - `midnightntwrk/midnight-docs` at `72f101a`: `docs/relnotes/network.mdx`, `docs/guides/networks-and-environments.mdx` and `docs/relnotes/compact/toolchain-0.35.0.mdx`
 > - `midnightntwrk/midnight-ledger` `ledger/src/semantics.rs`, where a contract deploy is rejected only if the address is already deployed
@@ -19,9 +19,11 @@ The ledger itself never restricted deployers. A node operator can still reject d
 
 ## Compile with the compiler that matches mainnet
 
-Mainnet runs **ledger 9**, like Preview and Preprod. Build contracts for it with **Compact toolchain 0.36.x** (language 0.28, runtime 0.21.0). The network-supported version is pinned in `midnight-tooling/network-supported-compiler.txt`, and `midnight-tooling:install-cli` installs it.
+Every network runs **ledger 9**: Mainnet since 6 November 2026, Preview since its relaunch on 7 November, and Preprod since its upgrade on 9 November. Build contracts for it with **Compact toolchain 0.36.x** (0.36.1 or later; language 0.28, runtime 0.21.0), and deploy them with **Midnight.js 5.0.1**. The network-supported version is pinned in `midnight-tooling/network-supported-compiler.txt`, and `midnight-tooling:install-cli` installs it.
 
-Contracts built with 0.31.x target ledger 8, which no network runs since the ledger 9 upgrade. They compile and pass local tests, but Midnight.js 5 refuses to deploy them with `EraMismatchError`. Check with `compact compile --version` (0.36.0 and later print the commit after the version), and switch with `compact update 0.36.0`. Pin `@midnight-ntwrk/compact-runtime` to the version that the [compatibility matrix](https://docs.midnight.network/relnotes/support-matrix) lists for that toolchain, 0.21.0 for 0.36.x.
+Contracts built with 0.31.x target ledger 8. They compile and pass local tests, but Midnight.js 5 refuses to deploy them with `EraMismatchError`. Check with `compact compile --version` (0.36.0 and later print the commit after the version), and switch with `compact update 0.36.1`. The minimums are the Release 1 "1.1 patch" (17 November 2026): Midnight.js 5.0.1, `@midnightntwrk/dapp-connector-api` 4.1.0, wallet SDK 2.0.1, `compact-runtime` 0.21.0, proof server 9.0.2, node 2.1.101 and indexer 4.4.101. Recheck them against the [compatibility matrix](https://docs.midnight.network/relnotes/support-matrix) before a launch. The DApp gets the runtime through `@midnight-ntwrk/midnight-js-protocol/v9/compact-runtime` rather than a direct `compact-runtime` dependency.
+
+A contract deployed on mainnet before the fork, with toolchain 0.31.1, keeps working. Call it with its original artifacts and pass `{ verify: "require-if-present" }` to the ZK config provider, because 0.31.1 wrote no artifact manifest. Recompiling it changes the verifier keys, so recompiled artifacts don't match the contract on chain.
 
 ## Endpoints and the Blockfrost token
 
@@ -38,8 +40,6 @@ Blockfrost hosts the public mainnet indexer and node RPC. The Midnight-hosted `i
 Create a **Midnight Mainnet** project on [blockfrost.io](https://blockfrost.io). Its project ID starts with `nightmainnet`. Append it as `?project_id=<token>` to every indexer and RPC URL, including the WebSocket URLs. A Preprod token (`nightpreprod…`) fails on mainnet with `403 Network token mismatch`. Request limits depend on your Blockfrost plan, so size the plan for your traffic, or run your own node and indexer.
 
 ```typescript
-import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
-
 function withBlockfrostKey(url: string, projectId: string): string {
   return `${url}${url.includes('?') ? '&' : '?'}project_id=${encodeURIComponent(projectId)}`;
 }
@@ -57,11 +57,10 @@ export function mainnetConfig() {
   } as const;
 }
 
-setNetworkId('mainnet');
 const network = mainnetConfig();
 ```
 
-Pass these URLs to `indexerPublicDataProvider(network.indexer, network.indexerWS)`, and pass the same Blockfrost URLs to the wallet configuration. The rest of the deploy flow is the same as on any other network; see `transaction-lifecycle.md`. `create-mn-app` doesn't offer a mainnet target, so you have to wire the providers by hand.
+Pass these URLs to `indexerPublicDataProvider(network.indexer, network.indexerWS)`, and pass the same Blockfrost URLs to the wallet configuration. Midnight.js 5 has no `setNetworkId()`. The network ID goes in the providers bundle instead, as `config: { networkId: network.networkId, ttlSeconds: 3600 }`. The rest of the deploy flow is the same as on any other network; see `transaction-lifecycle.md`. `create-mn-app` doesn't offer a mainnet target, so you have to wire the providers by hand.
 
 **Keep the token private.** It is part of every URL. SDK errors such as `request to <url> failed` and testkit-js's environment log print the full URL. Strip `project_id` before logging anything. For a browser DApp, either route indexer and RPC calls through a backend that adds the token, or use the endpoints the user's wallet provides through the DApp Connector's `getConfiguration()`.
 
@@ -82,7 +81,7 @@ Every transaction pays its fee in DUST, and mainnet has no faucet. Most NIGHT is
 ## Mainnet readiness checklist
 
 - [ ] The full deploy-and-interact flow works end to end on `preprod`.
-- [ ] The contract was compiled with the network-supported toolchain (0.36.x for ledger 9), and `compact-runtime` is pinned to the matching version (0.21.0).
+- [ ] The contract was compiled with the network-supported toolchain (0.36.x for ledger 9, `compact-runtime` 0.21.0), and the DApp uses Midnight.js 5.0.1 or later.
 - [ ] A security review is done. It isn't required for deployment any more, but mainnet holds real value. Use `/compact-core:audit-compact`, and the docs' [pre-deployment security checklist](https://docs.midnight.network/guides/security-best-practices#pre-deployment-security-checklist).
 - [ ] You have decided whether the contract can be upgraded, and who holds the maintenance authority. See the [updatability guide](https://docs.midnight.network/guides/deploy-and-operate#contract-updatability-and-the-maintenance-authority).
 - [ ] The deployer wallet shows a DUST balance, and the 12-hour cNIGHT registration delay has passed.

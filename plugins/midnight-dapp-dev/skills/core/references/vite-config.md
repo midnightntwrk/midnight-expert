@@ -2,45 +2,39 @@
 
 The Midnight SDK was designed for Node.js and requires significant Vite
 configuration to work in the browser. This reference documents every required
-plugin, polyfill, and configuration option.
+plugin, polyfill, and configuration option. The template uses Vite 8 (`vite`
+8.3.3, `@vitejs/plugin-react` ^6.3.0), and a production `vite build` of it with
+the ledger 9 WASM runtime is known to work.
 
 ## Full Annotated vite.config.ts
 
 ```typescript
+import path from 'path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import wasm from 'vite-plugin-wasm';
-import topLevelAwait from 'vite-plugin-top-level-await';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
-import commonjs from '@originjs/vite-plugin-commonjs';
-import path from 'path';
+import { viteCommonjs } from '@originjs/vite-plugin-commonjs';
 
 export default defineConfig({
   plugins: [
     // React Fast Refresh and JSX transform
     react(),
 
-    // Tailwind v4 — CSS-based configuration, no tailwind.config.js needed
+    // Tailwind v4: CSS-based configuration, no tailwind.config.js needed
     tailwindcss(),
 
-    // WASM support — Midnight SDK uses WebAssembly for ZK circuit execution
+    // WASM support: the ledger 9 runtime ships as WebAssembly
     wasm(),
 
-    // Top-level await — required by some SDK modules that await at module scope
-    topLevelAwait(),
+    // CommonJS interop: some SDK dependencies are not ESM-compatible
+    viteCommonjs(),
 
-    // Node.js polyfills — SDK packages depend on Node.js built-in modules
+    // Node.js polyfills: SDK packages depend on Node.js built-in modules
     nodePolyfills({
       include: ['buffer', 'process', 'util', 'crypto', 'stream'],
-      globals: {
-        Buffer: true,
-        process: true,
-      },
     }),
-
-    // CommonJS interop — some SDK packages are not ESM-compatible
-    commonjs(),
   ],
 
   resolve: {
@@ -50,12 +44,10 @@ export default defineConfig({
   },
 
   build: {
+    // esnext keeps top-level await native. Vite 8 bundles with Rolldown and
+    // ships no rollup, so vite-plugin-top-level-await can't load there.
     target: 'esnext',
     minify: false, // Disable in development for readable stack traces
-  },
-
-  optimizeDeps: {
-    exclude: ['@midnight-ntwrk/*'],
   },
 });
 ```
@@ -85,29 +77,32 @@ cannot process `.wasm` imports and the SDK fails to initialize.
 The plugin configures Vite to handle WASM modules as ES module imports,
 enabling the SDK's cryptographic operations to run in the browser.
 
-### vite-plugin-top-level-await
+### No vite-plugin-top-level-await
 
-Some SDK modules use top-level `await` to initialize WASM modules and
-cryptographic primitives. Standard Vite builds do not support top-level
-await in all output formats. This plugin transforms top-level await
-statements to be compatible with the build target.
+Some SDK modules use top-level `await` to initialize WASM modules. Older
+templates added `vite-plugin-top-level-await` to transform it. That plugin
+needs rollup, and Vite 8 bundles with Rolldown and ships no rollup, so it
+fails to load. With `build.target: 'esnext'` the browser runs top-level await
+natively, so leave the plugin out (and remove it when upgrading an older
+project to Vite 8).
 
 ### vite-plugin-node-polyfills
 
 The Midnight SDK was built for Node.js and uses built-in modules that do not
 exist in the browser. This plugin provides browser-compatible polyfills for:
 
-- **buffer** — Binary data handling used by the SDK's serialization layer
-- **process** — Environment detection and `process.env` references
-- **util** — Utility functions (TextEncoder, TextDecoder, inspect)
-- **crypto** — Cryptographic operations (hashing, random bytes)
-- **stream** — Stream processing used by some SDK internals
+- **buffer**: Binary data handling used by the SDK's serialization layer
+- **process**: Environment detection and `process.env` references
+- **util**: Utility functions (TextEncoder, TextDecoder, inspect)
+- **crypto**: Cryptographic operations (hashing, random bytes)
+- **stream**: Stream processing used by some SDK internals
 
-The `globals` option ensures `Buffer` and `process` are available globally,
-matching Node.js behavior that the SDK expects.
+The plugin's default `globals` settings make `Buffer` and `process` available
+globally, matching the Node.js behavior the SDK expects.
 
 ### @originjs/vite-plugin-commonjs
 
+Import it as a named export, `import { viteCommonjs } from '@originjs/vite-plugin-commonjs'`.
 Some Midnight SDK packages are published as CommonJS modules rather than
 ES modules. Vite's native CommonJS handling does not cover all edge cases
 in the SDK's dependency tree. This plugin provides more robust CommonJS-to-ESM
@@ -168,7 +163,7 @@ CSS variable approach:
 }
 ```
 
-Note `"config": ""` — Tailwind v4 does not use a config file, so this is
+Note `"config": ""`: Tailwind v4 does not use a config file, so this is
 left empty. The `css` field points to the stylesheet containing
 `@import "tailwindcss"`.
 
@@ -198,6 +193,9 @@ resolve: {
 }
 ```
 
+`tsconfig.app.json` also sets `"noEmit": true`: Vite does the bundling, and
+`tsc -b` in the build script only type-checks.
+
 Both configurations must agree. If they diverge, Vite resolves imports
 correctly at runtime but TypeScript reports errors in the editor.
 
@@ -212,13 +210,6 @@ Minification is disabled (`minify: false`) in development to preserve
 readable stack traces. In production builds, set `minify: true` or remove
 the option to enable Vite's default minification.
 
-## optimizeDeps
-
-The `optimizeDeps.exclude` array tells Vite's dependency pre-bundling to
-skip Midnight SDK packages. Pre-bundling can interfere with the SDK's WASM
-loading and internal module resolution. Excluding `@midnight-ntwrk/*`
-prevents these issues.
-
 ## vitest.config.ts
 
 Tests need a separate configuration because the test environment differs
@@ -226,15 +217,15 @@ significantly from the build environment:
 
 ```typescript
 import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
+  plugins: [react()],
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: ['./src/test/setup.ts'],
-    include: ['src/**/*.test.{ts,tsx}'],
-    css: false,
+    setupFiles: ['./src/__tests__/setup.ts'],
   },
   resolve: {
     alias: {
@@ -246,12 +237,11 @@ export default defineConfig({
 
 Key differences from vite.config.ts:
 
-- **No Tailwind plugin** — Tests do not need CSS processing
-- **No WASM plugin** — SDK modules are mocked in tests
-- **No CommonJS plugin** — Test dependencies are ESM-compatible
-- **No node polyfills** — jsdom provides its own Node.js globals
-- **jsdom environment** — Provides DOM APIs for component testing
-- **css: false** — Avoids parsing CSS imports in test files
+- **No Tailwind plugin**: tests do not need CSS processing
+- **No WASM plugin**: SDK modules are mocked in tests
+- **No CommonJS plugin**: test dependencies are ESM-compatible
+- **No node polyfills**: tests run in Node.js, which has the built-ins
+- **jsdom environment**: provides DOM APIs for component testing
 
 The path alias must be duplicated here because Vitest uses its own module
 resolution pipeline.
@@ -263,10 +253,9 @@ resolution pipeline.
 **Symptom:** `CompileError: WebAssembly.instantiate()` or
 `TypeError: Failed to fetch` when loading SDK modules.
 
-**Cause:** Missing `vite-plugin-wasm` or incorrect `optimizeDeps` configuration.
+**Cause:** Missing `vite-plugin-wasm`.
 
-**Fix:** Ensure `wasm()` is in the plugins array and `@midnight-ntwrk/*` is
-in `optimizeDeps.exclude`.
+**Fix:** Ensure `wasm()` is in the plugins array.
 
 ### Missing Polyfills
 
@@ -276,8 +265,8 @@ in `optimizeDeps.exclude`.
 **Cause:** SDK code references Node.js globals that are not available in the
 browser.
 
-**Fix:** Verify `nodePolyfills` includes all required modules and that
-`globals.Buffer` and `globals.process` are set to `true`.
+**Fix:** Verify `nodePolyfills` includes all required modules and that its
+`globals` option has not turned `Buffer` or `process` off.
 
 ### CommonJS Interop Errors
 
@@ -287,7 +276,7 @@ browser.
 **Cause:** SDK package uses `module.exports` or `require()` and Vite's
 default CJS handling does not convert it correctly.
 
-**Fix:** Ensure `commonjs()` plugin is included. If specific packages still
+**Fix:** Ensure the `viteCommonjs()` plugin is included. If specific packages still
 fail, add them to `optimizeDeps.include` to force pre-bundling with CJS
 conversion.
 
@@ -301,3 +290,13 @@ instead of the v4 CSS-based approach.
 **Fix:** Replace all `@tailwind` directives with `@import "tailwindcss"` in
 your main CSS file. Remove `tailwind.config.js` and `postcss.config.js` if
 they exist. Ensure `@tailwindcss/vite` is in the plugins array.
+
+### vite-plugin-top-level-await Fails to Load
+
+**Symptom:** The dev server or `vite build` fails while loading
+`vite-plugin-top-level-await` after an upgrade to Vite 8.
+
+**Cause:** Vite 8 bundles with Rolldown and ships no rollup.
+
+**Fix:** Remove the plugin and its import. Keep `build.target: 'esnext'` so
+top-level await stays native.

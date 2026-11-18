@@ -56,8 +56,22 @@ When connecting a compiled contract to the API layer:
    ledger shape
 2. Update `api/src/types.ts` with the contract's state types
 3. Update `api/src/index.ts` to import the compiled contract and
-   implement `deploy()` / `join()` functions
-4. Create React hooks or components for each circuit the user needs
+   implement `deploy()` / `join()` functions. Wrap the contract with
+   `CompiledContract.make` from `@midnight-ntwrk/midnight-js-protocol/v9/compact-js`.
+   In `join()`, leave out `initialPrivateState` to reuse the stored private
+   state: the key overwrites it even when undefined
+4. Decode contract state with `ledger(contractStateData(read))`, not
+   `Contract.ledger(state.data)`
+5. Create React hooks or components for each circuit the user needs
+
+## Stack
+
+Every Midnight network runs ledger 9. The templates use Midnight.js 5.0.1,
+`@midnightntwrk/dapp-connector-api` 4.1.0 and Vite 8, and contracts must be
+compiled with Compact toolchain 0.36.x. There is no `setNetworkId()`: the
+network ID goes in the providers' `config: { networkId, ttlSeconds }`, and the
+UI picks the wallet network from `VITE_NETWORK_ID`. An `EraMismatchError`
+usually means the contract was compiled with toolchain 0.31.x.
 
 ## Boundaries
 

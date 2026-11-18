@@ -67,11 +67,11 @@ This single import adds custom matchers like `toBeInTheDocument()`,
 ```json
 {
   "devDependencies": {
-    "vitest": "^3.0.0",
-    "@testing-library/react": "^16.0.0",
-    "@testing-library/jest-dom": "^6.0.0",
-    "@testing-library/user-event": "^14.0.0",
-    "jsdom": "^25.0.0"
+    "vitest": "^4.1.11",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/jest-dom": "^6.6.0",
+    "@testing-library/user-event": "^14.6.0",
+    "jsdom": "^26.1.0"
   }
 }
 ```
@@ -87,36 +87,59 @@ however you like — the code under test should discover the wallet by enumerati
 
 ### Creating a Mock InitialAPI
 
+The mock follows the `@midnightntwrk/dapp-connector-api` 4.1.0 types, so every
+method resolves to the shape the real wallet returns:
+
 ```typescript
 import { vi } from 'vitest';
-import type { InitialAPI, ConnectedAPI, Configuration } from '@midnight-ntwrk/dapp-connector-api';
+import type { InitialAPI, ConnectedAPI, Configuration } from '@midnightntwrk/dapp-connector-api';
 
 export const mockConfiguration: Configuration = {
-  indexerUri: 'http://localhost:8080',
-  indexerWsUri: 'ws://localhost:8080/ws',
-  substrateNodeUri: 'ws://localhost:9944',
-  networkId: 'testnet',
+  indexerUri: 'http://localhost:8088/api/v3/graphql',
+  indexerWsUri: 'ws://localhost:8088/api/v3/graphql/ws',
+  substrateNodeUri: 'http://localhost:9944',
+  networkId: 'undeployed',
 };
+
+// The real wallet returns Bech32m keys. createProviders passes hex through
+// parseCoinPublicKeyToHex / parseEncPublicKeyToHex unchanged, so hex keeps the
+// mock simple.
+const MOCK_COIN_PUBLIC_KEY = 'aa'.repeat(32);
+const MOCK_ENC_PUBLIC_KEY = 'bb'.repeat(32);
 
 export function createMockConnectedApi(
   overrides?: Partial<ConnectedAPI>,
 ): ConnectedAPI {
   return {
     getConfiguration: vi.fn().mockResolvedValue(mockConfiguration),
+    getConnectionStatus: vi.fn().mockResolvedValue({ status: 'connected', networkId: 'undeployed' }),
     getShieldedAddresses: vi.fn().mockResolvedValue({
       shieldedAddress: 'mock-shielded-address',
-      shieldedCoinPublicKey: 'mock-shielded-coin-public-key',
-      shieldedEncryptionPublicKey: 'mock-shielded-encryption-public-key',
+      shieldedCoinPublicKey: MOCK_COIN_PUBLIC_KEY,
+      shieldedEncryptionPublicKey: MOCK_ENC_PUBLIC_KEY,
     }),
-    getUnshieldedAddress: vi.fn().mockResolvedValue('mock-unshielded-address'),
-    getDustAddress: vi.fn().mockResolvedValue('mock-dust-address'),
-    getShieldedBalances: vi.fn().mockResolvedValue([]),
-    getUnshieldedBalances: vi.fn().mockResolvedValue([]),
-    getDustBalance: vi.fn().mockResolvedValue({ amount: 0n }),
-    balanceUnsealedTransaction: vi.fn().mockResolvedValue({ balanced: true }),
-    submitTransaction: vi.fn().mockResolvedValue('mock-tx-id'),
-    signData: vi.fn().mockResolvedValue({ signature: 'mock-sig' }),
-    getProvingProvider: vi.fn().mockResolvedValue(null),
+    getUnshieldedAddress: vi.fn().mockResolvedValue({ unshieldedAddress: 'mock-unshielded-address' }),
+    getDustAddress: vi.fn().mockResolvedValue({ dustAddress: 'mock-dust-address' }),
+    getShieldedBalances: vi.fn().mockResolvedValue({}),
+    getUnshieldedBalances: vi.fn().mockResolvedValue({}),
+    getDustBalance: vi.fn().mockResolvedValue({ balance: 0n, cap: 0n }),
+    getTxHistory: vi.fn().mockResolvedValue([]),
+    makeTransfer: vi.fn().mockResolvedValue({ tx: '00' }),
+    makeIntent: vi.fn().mockResolvedValue({ tx: '00' }),
+    balanceUnsealedTransaction: vi.fn().mockResolvedValue({ tx: '00' }),
+    balanceSealedTransaction: vi.fn().mockResolvedValue({ tx: '00' }),
+    submitTransaction: vi.fn().mockResolvedValue(undefined), // resolves to void
+    signData: vi.fn().mockResolvedValue({
+      scheme: 'schnorr_bip340',
+      data: 'mock-data',
+      signature: 'mock-sig',
+      verifyingKey: 'mock-key',
+    }),
+    getProvingProvider: vi.fn().mockResolvedValue({
+      check: vi.fn().mockResolvedValue([]),
+      prove: vi.fn().mockResolvedValue(new Uint8Array()),
+    }),
+    hintUsage: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }
@@ -128,7 +151,7 @@ export function createMockInitialApi(
   return {
     name: 'Mock Lace',
     icon: 'data:image/png;base64,mock',
-    apiVersion: '4.0.1',
+    apiVersion: '4.1.0',
     rdns: 'com.mock.lace',
     connect: vi.fn().mockResolvedValue(api),
   };
@@ -206,6 +229,7 @@ describe('wallet connection states', () => {
     await waitFor(() => {
       expect(screen.getByTestId('status')).toHaveTextContent('connected');
     });
+    // The template connects to import.meta.env.VITE_NETWORK_ID, default "undeployed".
     expect(mockApi.connect).toHaveBeenCalledWith('undeployed');
   });
 
@@ -253,16 +277,19 @@ describe('wallet connection states', () => {
 
 ## Testing Provider Assembly
 
-Test that `createProviders()` correctly assembles all 6 providers from a
-`ConnectedAPI`:
+Test that `createProviders()` assembles all 6 providers and the `config` field
+from a `ConnectedAPI`. Use local proving here so the test does not depend on
+the wallet's proving provider:
 
 ```typescript
 import { createProviders } from '@/lib/providers';
 
 describe('createProviders', () => {
+  const proving = { mode: 'local', proofServerUrl: 'http://127.0.0.1:6300' } as const;
+
   it('assembles all 6 providers from ConnectedAPI', async () => {
     const connectedApi = createMockConnectedApi();
-    const providers = await createProviders(connectedApi);
+    const providers = await createProviders(connectedApi, { proving });
 
     expect(providers.publicDataProvider).toBeDefined();
     expect(providers.zkConfigProvider).toBeDefined();
@@ -272,12 +299,13 @@ describe('createProviders', () => {
     expect(providers.privateStateProvider).toBeDefined();
   });
 
-  it('derives proof server URI from substrate node URI', async () => {
+  it("takes the network ID from the wallet's configuration", async () => {
     const connectedApi = createMockConnectedApi();
-    const providers = await createProviders(connectedApi);
+    const providers = await createProviders(connectedApi, { proving });
 
-    // Verify the proof server was configured with port 6300
     expect(connectedApi.getConfiguration).toHaveBeenCalled();
+    expect(providers.config.networkId).toBe('undeployed');
+    expect(providers.walletProvider.supportedEras).toEqual(['v9']);
   });
 });
 ```
@@ -292,8 +320,10 @@ an object matching the corresponding provider interface from `@midnight-ntwrk/mi
 
 ```typescript
 function createMockPublicDataProvider(): PublicDataProvider {
-  // contractStateObservable(address, config) — config is required at runtime.
-  return { contractStateObservable: vi.fn().mockReturnValue(new BehaviorSubject(null)) } as unknown as PublicDataProvider;
+  // contractStateObservable(address, config) emits PositionedRecord<ContractStateRead>
+  // ({ value, blockHeight, blockHash }). Emit nothing here; push records from a
+  // Subject in tests that need state.
+  return { contractStateObservable: vi.fn().mockReturnValue(new Subject()) } as unknown as PublicDataProvider;
 }
 
 function createMockZkConfigProvider(): ZKConfigProvider<string> {
@@ -306,36 +336,39 @@ function createMockZkConfigProvider(): ZKConfigProvider<string> {
   } as unknown as ZKConfigProvider<string>;
 }
 
+// Midnight.js 5 providers declare the ledger eras they serve.
 function createMockProofProvider(): ProofProvider {
-  // ProofProvider.proveTx(unprovenTx, config?) => Promise<UnboundTransaction>.
-  return { proveTx: vi.fn().mockResolvedValue(new Uint8Array()) } as unknown as ProofProvider;
+  return { supportedEras: ['v9'], proveTx: vi.fn() } as unknown as ProofProvider;
 }
 
 function createMockWalletProvider(): WalletProvider {
   return {
-    getCoinPublicKey: vi.fn().mockReturnValue(new Uint8Array(32)),
-    getEncryptionPublicKey: vi.fn().mockReturnValue(new Uint8Array(32)),
-    balanceTx: vi.fn().mockImplementation(async (tx) => tx),
+    supportedEras: ['v9'],
+    // Coin and encryption public keys are hex strings.
+    getCoinPublicKey: vi.fn().mockReturnValue('aa'.repeat(32)),
+    getEncryptionPublicKey: vi.fn().mockReturnValue('bb'.repeat(32)),
+    balanceTx: vi.fn(),
   };
 }
 
 function createMockMidnightProvider(): MidnightProvider {
-  return { submitTx: vi.fn().mockResolvedValue('mock-tx-id') };
+  return { supportedEras: ['v9'], submitTx: vi.fn().mockResolvedValue('mock-tx-id') };
 }
 
 function createMockPrivateStateProvider(): PrivateStateProvider<string, unknown> {
-  // Partial mock: the real PrivateStateProvider interface requires ~13 members
-  // (setContractAddress, set, get, remove, clear, setSigningKey, getSigningKey,
-  // removeSigningKey, clearSigningKeys, exportPrivateStates, importPrivateStates,
-  // exportSigningKeys, importSigningKeys). We stub only the commonly-called ones and
-  // cast via `as unknown` so TypeScript does not flag the missing members. Add more
-  // stubs here if a test exercises them.
+  // Partial mock. Midnight.js 5 scopes private state per contract, so stub
+  // forContract() and the methods on what it returns. Cast via `as unknown` so
+  // TypeScript does not flag the members left out (clearAll, the signing-key
+  // and export/import methods); add stubs if a test exercises them.
   return {
-    get: vi.fn().mockResolvedValue(null),
-    set: vi.fn().mockResolvedValue(undefined),
-    remove: vi.fn().mockResolvedValue(undefined),
-    clear: vi.fn().mockResolvedValue(undefined),
-    setContractAddress: vi.fn().mockResolvedValue(undefined),
+    forContract: vi.fn().mockImplementation((contractAddress: string) => ({
+      contractAddress,
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockResolvedValue(undefined),
+      remove: vi.fn().mockResolvedValue(undefined),
+      clear: vi.fn().mockResolvedValue(undefined),
+    })),
+    clearAll: vi.fn().mockResolvedValue(undefined),
   } as unknown as PrivateStateProvider<string, unknown>;
 }
 
@@ -348,6 +381,7 @@ function renderWithProviders(ui: React.ReactElement) {
     walletProvider: createMockWalletProvider(),
     midnightProvider: createMockMidnightProvider(),
     privateStateProvider: createMockPrivateStateProvider(),
+    config: { networkId: 'undeployed', ttlSeconds: 3600 },
   };
 
   return render(

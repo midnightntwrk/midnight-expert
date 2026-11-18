@@ -4,7 +4,7 @@
   <img src="assets/mascot.png" alt="midnight-dapp-dev mascot" width="200" />
 </p>
 
-Scaffold and build Midnight DApp frontends -- Vite + React 19 + shadcn + Tailwind v4 templates, wallet integration, provider architecture, and a development agent for ongoing UI work.
+Scaffold and build Midnight DApp frontends -- Vite 8 + React 19 + shadcn + Tailwind v4 templates on Midnight.js 5 (ledger 9), wallet integration, provider architecture, and a development agent for ongoing UI work.
 
 ## Skills
 
@@ -30,7 +30,7 @@ Covers the Midnight DApp Connector API for browser-based wallet integration: con
 | Name | Description | When it is used |
 |------|-------------|-----------------|
 | [`browser-providers.md`](skills/dapp-connector/references/browser-providers.md) | Assembling MidnightProviders from the DApp Connector API in a browser context | When building SDK providers from the Lace wallet connection |
-| [`connector-api-types.md`](skills/dapp-connector/references/connector-api-types.md) | Complete type definitions for the DApp Connector API v4.0.1 (InitialAPI, ConnectedAPI) | When working with DApp Connector types or augmenting the window object |
+| [`connector-api-types.md`](skills/dapp-connector/references/connector-api-types.md) | Complete type definitions for the DApp Connector API (`@midnightntwrk/dapp-connector-api` 4.1.0: InitialAPI, ConnectedAPI) | When working with DApp Connector types or augmenting the window object |
 
 ### midnight-dapp-dev:init
 
@@ -38,7 +38,7 @@ Scaffolds a Vite + React 19 + shadcn + Tailwind v4 UI package and a TypeScript A
 
 ### midnight-dapp-dev:midnight-sdk
 
-Comprehensive reference for the Midnight.js SDK (v4.1.1): the core packages, the MidnightProviders architecture, the full transaction lifecycle, advanced contract operations, observable patterns, and testkit-js.
+Comprehensive reference for the Midnight.js SDK (5.0.1, ledger 9): the core packages, the MidnightProviders architecture, the full transaction lifecycle, advanced contract operations, observable patterns, and testkit-js.
 
 #### References
 
@@ -46,6 +46,7 @@ Comprehensive reference for the Midnight.js SDK (v4.1.1): the core packages, the
 |------|-------------|-----------------|
 | [`package-reference.md`](skills/midnight-sdk/references/package-reference.md) | Detailed exports, constructor signatures, and configuration for the Midnight.js SDK packages | When looking up specific SDK package APIs or constructor options |
 | [`transaction-lifecycle.md`](skills/midnight-sdk/references/transaction-lifecycle.md) | Complete reference for the five-stage transaction pipeline: build, prove, balance, submit, finalize | When implementing or debugging the contract interaction flow |
+| [`mainnet-deployment.md`](skills/midnight-sdk/references/mainnet-deployment.md) | Deploying to mainnet: the ledger 9 toolchain and SDK versions, Blockfrost endpoints and token, DUST funding, readiness checklist | When moving a contract and DApp from preprod to mainnet |
 
 ## Agents
 

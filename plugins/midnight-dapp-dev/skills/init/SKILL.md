@@ -11,8 +11,10 @@ version: 0.1.0
 
 # Initialize Midnight DApp Frontend
 
-Scaffold a Vite + React 19 + shadcn + Tailwind v4 UI package and a TypeScript
-API package into the current project.
+Scaffold a Vite 8 + React 19 + shadcn + Tailwind v4 UI package and a TypeScript
+API package into the current project. The templates use Midnight.js 5.0.1 and
+`@midnightntwrk/dapp-connector-api` 4.1.0, which build the ledger 9
+transactions every Midnight network runs.
 
 ## Usage
 
@@ -54,9 +56,11 @@ The script:
 ## After Scaffolding
 
 1. Install dependencies with the detected package manager
-2. Configure the `copy-contract-keys` script in the UI `package.json` with the path to the contract's compiled `keys/` and `zkir/` output
-3. Wire up the contract in the API package's `src/index.ts` and `src/types.ts`
-4. Run `npm run dev` in the UI directory to start the dev server
+2. Configure the `copy-contract-keys` script in the UI `package.json` with the path to the contract's compiled `keys/`, `zkir/` and `compiler/` output. `FetchZkConfigProvider` checks the artifacts against `compiler/contract-manifest.json`, so all three directories must be served
+3. Compile the contract with Compact toolchain 0.36.x (`compact-runtime` 0.21.0). Midnight.js 5 refuses artifacts from toolchain 0.31.x with `EraMismatchError`
+4. Wire up the contract in the API package's `src/index.ts` and `src/types.ts`: build a `CompiledContract` from `@midnight-ntwrk/midnight-js-protocol/v9/compact-js`, and pass your contract's `ledger()` to `createStateObservable`
+5. Set `VITE_NETWORK_ID` in the UI's `.env` (`undeployed` by default, or `preview`, `preprod`, `mainnet`)
+6. Run `npm run dev` in the UI directory to start the dev server
 
 ## Placeholders
 
