@@ -28,18 +28,22 @@ export default class Call extends BaseCommand {
 		//
 		//   import { buildFacade, getWallet } from "../lib/wallet.js";
 		//   import { createProviders } from "../lib/providers.js";
-		//   import { join } from "../lib/contract.js";
-		//   import { loadDeployedContracts } from "../lib/contract.js";
+		//   import { join, loadDeployedContracts } from "../lib/contract.js";
 		//
 		//   const walletData = getWallet(flags.wallet);
 		//   const ctx = await buildFacade(walletData.seed);
-		//   const providers = await createProviders(ctx.facade, ctx.shieldedSecretKeys, ctx.dustSecretKey, ctx.keystore, "counter-private-state");
-		//   const contracts = loadDeployedContracts();
-		//   const contract = await join(providers, contracts["counter"].address, { privateCounter: 0 });
+		//   try {
+		//     const providers = await createProviders(ctx.facade, ctx.keystore, "counter-private-state");
+		//     const deployed = loadDeployedContracts().counter;
+		//     if (!deployed) throw new Error("No deployed counter contract. Run `deploy` first.");
+		//     const contract = await join(providers, deployed.address, {});
 		//
-		//   const txData = await contract.callTx.increment();
-		//   this.log(`Transaction: ${txData.public.txId}`);
-		//   this.log(`Block: ${txData.public.blockHeight}`);
+		//     const txData = await contract.callTx.increment();
+		//     this.log(`Transaction: ${txData.public.txId}`);
+		//     this.log(`Block: ${txData.public.blockHeight}`);
+		//   } finally {
+		//     await ctx.facade.stop();
+		//   }
 
 		this.log(`Circuit "${args.circuit}" is not yet implemented.`);
 		this.log("Edit src/commands/call.ts to add your contract's circuit calls.");

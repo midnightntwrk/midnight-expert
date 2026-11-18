@@ -17,15 +17,29 @@ interface ClassifiedError {
 
 const CLI_NAME = "{{CLI_PACKAGE_NAME}}";
 
+// Midnight.js 5 wraps a wallet's failure in a ProviderFailedError ("balanceTx
+// rejected the transaction ...") and keeps the wallet's own error on `cause`, so
+// read the whole chain, not just the top message.
+function messageChain(err: unknown): string[] {
+	const messages: string[] = [];
+	let current: unknown = err;
+	for (let depth = 0; current !== undefined && current !== null && depth < 8; depth++) {
+		messages.push(current instanceof Error ? current.message : String(current));
+		current = current instanceof Error ? current.cause : undefined;
+	}
+	return messages;
+}
+
 export function classifyError(err: unknown): ClassifiedError {
-	const message = err instanceof Error ? err.message : String(err);
+	const chain = messageChain(err);
+	const message = chain.join("\n  caused by: ");
 	const lower = message.toLowerCase();
 
-	if (lower.includes("dust") || lower.includes("no dust") || lower.includes("insufficient fee")) {
+	if (lower.includes("dust") || lower.includes("insufficient fee")) {
 		return {
 			code: ErrorCode.DUST_REQUIRED,
 			message,
-			action: `Run \`${CLI_NAME} dust:register <wallet>\` to generate DUST tokens.`,
+			action: `Run \`${CLI_NAME} dust:status <wallet>\`. If no NIGHT is registered, run \`${CLI_NAME} dust:register <wallet>\`; if it is, DUST is still accruing, so wait a minute and retry.`,
 		};
 	}
 

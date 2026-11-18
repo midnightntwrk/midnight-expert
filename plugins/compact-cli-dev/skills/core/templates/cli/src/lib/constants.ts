@@ -16,19 +16,24 @@ export const SEED_LENGTH = 64; // hex chars = 32 bytes
 // Local devnet private-state encryption. The level private-state provider
 // encrypts persisted private state at rest; on a throwaway local devnet a fixed
 // dev password is fine. Replace with a real secret for any non-local network.
-export const LOCAL_PRIVATE_STATE_PASSWORD = "midnight-local-devnet";
+// Midnight.js 5 rejects a password with fewer than three of: uppercase letters,
+// lowercase letters, digits, special characters.
+export const LOCAL_PRIVATE_STATE_PASSWORD = "Midnight-Local-Devnet-1";
 
-// Network
-export const DEFAULT_TTL_MINUTES = 10;
+// Transactions: how long a built transaction stays valid, in seconds. Midnight.js
+// 5 reads it from the providers' `config.ttlSeconds`; the wallet uses it too.
+export const TX_TTL_SECONDS = 30 * 60;
 
 // Fees
 export const ADDITIONAL_FEE_OVERHEAD = 300_000_000_000_000n;
 export const FEE_BLOCKS_MARGIN = 5;
-export const DUST_MIN_REQUIREMENT = 800_000_000_000_000n;
+// DUST a wallet should hold before it transacts. A counter deploy on the local
+// devnet costs about 1.4 DUST (1 DUST = 10^15 specks), so wait for 2.
+export const DUST_MIN_REQUIREMENT = 2_000_000_000_000_000n;
 
 // Timeouts (ms)
 export const WALLET_SYNC_TIMEOUT = 120_000;
-export const DUST_GENERATION_TIMEOUT = 120_000;
+export const DUST_GENERATION_TIMEOUT = 300_000;
 export const DUST_POLL_INTERVAL = 5_000;
 export const FUND_POLL_INTERVAL = 10_000;
 export const PROOF_TIMEOUT = 300_000;

@@ -1,8 +1,6 @@
-import { getNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
-import { createKeystore } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
 import { Args } from "@oclif/core";
 import { BaseCommand } from "../../base-command.js";
-import { deriveKeys, newSeed, saveWallet } from "../../lib/wallet.js";
+import { createWalletKeystore, deriveSeeds, newSeed, saveWallet } from "../../lib/wallet.js";
 
 export default class WalletCreate extends BaseCommand {
 	static override description = "Generate a new wallet with a random seed";
@@ -19,8 +17,7 @@ export default class WalletCreate extends BaseCommand {
 		const name = args.name;
 
 		const seed = newSeed();
-		const keys = deriveKeys(seed);
-		const keystore = createKeystore(keys.nightExternal, getNetworkId());
+		const keystore = createWalletKeystore(deriveSeeds(seed));
 		// getBech32Address() returns a branded MidnightBech32m; persist the string.
 		const address = keystore.getBech32Address().toString();
 

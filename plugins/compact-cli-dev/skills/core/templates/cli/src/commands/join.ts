@@ -35,8 +35,6 @@ export default class Join extends BaseCommand {
 
 			const providers = await createProviders(
 				ctx.facade,
-				ctx.shieldedSecretKeys,
-				ctx.dustSecretKey,
 				ctx.keystore,
 				`${CONTRACT_NAME}-private-state`,
 			);

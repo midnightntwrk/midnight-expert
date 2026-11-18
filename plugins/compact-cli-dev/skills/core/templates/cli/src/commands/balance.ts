@@ -1,10 +1,8 @@
-import { unshieldedToken } from "@midnight-ntwrk/ledger-v8";
+import { unshieldedToken } from "@midnight-ntwrk/midnight-js-protocol/v9";
 import { Args } from "@oclif/core";
-import * as Rx from "rxjs";
 import { BaseCommand } from "../base-command.js";
-import { DUST_POLL_INTERVAL } from "../lib/constants.js";
 import { withSpinner } from "../lib/progress.js";
-import { buildFacade, getWallet } from "../lib/wallet.js";
+import { buildFacade, getWallet, waitForSettled } from "../lib/wallet.js";
 
 export default class Balance extends BaseCommand {
 	static override description = "Check NIGHT and DUST balances for a wallet";
@@ -19,12 +17,7 @@ export default class Balance extends BaseCommand {
 
 		const ctx = await withSpinner("Syncing wallet...", () => buildFacade(wallet.seed));
 		try {
-			const state = await Rx.firstValueFrom(
-				ctx.facade.state().pipe(
-					Rx.throttleTime(DUST_POLL_INTERVAL),
-					Rx.filter((s) => s.isSynced),
-				),
-			);
+			const state = await waitForSettled(ctx.facade);
 
 			const night = state.unshielded.balances[unshieldedToken().raw] ?? 0n;
 			const dust = state.dust.balance(new Date());

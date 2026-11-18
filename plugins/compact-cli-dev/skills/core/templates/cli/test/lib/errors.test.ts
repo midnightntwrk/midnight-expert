@@ -8,6 +8,16 @@ describe("classifyError", () => {
 		expect(result.action).toContain("dust:register");
 	});
 
+	it("classifies a DUST shortfall wrapped by Midnight.js", () => {
+		const wrapped = new Error(
+			"balanceTx rejected the transaction. The provider's own failure is on `cause`.",
+			{ cause: new Error("Wallet.InsufficientFunds: Insufficient Funds: could not balance dust") },
+		);
+		const result = classifyError(wrapped);
+		expect(result.code).toBe(ErrorCode.DUST_REQUIRED);
+		expect(result.message).toContain("could not balance dust");
+	});
+
 	it("classifies proof server connection errors", () => {
 		const result = classifyError(new Error("connect ECONNREFUSED 127.0.0.1:6300"));
 		expect(result.code).toBe(ErrorCode.SERVICE_DOWN);

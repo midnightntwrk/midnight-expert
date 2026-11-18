@@ -17,8 +17,10 @@ export default class WalletFund extends BaseCommand {
 	static override flags = {
 		...BaseCommand.baseFlags,
 		amount: Flags.string({
+			// 10,000 NIGHT. DUST accrues in proportion to the NIGHT registered, so
+			// this reaches the DUST a deploy needs in under a minute.
 			description: "Amount of NIGHT to airdrop (in micro-NIGHT)",
-			default: "1000000000",
+			default: "10000000000",
 		}),
 	};
 
