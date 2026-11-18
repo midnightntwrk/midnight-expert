@@ -1,4 +1,4 @@
-import { unshieldedToken } from "@midnight-ntwrk/midnight-js-protocol/v9";
+import { Token } from "@midnightntwrk/wallet-sdk";
 import { Args } from "@oclif/core";
 import { BaseCommand } from "../base-command.js";
 import { withSpinner } from "../lib/progress.js";
@@ -19,7 +19,7 @@ export default class Balance extends BaseCommand {
 		try {
 			const state = await waitForSettled(ctx.facade);
 
-			const night = state.unshielded.balances[unshieldedToken().raw] ?? 0n;
+			const night = state.unshielded.balances[Token.night] ?? 0n;
 			const dust = state.dust.balance(new Date());
 
 			const result = {

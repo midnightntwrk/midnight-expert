@@ -47,4 +47,8 @@ describe("wallet persistence", () => {
 	it("rejects a seed that isn't 32 bytes of hex", () => {
 		expect(() => deriveSeeds("abcd")).toThrow("Invalid seed length");
 	});
+
+	it("rejects a 64-character seed that isn't hex", () => {
+		expect(() => deriveSeeds(`${"0".repeat(63)}g`)).toThrow("Invalid seed");
+	});
 });

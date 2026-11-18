@@ -90,20 +90,20 @@ import { findDeployedContract } from "@midnight-ntwrk/midnight-js-contracts";
 export async function join(
   providers: Providers,
   contractAddress: string,
-  initialPrivateState: Record<string, unknown>,
+  initialPrivateState?: Record<string, unknown>,
 ) {
   const compiledContract = await loadCompiledContract();
+  const privateStateId = `${CONTRACT_NAME}PrivateState`;
 
-  return findDeployedContract(providers, {
-    contractAddress,
-    compiledContract,
-    privateStateId: `${CONTRACT_NAME}PrivateState`,
-    initialPrivateState,
-  });
+  return initialPrivateState === undefined
+    ? findDeployedContract(providers, { contractAddress, compiledContract, privateStateId })
+    : findDeployedContract(providers, { contractAddress, compiledContract, privateStateId, initialPrivateState });
 }
 ```
 
-The returned `FoundContract` object has the same `callTx` interface as a deployed contract. The `initialPrivateState` should match what the joining party's private state should be initialized to.
+The returned `FoundContract` object has the same `callTx` interface as a deployed contract.
+
+When the options include `initialPrivateState`, `findDeployedContract` stores it under `privateStateId`, **replacing** whatever is stored there. Midnight.js checks whether the key is present, not whether its value is defined, so `initialPrivateState: undefined` overwrites too. Pass it only the first time a wallet joins a contract. Leave the key out to reuse the private state saved at deploy or at an earlier join; Midnight.js throws if nothing is stored yet.
 
 Full command usage:
 
@@ -123,7 +123,8 @@ After deploying or joining, call contract circuits via the `callTx` proxy:
 // From the call.ts command stub:
 const deployed = loadDeployedContracts().counter;
 if (!deployed) throw new Error("No deployed counter contract. Run `deploy` first.");
-const contract = await join(providers, deployed.address, {});
+// No initial private state: reuse the one saved at deploy or join.
+const contract = await join(providers, deployed.address);
 
 const txData = await contract.callTx.increment();
 // txData.public.txId      — transaction hash

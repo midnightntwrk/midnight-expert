@@ -21,7 +21,7 @@ export type Providers = ContractProviders<AppContract>;
 | `zkConfigProvider` | `midnight-js-node-zk-config-provider` | Locates compiled ZK circuit files on disk |
 | `proofProvider` | `midnight-js-http-client-proof-provider` | HTTP client for the proof server |
 | `walletProvider` | Built from `WalletFacade` | `balanceTx`, `getCoinPublicKey`, `getEncryptionPublicKey` |
-| `midnightProvider` | Same object as `walletProvider` | `submitTx` (transaction submission) |
+| `midnightProvider` | Built from `WalletFacade` | `submitTx` (transaction submission) |
 | `config` | Plain object | `networkId` and `ttlSeconds`, applied to every transaction |
 
 ---
@@ -34,7 +34,7 @@ export async function createProviders(
   keystore: UnshieldedKeystore,
   privateStateStoreName: string,
 ): Promise<Providers> {
-  const walletProvider = await createWalletProvider(facade, keystore);
+  const { walletProvider, midnightProvider } = await createWalletProviders(facade, keystore);
   const zkConfigProvider = new NodeZkConfigProvider<ProvableCircuitId<AppContract>>(ZK_CONFIG_PATH);
 
   return {
@@ -47,7 +47,7 @@ export async function createProviders(
     zkConfigProvider,
     proofProvider: httpClientProofProvider(DEVNET_CONFIG.proofServer, zkConfigProvider),
     walletProvider,
-    midnightProvider: walletProvider,
+    midnightProvider,
     config: { networkId: DEVNET_CONFIG.networkId, ttlSeconds: TX_TTL_SECONDS },
   };
 }
@@ -62,43 +62,41 @@ const providers = await createProviders(ctx.facade, ctx.keystore, `${CONTRACT_NA
 
 ---
 
-## `createWalletProvider()`
+## `createWalletProviders()`
 
-Midnight.js 5 and the wallet SDK each load their own copy of the ledger, so a transaction crosses between them as bytes. Midnight.js hands the wallet provider a ledger 9 transaction handle; the wallet decodes its bytes with its own ledger copy, seals them with `WalletTransaction.adopt` at the chain's protocol version, balances and signs, and hands bytes back.
+Midnight.js 5 hands the wallet provider its own transaction handle, and the wallet SDK takes its own `WalletTransaction` handle, so a transaction crosses between them as bytes. `facade.adoptTransaction(bytes, stage)` reads the bytes and stamps them with the protocol version the wallet is acting at; `WalletTransaction.toWire(handle).transaction` gives the bytes of the wallet's answer back as hex.
 
-`createLedger9WalletProvider` and `createLedger9MidnightProvider` from `@midnight-ntwrk/midnight-js-types` wrap a ledger 9 only implementation. The local devnet starts on ledger 9, so the template serves ledger 9 only; a ledger 8 transaction is refused with `ProviderEraUnsupportedError`. To serve both eras, use `createWalletProviderFromHandlers` with a `v8` and a `v9` handler.
+`createLedger9WalletProvider` and `createLedger9MidnightProvider` from `@midnight-ntwrk/midnight-js-types` wrap a ledger 9 only implementation. The local devnet runs ledger 9, so the template serves ledger 9 only; a ledger 8 transaction is refused with `ProviderEraUnsupportedError`. To serve both eras, use `createWalletProviderFromHandlers` with a `v8` and a `v9` handler.
 
 ```typescript
 import { createLedger9MidnightProvider, createLedger9WalletProvider } from "@midnight-ntwrk/midnight-js-types";
 import { WalletTransaction } from "@midnightntwrk/wallet-sdk";
-import * as WalletLedger from "@midnightntwrk/wallet-sdk/ledger/v9";
-
-async function adopt<S extends "Unbound" | "Finalized">(facade: WalletFacade, stage: S, bytes: Uint8Array) {
-  const binding = stage === "Unbound" ? "pre-binding" : "binding";
-  const tx = WalletLedger.Transaction.deserialize("signature", "proof", binding, bytes);
-  const state = await waitForSettled(facade);
-  return WalletTransaction.adopt(stage, tx, state.activeProtocolVersion);
-}
 
 const toBytes = (handle: WalletTransaction) => Buffer.from(WalletTransaction.toWire(handle).transaction, "hex");
 
-const walletProvider = createLedger9WalletProvider({
-  getCoinPublicKey: () => shielded.coinPublicKey.toHexString(),
-  getEncryptionPublicKey: () => shielded.encryptionPublicKey.toHexString(),
-  async balanceTx(tx, ttl) {
-    const recipe = await facade.balanceUnboundTransaction(await adopt(facade, "Unbound", tx.serialize()), {
-      ttl: ttl ?? new Date(Date.now() + TX_TTL_SECONDS * 1000),
-    });
-    const signed = await facade.signRecipe(recipe, keystore.signDataAsync);
-    return toBytes(await facade.finalizeRecipe(signed));
-  },
-});
-const midnightProvider = createLedger9MidnightProvider(async (tx) =>
-  facade.submitTransaction(await adopt(facade, "Finalized", tx.serialize())),
-);
+export async function createWalletProviders(facade: WalletFacade, keystore: UnshieldedKeystore) {
+  const { shielded } = await waitForSettled(facade);
+
+  const walletProvider = createLedger9WalletProvider({
+    getCoinPublicKey: () => shielded.coinPublicKey.toHexString(),
+    getEncryptionPublicKey: () => shielded.encryptionPublicKey.toHexString(),
+    async balanceTx(tx, ttl) {
+      const recipe = await facade.balanceUnboundTransaction(facade.adoptTransaction(tx.serialize(), "Unbound"), {
+        ttl: ttl ?? new Date(Date.now() + TX_TTL_SECONDS * 1000),
+      });
+      const signed = await facade.signRecipe(recipe, keystore.signDataAsync);
+      return toBytes(await facade.finalizeRecipe(signed));
+    },
+  });
+  const midnightProvider = createLedger9MidnightProvider((tx) =>
+    facade.submitTransaction(facade.adoptTransaction(tx.serialize(), "Finalized")),
+  );
+
+  return { walletProvider, midnightProvider };
+}
 ```
 
-`createWalletProvider()` returns one object that merges the two, with `supportedEras` taken from the wallet provider. Balancing in wallet SDK 2 takes only the transaction and a TTL: the facade already holds the shielded and DUST keys from `start(seeds)`. Unshielded inputs still need a signature, which `signRecipe` adds with the keystore.
+Balancing in wallet SDK 2 takes only the transaction and a TTL: the facade already holds the shielded and DUST keys from `start(seeds)`. Unshielded inputs still need a signature, which `signRecipe` adds with the keystore.
 
 ---
 
@@ -123,14 +121,4 @@ Midnight.js 5 has no global network ID: `setNetworkId` and the `@midnight-ntwrk/
 
 ## `walletProvider` and `midnightProvider`
 
-Both fields point to the **same object**. The SDK needs a `WalletProvider` (for `balanceTx`, `getCoinPublicKey`, `getEncryptionPublicKey`) and a `MidnightProvider` (for `submitTx`). Both carry `supportedEras`, which Midnight.js reads before each operation to check that the providers serve the network's ledger era. In this CLI template, one object satisfies both interfaces:
-
-```typescript
-return {
-  // ...
-  walletProvider,
-  midnightProvider: walletProvider, // Same object
-};
-```
-
-This is the standard pattern for Node.js CLIs where one wallet handles both balancing and submission.
+The SDK needs a `WalletProvider` (for `balanceTx`, `getCoinPublicKey`, `getEncryptionPublicKey`) and a `MidnightProvider` (for `submitTx`). Both carry `supportedEras`, which Midnight.js reads before each operation to check that the providers serve the network's ledger era. In this template both are built from the same `WalletFacade`, so one wallet balances and submits, but they stay two objects in the bundle.

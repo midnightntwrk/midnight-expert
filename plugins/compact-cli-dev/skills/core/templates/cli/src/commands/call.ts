@@ -36,7 +36,8 @@ export default class Call extends BaseCommand {
 		//     const providers = await createProviders(ctx.facade, ctx.keystore, "counter-private-state");
 		//     const deployed = loadDeployedContracts().counter;
 		//     if (!deployed) throw new Error("No deployed counter contract. Run `deploy` first.");
-		//     const contract = await join(providers, deployed.address, {});
+		//     // No initial private state: reuse the one saved at deploy or join.
+		//     const contract = await join(providers, deployed.address);
 		//
 		//     const txData = await contract.callTx.increment();
 		//     this.log(`Transaction: ${txData.public.txId}`);

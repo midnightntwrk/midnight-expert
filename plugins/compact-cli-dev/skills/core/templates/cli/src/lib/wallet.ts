@@ -65,6 +65,10 @@ export function deriveSeeds(seed: string): WalletSeeds {
 			`Invalid seed length: expected ${String(SEED_LENGTH)} hex chars, got ${String(seed.length)}`,
 		);
 	}
+	// Buffer.from(_, "hex") stops at the first non-hex character, so check first.
+	if (!/^[0-9a-fA-F]+$/.test(seed)) {
+		throw new Error("Invalid seed: expected hex characters only (0-9, a-f)");
+	}
 	return WalletSeeds.fromMasterSeed(Buffer.from(seed, "hex"));
 }
 
@@ -102,7 +106,14 @@ export async function buildFacade(seed: string): Promise<WalletContext> {
 	});
 	// start() takes the seeds rather than key objects: seeds are the only key
 	// material that works on both sides of the ledger 8 / ledger 9 boundary.
-	await facade.start(seeds);
+	// Callers stop the facade in a finally block once this returns; if start()
+	// throws, stop it here so its open connections don't keep the process alive.
+	try {
+		await facade.start(seeds);
+	} catch (error) {
+		await facade.stop().catch(() => undefined);
+		throw error;
+	}
 
 	return { facade, keystore };
 }
@@ -110,12 +121,13 @@ export async function buildFacade(seed: string): Promise<WalletContext> {
 // Synced, and all three sub-wallets on the same protocol version. Until a
 // wallet has caught up past the ledger 9 fork it reports protocol "Crossing",
 // and a transaction built then can fail with ProtocolVersionMismatchError.
+export function isSettled(state: FacadeState): boolean {
+	return state.isSynced && state.protocol._tag === "Settled";
+}
+
 export function waitForSettled(facade: WalletFacade): Promise<FacadeState> {
 	return Rx.firstValueFrom(
-		facade.state().pipe(
-			Rx.filter((s) => s.isSynced && s.protocol._tag === "Settled"),
-			Rx.timeout(WALLET_SYNC_TIMEOUT),
-		),
+		facade.state().pipe(Rx.filter(isSettled), Rx.timeout(WALLET_SYNC_TIMEOUT)),
 	);
 }
 

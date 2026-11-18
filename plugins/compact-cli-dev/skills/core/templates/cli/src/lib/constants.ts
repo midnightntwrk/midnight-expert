@@ -33,9 +33,13 @@ export const DUST_MIN_REQUIREMENT = 2_000_000_000_000_000n;
 
 // Timeouts (ms)
 export const WALLET_SYNC_TIMEOUT = 120_000;
-export const DUST_GENERATION_TIMEOUT = 300_000;
+// DUST accrues in proportion to the NIGHT registered: 10,000 NIGHT reaches
+// DUST_MIN_REQUIREMENT in about 25 seconds, 1,000 NIGHT in about four minutes
+// and 300 NIGHT in about thirteen.
+export const DUST_GENERATION_TIMEOUT = 15 * 60_000;
+// How long to wait for NIGHT to show up in a wallet (an airdrop lands in seconds).
+export const FUND_TIMEOUT = 120_000;
 export const DUST_POLL_INTERVAL = 5_000;
-export const FUND_POLL_INTERVAL = 10_000;
 export const PROOF_TIMEOUT = 300_000;
 
 // Retry

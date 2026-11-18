@@ -10,7 +10,10 @@ interface ServiceStatus {
 async function checkService(name: string, url: string): Promise<ServiceStatus> {
 	try {
 		const response = await fetch(url, { signal: AbortSignal.timeout(5_000) });
-		return { name, url, healthy: response.ok };
+		// The indexer's /ready answers 503 while it catches up with the node.
+		return response.ok
+			? { name, url, healthy: true }
+			: { name, url, healthy: false, error: `HTTP ${String(response.status)}` };
 	} catch (err) {
 		return {
 			name,

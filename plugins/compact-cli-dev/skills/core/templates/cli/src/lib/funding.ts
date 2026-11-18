@@ -1,6 +1,7 @@
-import { unshieldedToken } from "@midnight-ntwrk/midnight-js-protocol/v9";
 import {
+	type FacadeState,
 	MidnightBech32m,
+	Token,
 	UnshieldedAddress,
 	type UnshieldedKeystore,
 	type UtxoWithMeta,
@@ -13,22 +14,37 @@ import {
 	DUST_GENERATION_TIMEOUT,
 	DUST_MIN_REQUIREMENT,
 	DUST_POLL_INTERVAL,
-	FUND_POLL_INTERVAL,
+	FUND_TIMEOUT,
 	GENESIS_SEED,
 	TX_TTL_SECONDS,
 } from "./constants.js";
 import { withSpinner } from "./progress.js";
-import { buildFacade, waitForSettled } from "./wallet.js";
+import { buildFacade, isSettled, waitForSettled } from "./wallet.js";
 
-const NIGHT = unshieldedToken().raw;
+const NIGHT = Token.night;
 
-export async function waitForFunds(facade: WalletFacade): Promise<bigint> {
+export function nightBalance(state: FacadeState): bigint {
+	return state.unshielded.balances[NIGHT] ?? 0n;
+}
+
+// Wait until the wallet holds at least `minimum` NIGHT. Pass the balance you
+// expect after a transfer, so an older balance doesn't count as the new funds.
+export async function waitForFunds(facade: WalletFacade, minimum = 1n): Promise<bigint> {
 	return Rx.firstValueFrom(
 		facade.state().pipe(
-			Rx.throttleTime(FUND_POLL_INTERVAL, undefined, { leading: true, trailing: true }),
-			Rx.filter((s) => s.isSynced && s.protocol._tag === "Settled"),
-			Rx.map((s) => s.unshielded.balances[NIGHT] ?? 0n),
-			Rx.filter((balance) => balance > 0n),
+			Rx.filter(isSettled),
+			Rx.map(nightBalance),
+			Rx.filter((balance) => balance >= minimum),
+			Rx.timeout({
+				first: FUND_TIMEOUT,
+				with: () =>
+					Rx.throwError(
+						() =>
+							new Error(
+								`No NIGHT arrived within ${String(FUND_TIMEOUT / 1000)} s (expected at least ${minimum.toString()}).`,
+							),
+					),
+			}),
 		),
 	);
 }
@@ -47,7 +63,16 @@ export async function waitForDust(
 		]).pipe(
 			Rx.map(([s]) => s.dust.balance(new Date())),
 			Rx.filter((balance) => balance >= minimum),
-			Rx.timeout({ first: DUST_GENERATION_TIMEOUT }),
+			Rx.timeout({
+				first: DUST_GENERATION_TIMEOUT,
+				with: () =>
+					Rx.throwError(
+						() =>
+							new Error(
+								`DUST is still accruing: below ${minimum.toString()} specks after ${String(DUST_GENERATION_TIMEOUT / 60_000)} minutes. The registration is on chain; check dust:status and retry later.`,
+							),
+					),
+			}),
 		),
 	);
 }
@@ -56,7 +81,7 @@ export async function airdropFromGenesis(targetAddress: string, amount: bigint):
 	return withSpinner("Airdropping from genesis wallet...", async () => {
 		const genesis = await buildFacade(GENESIS_SEED);
 		try {
-			await waitForFunds(genesis.facade);
+			await waitForFunds(genesis.facade, amount);
 
 			// Addresses are branded types: decode the bech32m string into a typed
 			// UnshieldedAddress for the transfer output.

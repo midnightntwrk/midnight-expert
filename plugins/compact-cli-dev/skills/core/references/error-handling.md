@@ -20,17 +20,33 @@ function messageChain(err: unknown): string[] {
   let current: unknown = err;
   for (let depth = 0; current !== undefined && current !== null && depth < 8; depth++) {
     messages.push(current instanceof Error ? current.message : String(current));
+    // The wallet SDK's submitTransaction rejects with an AggregateError whose
+    // first error is the real one.
+    if (current instanceof AggregateError) {
+      for (const inner of current.errors) messages.push(...messageChain(inner));
+    }
     current = current instanceof Error ? current.cause : undefined;
   }
   return messages;
 }
 
 export function classifyError(err: unknown): ClassifiedError {
-  const chain = messageChain(err);
-  const message = chain.join("\n  caused by: ");
-  const lower = message.toLowerCase();
+  const chain = messageChain(err).map((m) => m.toLowerCase());
+  const message = messageChain(err).join("\n  caused by: ");
+  // Each rule is matched against one message at a time.
+  const anyMessage = (test: (lower: string) => boolean) => chain.some(test);
 
-  if (lower.includes("dust") || lower.includes("insufficient fee")) {
+  // Unreachable services first: a wrapper that mentions DUST can sit on top of
+  // an indexer or node that is simply down.
+  if (anyMessage((lower) => lower.includes("econnrefused") && lower.includes("6300"))) {
+    return { code: ErrorCode.SERVICE_DOWN, message: "Proof server is not reachable at localhost:6300.", action: `Run \`${CLI_NAME} devnet:start\` to start all services.` };
+  }
+
+  if (anyMessage((lower) => lower.includes("no unregistered night") || lower.includes("no night arrived"))) {
+    return { code: ErrorCode.NIGHT_REQUIRED, message, action: `The wallet has no NIGHT. Run \`${CLI_NAME} wallet:fund <wallet>\` first.` };
+  }
+
+  if (anyMessage((lower) => lower.includes("could not balance dust") || lower.includes("insufficient dust") /* ... */)) {
     return {
       code: ErrorCode.DUST_REQUIRED,
       message,
@@ -48,9 +64,9 @@ export function classifyError(err: unknown): ClassifiedError {
 }
 ```
 
-Classification works by substring matching on the lowercased error messages. The first matching pattern wins.
+Classification works by substring matching on the lowercased error messages, one message at a time, so words from two unrelated messages in the chain can't combine into a match. The first matching rule wins, and unreachable services are checked first.
 
-Midnight.js 5 wraps a provider's failure in a `ProviderFailedError` whose own message is generic ("balanceTx rejected the transaction. The provider's own failure is on `cause` ..."). The wallet's actual error, such as `Insufficient Funds: could not balance dust`, is on `cause`, so `messageChain()` walks the `cause` chain and the classifier matches against every message in it.
+Midnight.js 5 wraps a provider's failure in a `ProviderFailedError` whose own message is generic ("balanceTx rejected the transaction. The provider's own failure is on `cause` ..."). The wallet's actual error, such as `Insufficient Funds: could not balance dust`, is on `cause`, so `messageChain()` walks the `cause` chain, and the errors inside an `AggregateError`, and the classifier matches against every message in it.
 
 ---
 
@@ -58,7 +74,8 @@ Midnight.js 5 wraps a provider's failure in a `ProviderFailedError` whose own me
 
 | Code | Triggers When | Suggested Action |
 |------|--------------|-----------------|
-| `DUST_REQUIRED` | A message in the chain contains "dust" or "insufficient fee" | Check `dust:status <wallet>`; register NIGHT or wait for DUST to accrue |
+| `NIGHT_REQUIRED` | No unregistered NIGHT to register, or no NIGHT arrived in time | Run `wallet:fund <wallet>` |
+| `DUST_REQUIRED` | A message says the wallet couldn't balance DUST, or that DUST is still accruing | Check `dust:status <wallet>`; register NIGHT or wait for DUST to accrue |
 | `SERVICE_DOWN` | Connection refused to port 6300 (proof server) | Run `devnet:start` |
 | `SERVICE_DOWN` | Connection refused to port 8088 (indexer) or 9944 (node) | Run `devnet:status` to check services |
 | `CONTRACT_NOT_FOUND` | Message contains "contract" and "not found" | Verify contract address and devnet status |
@@ -70,6 +87,7 @@ Midnight.js 5 wraps a provider's failure in a `ProviderFailedError` whose own me
 
 ```typescript
 export enum ErrorCode {
+  NIGHT_REQUIRED = "NIGHT_REQUIRED",
   DUST_REQUIRED = "DUST_REQUIRED",
   SERVICE_DOWN = "SERVICE_DOWN",
   CONTRACT_NOT_FOUND = "CONTRACT_NOT_FOUND",
@@ -140,7 +158,8 @@ In normal mode, the `this.error()` call prints the formatted string and exits wi
 
 | Error Code | CLI Action |
 |------------|-----------|
-| `DUST_REQUIRED` | `dust:register <wallet>` |
+| `NIGHT_REQUIRED` | `wallet:fund <wallet>` |
+| `DUST_REQUIRED` | `dust:status <wallet>`, then `dust:register <wallet>` or wait |
 | `SERVICE_DOWN` (proof server) | `devnet:start` |
 | `SERVICE_DOWN` (indexer/node) | `devnet:status` |
 | `CONTRACT_NOT_FOUND` | Verify address, check `devnet:status` |
@@ -170,14 +189,14 @@ export enum ErrorCode {
 }
 
 export function classifyError(err: unknown): ClassifiedError {
-  const chain = messageChain(err);
-  const message = chain.join("\n  caused by: ");
-  const lower = message.toLowerCase();
+  const chain = messageChain(err).map((m) => m.toLowerCase());
+  const message = messageChain(err).join("\n  caused by: ");
+  const anyMessage = (test: (lower: string) => boolean) => chain.some(test);
 
   // ... existing patterns ...
 
   // Add new pattern before the UNKNOWN fallback:
-  if (lower.includes("proof") && lower.includes("timeout")) {
+  if (anyMessage((lower) => lower.includes("proof") && lower.includes("timeout"))) {
     return {
       code: ErrorCode.PROOF_TIMEOUT,
       message,
@@ -194,6 +213,6 @@ export function classifyError(err: unknown): ClassifiedError {
 ```
 
 Pattern matching tips:
-- Use `lower.includes()` for substring matching (case-insensitive via the lowercased message)
+- Wrap each condition in `anyMessage((lower) => ...)`, which tests one lowercased message of the chain at a time
 - Combine multiple conditions with `&&` for specificity (e.g., port number + "econnrefused")
 - Place more specific patterns before broader ones — first match wins

@@ -41,7 +41,7 @@ src/
   base-command.ts          Shared base command (--json, error handling, welcome banner)
   lib/
     wallet.ts              HD wallet derivation, WalletFacade, persistence
-    providers.ts           6-provider bundle factory
+    providers.ts           provider bundle factory
     funding.ts             Genesis airdrop, DUST registration, balance polling
     contract.ts            CompiledContract loading, deploy, join, persistence
     config.ts              Network config (DEVNET_CONFIG)
@@ -131,7 +131,7 @@ The `templates/cli/` directory contains a complete, production-ready scaffolding
 | Reference | When to Consult |
 |-----------|-----------------|
 | `references/oclif-patterns.md` | Understanding command structure, BaseCommand, `--json`, topic grouping |
-| `references/wallet-management.md` | HD derivation, WalletFacade, seed format, persistence, key functions |
-| `references/provider-setup.md` | The 6-provider bundle, `createProviders()`, network config |
+| `references/wallet-management.md` | seed derivation, WalletFacade, seed format, persistence, key functions |
+| `references/provider-setup.md` | The provider bundle, `createProviders()`, network config |
 | `references/contract-lifecycle.md` | CompiledContract, deploy, join, calling circuits, querying state |
 | `references/error-handling.md` | Error classification, ErrorCode enum, formatError, adding new codes |
