@@ -21,6 +21,7 @@ export function App() {
               <h1 className="text-lg font-semibold">{{PROJECT_NAME}}</h1>
               <div className="flex items-center gap-3">
                 <NetworkBadge />
+                {/* Pass proofServerUrl when createProviders uses proving: { mode: "local" } */}
                 <ProofServerStatus />
                 <WalletWidget />
               </div>

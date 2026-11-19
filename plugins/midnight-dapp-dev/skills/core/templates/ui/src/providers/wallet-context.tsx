@@ -5,7 +5,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { ConnectedAPI, InitialAPI } from "@midnight-ntwrk/dapp-connector-api";
+import type { ConnectedAPI, InitialAPI } from "@midnightntwrk/dapp-connector-api";
 
 const STORAGE_KEY = "{{PROJECT_NAME}}_wallet_autoconnect";
 
@@ -68,7 +68,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const api = await wallet.connect("undeployed");
+      // The network the wallet must be on: "undeployed" (local devnet),
+      // "preview", "preprod" or "mainnet". Set VITE_NETWORK_ID in .env.
+      const api = await wallet.connect(import.meta.env.VITE_NETWORK_ID || "undeployed");
       const config = await api.getConfiguration();
       const addresses = await api.getShieldedAddresses();
 

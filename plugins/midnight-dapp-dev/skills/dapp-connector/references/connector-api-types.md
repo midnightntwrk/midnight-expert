@@ -1,6 +1,8 @@
 # DApp Connector API Type Reference
 
-Complete type definitions for the Midnight DApp Connector API v4.0.1. For usage patterns and React/Next.js integration, see the main `dapp-connector` skill. For building SDK providers from these types, see `references/browser-providers.md`.
+Complete type definitions for the Midnight DApp Connector API, `@midnightntwrk/dapp-connector-api` 4.1.0. This is the npm scope Midnight.js 5 depends on. The older `@midnight-ntwrk/dapp-connector-api` scope also reaches 4.1.0, but import from `@midnightntwrk` so your types match the ones Midnight.js uses.
+
+Compared with 4.0.1, version 4.1.0 adds the `InsufficientFunds` error code, adds an optional `scheme` field to `Signature`, and types `window.midnight` through a global `var midnight` declaration instead of a `Window` interface augmentation. Every method signature is unchanged. For usage patterns and React/Next.js integration, see the main `dapp-connector` skill. For building SDK providers from these types, see `references/browser-providers.md`.
 
 ## Core Types
 
@@ -9,27 +11,27 @@ Complete type definitions for the Midnight DApp Connector API v4.0.1. For usage 
 Injected by the wallet extension at `window.midnight.{walletId}`:
 
 ```typescript
-interface InitialAPI {
-  /** Wallet display name */
-  readonly name: string;
+type InitialAPI = {
+  /** Reverse DNS identifier (e.g., "com.example.wallet"). Treat it like a user agent string. */
+  rdns: string;
 
-  /** Wallet icon URL (data URI or HTTPS) */
-  readonly icon: string;
+  /** Wallet display name. Sanitize before display (render it as a text node). */
+  name: string;
 
-  /** Semver version of the DApp Connector API */
-  readonly apiVersion: string;
+  /** Wallet icon URL (hosted or base64 data URL). Display it through an `img` tag. */
+  icon: string;
 
-  /** Reverse DNS identifier (e.g., "io.midnight.lace") */
-  readonly rdns: string;
+  /** Version of @midnightntwrk/dapp-connector-api the wallet implements, e.g. "4.1.0" */
+  apiVersion: string;
 
   /**
-   * Initiate wallet connection.
-   * @param networkId - Target network: "undeployed", "preview", or "preprod"
+   * Initiate wallet connection, hinting the desired network.
+   * @param networkId - "undeployed", "preview", "preprod", or "mainnet"
    * @returns ConnectedAPI on success
    * @throws APIError with code "PermissionRejected" if user denies
    */
-  connect(networkId: string): Promise<ConnectedAPI>;
-}
+  connect: (networkId: string) => Promise<ConnectedAPI>;
+};
 ```
 
 ### ConnectedAPI
@@ -106,18 +108,18 @@ interface WalletConnectedAPI {
 
   /**
    * Get paginated transaction history.
-   * @param page - Zero-based page index
-   * @param size - Number of entries per page
+   * @param pageNumber - Page index
+   * @param pageSize - Number of entries per page
    */
-  getTxHistory(page: number, size: number): Promise<HistoryEntry[]>;
+  getTxHistory(pageNumber: number, pageSize: number): Promise<HistoryEntry[]>;
 
   /**
    * Initialize a transfer transaction with the desired outputs. The wallet pays
    * fees by default (`payFees: true`).
    *
    * The returned `tx` is a SERIALIZED transaction (hex string), NOT a Ledger
-   * `Transaction` object — see the note under "Transaction values are serialized
-   * hex strings" below.
+   * `Transaction` object. See "Transaction values are serialized hex strings"
+   * below.
    * @param desiredOutputs - Outputs to create
    * @param options - Optional transfer parameters
    */
@@ -321,27 +323,27 @@ type TxStatus =
 
 The transaction methods above (`makeTransfer`, `makeIntent`,
 `balanceUnsealedTransaction`, `balanceSealedTransaction`, `submitTransaction`)
-do **not** exchange Ledger `Transaction` objects — the connector API speaks
+do **not** exchange Ledger `Transaction` objects. The connector API speaks
 **serialized transactions as hex strings**. The DApp Connector API package does
-not export `Transaction`, `UnbalancedTransaction`, `BalancedTransaction`,
-`SealedTransaction`, or similar object types; those live in the Ledger API
-(`@midnight-ntwrk/ledger-v<N>`).
+not export `Transaction` or similar object types; in a DApp, import the ledger
+from `@midnight-ntwrk/midnight-js-protocol/v9`. Every public network runs
+ledger 9.
 
-Convert between the wallet's hex strings and the SDK's `Transaction` objects with
-the same adapter idiom used by the provider adapters (see
-`references/browser-providers.md`):
+Convert between the wallet's hex strings and ledger 9 transactions with the same
+idiom the provider adapters use (see `references/browser-providers.md`). In those
+adapters, Midnight.js hands you transaction handles; `handle.serialize()` gives
+the bytes:
 
 ```typescript
 import { toHex, fromHex } from "@midnight-ntwrk/midnight-js-utils";
-import { Transaction } from "@midnight-ntwrk/ledger-v8";
+import { Transaction } from "@midnight-ntwrk/midnight-js-protocol/v9";
 
-// SDK Transaction object -> hex string the wallet understands
+// transaction bytes -> hex string the wallet understands
 await api.submitTransaction(toHex(tx.serialize()));
 
-// hex string from the wallet -> SDK Transaction object
+// hex string from the wallet -> ledger 9 Transaction
 const { tx: balancedHex } = await api.balanceUnsealedTransaction(
   toHex(unsealedTx.serialize()),
-  {},
 );
 // A balanced/sealed tx is Transaction<SignatureEnabled, Proof, Binding>;
 // pass the three instance markers for those type parameters.
@@ -383,6 +385,13 @@ type DesiredInput = {
 ```typescript
 interface Signature {
   /**
+   * Signature scheme, added in 4.1.0. Optional for backward compatibility:
+   * when it is absent, treat the signature as "schnorr_bip340". A future major
+   * version will make it mandatory, so handle both values.
+   */
+  scheme?: "ecdsa_secp256k1_sha256" | "schnorr_bip340";
+
+  /**
    * The data that was signed (echoed back from the input, in the original encoding).
    * Useful for verifying what was signed without re-parsing the request.
    */
@@ -393,13 +402,19 @@ interface Signature {
    * prepends a domain-separation prefix to the bytes before signing — the
    * standard guard that keeps a signed message from being interpreted as a
    * transaction. The exact prefix format is a wallet implementation detail and
-   * is NOT specified by `@midnight-ntwrk/dapp-connector-api`, whose `signData`
+   * is NOT specified by `@midnightntwrk/dapp-connector-api`, whose `signData`
    * JSDoc only states the data "will be prepended with right prefix"; do not
    * depend on a specific prefix string.
+   *
+   * Encoded as the big-endian scalars `r` and `s`, each padded to 32 bytes
+   * (64 bytes total for either scheme).
    */
   signature: string;
 
-  /** The verifying key corresponding to the signing key used. */
+  /**
+   * The verifying key. 32 bytes (BIP-340 x-only) for "schnorr_bip340",
+   * 33 bytes (SEC1 compressed) for "ecdsa_secp256k1_sha256".
+   */
   verifyingKey: string;
 }
 
@@ -423,7 +438,7 @@ interface SignDataOptions {
 ### APIError
 
 ```typescript
-interface APIError {
+type APIError = Error & {
   /** Discriminant field -- always "DAppConnectorAPIError" */
   type: "DAppConnectorAPIError";
 
@@ -432,15 +447,18 @@ interface APIError {
 
   /** Human-readable error description */
   reason: string;
-}
+};
 
 type ErrorCode =
   | "Disconnected"       // Wallet connection lost
   | "InternalError"      // Wallet-side internal failure
   | "InvalidRequest"     // Malformed request from DApp
   | "PermissionRejected" // User denied the permission prompt
-  | "Rejected";          // User rejected the specific operation
+  | "Rejected"           // User rejected the specific operation
+  | "InsufficientFunds"; // Well-formed request, but the wallet lacks the balance (4.1.0)
 ```
+
+The package also exports the codes as a runtime constant, `ErrorCodes` (e.g. `ErrorCodes.InsufficientFunds`).
 
 ### Error Checking Pattern
 
@@ -469,18 +487,18 @@ try {
 
 ## Window Type Augmentation
 
-The package already augments the global `Window` type — importing anything from `@midnight-ntwrk/dapp-connector-api` pulls in its bundled declaration (`window.midnight?: { [key: string]: InitialAPI }`), so most projects need **no** manual augmentation.
+The package types the global for you. Since 4.1.0 it declares `var midnight: { [key: string]: InitialAPI } | undefined` in the global scope (earlier versions augmented `Window` instead), so once anything is imported from `@midnightntwrk/dapp-connector-api`, both `window.midnight` and `globalThis.midnight` are typed. Most projects need **no** manual declaration.
 
-If you do declare your own (e.g. to attach documentation), it must use the **same index signature as the package** — `[key: string]: InitialAPI`, NOT `InitialAPI | undefined` — to avoid a declaration-merge conflict (which surfaces as `TS2717: Subsequent property declarations must have the same type` on recent TypeScript):
+The UI template's `vite-env.d.ts` adds no `Window` declaration and relies on the package's global. If you add your own, use the same index signature as the package, `[key: string]: InitialAPI`, so `window.midnight` has one consistent type:
 
 ```typescript
 // types/midnight.d.ts
-import type { InitialAPI } from "@midnight-ntwrk/dapp-connector-api";
+import type { InitialAPI } from "@midnightntwrk/dapp-connector-api";
 
 declare global {
   interface Window {
     // Each wallet installs its InitialAPI under its own key. The DApp Connector
-    // API is CAIP-372-compatible, so keys are UUIDs — do not assume a fixed key;
+    // API is CAIP-372-compatible, so keys are UUIDs. Do not assume a fixed key;
     // enumerate `Object.values(window.midnight)` and match by `name`/`rdns`.
     // (Lace also exposes a Lace-specific convenience alias at `mnLace`.)
     midnight?: { [walletId: string]: InitialAPI };

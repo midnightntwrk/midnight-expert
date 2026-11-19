@@ -13,9 +13,9 @@ description: >-
 version: 0.1.0
 ---
 
-# DApp Connector API v4.0.1
+# DApp Connector API v4.1.0
 
-This skill covers the Midnight DApp Connector API for browser-based wallet integration: connecting to the Lace wallet extension, using the ConnectedAPI for transactions and balances, handling errors, and building React 19.x / Next.js 16.x DApps. For Node.js CLI deployment with WalletFacade and HD keys, see `midnight-dapp-dev:midnight-sdk`. For contract runtime and witness types, see `compact-core:compact-witness-ts`. For local development network setup, see `midnight-tooling:devnet`.
+This skill covers the Midnight DApp Connector API (`@midnightntwrk/dapp-connector-api` 4.1.0, the npm scope Midnight.js 5 depends on) for browser-based wallet integration: connecting to the Lace wallet extension, using the ConnectedAPI for transactions and balances, handling errors, and building React 19.x / Next.js 16.x DApps. For Node.js CLI deployment with WalletFacade and HD keys, see `midnight-dapp-dev:midnight-sdk`. For contract runtime and witness types, see `compact-core:compact-witness-ts`. For local development network setup, see `midnight-tooling:devnet`.
 
 ## Connection Lifecycle
 
@@ -25,7 +25,7 @@ window.midnight[walletId]  ->  InitialAPI.connect(networkId)  ->  ConnectedAPI
 ```
 
 1. **Detect** -- Enumerate `Object.values(window.midnight)` and match by `name`/`rdns`. Each wallet installs its `InitialAPI` under its own key (a UUID — the API is CAIP-372-compatible), so do not assume a fixed key. Lace also exposes a convenience alias at `window.midnight.mnLace`, but relying on it alone misses other wallets. See the `findWallets()` helper and window augmentation in `references/connector-api-types.md`.
-2. **Connect** -- Call `connect(networkId)` with the target network (`"undeployed"`, `"preview"`, or `"preprod"`)
+2. **Connect** -- Call `connect(networkId)` with the target network (`"undeployed"`, `"preview"`, `"preprod"`, or `"mainnet"`)
 3. **Interact** -- Use the returned `ConnectedAPI` for addresses, balances, transfers, and proving
 
 ## InitialAPI
@@ -33,7 +33,7 @@ window.midnight[walletId]  ->  InitialAPI.connect(networkId)  ->  ConnectedAPI
 Each wallet extension injects an `InitialAPI` object under its own key in `window.midnight` — a per-wallet UUID, since the API is CAIP-372-compatible. Discover wallets by enumerating and matching on `name`/`rdns`, not by assuming a key. Lace also installs a convenience alias at `window.midnight.mnLace` (Lace-specific, not part of the normative spec):
 
 ```typescript
-import type { InitialAPI } from "@midnight-ntwrk/dapp-connector-api";
+import type { InitialAPI } from "@midnightntwrk/dapp-connector-api";
 
 // Robust: enumerate every injected wallet (see findWallets() in references/connector-api-types.md)
 const wallets: InitialAPI[] = Object.values(window.midnight ?? {}).filter(
@@ -83,10 +83,10 @@ Call `hintUsage` to pre-declare which methods the DApp intends to use. This allo
 | `getShieldedBalances()` | `Record<string, bigint>` | Token type to balance mapping |
 | `getUnshieldedBalances()` | `Record<string, bigint>` | Token type to balance mapping |
 | `getDustBalance()` | `{balance, cap}` | Current balance and max cap from NIGHT staking |
-| `getTxHistory(page, size)` | `HistoryEntry[]` | `txHash`, `txStatus` per entry |
+| `getTxHistory(pageNumber, pageSize)` | `HistoryEntry[]` | `txHash`, `txStatus` per entry |
 | `makeTransfer(outputs, options?)` | `{tx}` | Create a balanced transfer transaction |
 | `makeIntent(inputs, outputs, options)` | `{tx}` | Create an unbalanced intent for swaps |
-| `balanceUnsealedTransaction(tx, options?)` | `{tx}` | Balance a transaction from a contract call |
+| `balanceUnsealedTransaction(tx, options?)` | `{tx}` | Balance a transaction from a contract call (adds fees, signs, binds) |
 | `balanceSealedTransaction(tx, options?)` | `{tx}` | Balance a sealed transaction for swap completion |
 | `submitTransaction(tx)` | `void` | Submit a balanced and proven transaction |
 | `signData(data, options)` | `Signature` | Sign arbitrary data with the unshielded key |
@@ -103,7 +103,9 @@ interface Configuration {
   indexerUri: string;       // GraphQL HTTP endpoint
   indexerWsUri: string;     // GraphQL WebSocket endpoint
   substrateNodeUri: string; // Substrate node RPC
-  networkId: string;        // "undeployed", "preview", or "preprod"
+  networkId: string;        // "undeployed", "preview", "preprod", or "mainnet"
+  /** @deprecated Use getProvingProvider instead */
+  proverServerUri?: string;
 }
 ```
 
@@ -114,18 +116,19 @@ Use these values to configure SDK providers instead of hardcoding endpoints. Thi
 All DApp Connector errors use a discriminated type (not class instances):
 
 ```typescript
-interface APIError {
+type APIError = Error & {
   type: "DAppConnectorAPIError";
   code: ErrorCode;
   reason: string;
-}
+};
 
 type ErrorCode =
   | "Disconnected"
   | "InternalError"
   | "InvalidRequest"
   | "PermissionRejected"
-  | "Rejected";
+  | "Rejected"
+  | "InsufficientFunds"; // added in 4.1.0
 ```
 
 Check errors by type field, not `instanceof`:
@@ -157,6 +160,9 @@ try {
       case "Rejected":
         console.error("Request rejected:", apiError.reason);
         break;
+      case "InsufficientFunds":
+        console.error("Not enough funds in the wallet:", apiError.reason);
+        break;
     }
   }
 }
@@ -176,23 +182,25 @@ try {
 
 ### Network Selection
 
-Lace supports three networks:
+The network IDs a DApp can ask for:
 
 | Network | Network ID | Use Case |
 |---------|-----------|----------|
 | Undeployed | `undeployed` | Local development with Docker containers |
 | Preview | `preview` | Public testnet for integration testing |
 | Preprod | `preprod` | Pre-production testing |
+| Mainnet | `mainnet` | Production |
+
+Every public network (Preview, Preprod, Mainnet) runs ledger 9, so the providers below only handle ledger 9 transactions. The template reads the network to connect to from `import.meta.env.VITE_NETWORK_ID` and defaults to `"undeployed"`.
 
 Select the network in Lace settings. The "Undeployed" network connects to `localhost` endpoints matching the local Docker stack.
 
 ### Funding
 
 1. Copy the unshielded address from Lace
-2. Navigate to the network faucet (e.g., `https://faucet.preview.midnight.network`)
-3. Request tDUST tokens
-4. Delegate NIGHT tokens in Lace to begin DUST generation
-5. Wait for DUST to accumulate (used for transaction fees)
+2. Request tNIGHT from the network's faucet (Preview: `https://midnight-tmnight-preview.nethermind.dev/`, Preprod: `https://midnight-tmnight-preprod.nethermind.dev/`)
+3. Register the tNIGHT for DUST generation in Lace. DUST is not a token you request; registered NIGHT generates it over time
+4. Wait for DUST to accrue before transacting (it pays the fees)
 
 ### Authorization Modes
 
@@ -208,7 +216,7 @@ When a DApp calls `connect()`, Lace prompts the user:
 ```typescript
 "use client";
 import { useState, useCallback, useEffect } from "react";
-import type { InitialAPI, ConnectedAPI } from "@midnight-ntwrk/dapp-connector-api";
+import type { InitialAPI, ConnectedAPI } from "@midnightntwrk/dapp-connector-api";
 
 interface WalletState {
   connectedApi: ConnectedAPI | null;
@@ -263,7 +271,7 @@ export function useWalletConnection() {
 ```typescript
 "use client";
 import { useState, useEffect } from "react";
-import type { ConnectedAPI } from "@midnight-ntwrk/dapp-connector-api";
+import type { ConnectedAPI } from "@midnightntwrk/dapp-connector-api";
 
 export function WalletBalances({ api }: { api: ConnectedAPI }) {
   const [shielded, setShielded] = useState<Record<string, bigint>>({});
@@ -344,72 +352,66 @@ Instead of hardcoding network endpoints, read them from the wallet's configurati
 ```typescript
 "use client";
 
-import type { ConnectedAPI } from "@midnight-ntwrk/dapp-connector-api";
-import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
+import type { ConnectedAPI } from "@midnightntwrk/dapp-connector-api";
+import {
+  indexerPublicDataProvider,
+  type IndexerProviderConfig,
+} from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
 
 async function createProvidersFromWallet(api: ConnectedAPI) {
   const config = await api.getConfiguration();
 
-  const publicDataProvider = indexerPublicDataProvider(
-    config.indexerUri,
-    config.indexerWsUri,
-  );
+  // Pass the browser WebSocket explicitly. The default comes from isomorphic-ws,
+  // whose browser build has no named export, so it is undefined once bundled.
+  // Call publicDataProvider.dispose() when the wallet disconnects.
+  const publicDataProvider = indexerPublicDataProvider({
+    queryURL: config.indexerUri,
+    subscriptionURL: config.indexerWsUri,
+    webSocket: globalThis.WebSocket as unknown as IndexerProviderConfig["webSocket"],
+  });
 
-  // Use config.substrateNodeUri for node connections
-  // Use config.networkId for setNetworkId()
+  // Midnight.js 5 has no global network ID (setNetworkId is gone). Put
+  // config.networkId in the providers' `config: { networkId, ttlSeconds }`.
   return { publicDataProvider, networkId: config.networkId };
 }
 ```
 
 ## Building MidnightProviders from DApp Connector
 
-In the browser, the DApp Connector replaces the Node.js WalletFacade. The `ConnectedAPI` provides the wallet and midnight provider capabilities:
+In the browser, the DApp Connector replaces the Node.js WalletFacade. `dappConnectorWalletProviders(api)` from `@midnight-ntwrk/midnight-js-dapp-connector-proof-provider` builds both providers from the connector. Its `balanceTx` sends the transaction's bytes to `balanceUnsealedTransaction` (the wallet adds DUST fee inputs, signs and binds; the connector takes no TTL, so the wallet picks it), and its `submitTx` reads the transaction ID before handing the bytes to `submitTransaction`. Both serve ledger 8 and ledger 9.
+
+It returns the connector's keys as the wallet reports them, in Bech32m, while the ledger works with hex, so override the two key getters:
 
 ```typescript
-import type { WalletProvider, MidnightProvider } from "@midnight-ntwrk/midnight-js-types";
-import type { ConnectedAPI } from "@midnight-ntwrk/dapp-connector-api";
-import { toHex, fromHex } from "@midnight-ntwrk/midnight-js-utils";
-import { Transaction } from "@midnight-ntwrk/ledger-v8";
+import { dappConnectorWalletProviders } from "@midnight-ntwrk/midnight-js-dapp-connector-proof-provider";
+import type { MidnightProvider, WalletProvider } from "@midnight-ntwrk/midnight-js-types";
+import type { ConnectedAPI } from "@midnightntwrk/dapp-connector-api";
+import { parseCoinPublicKeyToHex, parseEncPublicKeyToHex } from "@midnight-ntwrk/midnight-js-utils";
 
-async function createWalletProvider(api: ConnectedAPI): Promise<WalletProvider> {
+async function createWalletProviders(
+  api: ConnectedAPI,
+): Promise<{ walletProvider: WalletProvider; midnightProvider: MidnightProvider }> {
+  const { networkId } = await api.getConfiguration();
+  const connector = await dappConnectorWalletProviders(api);
+
   const { shieldedCoinPublicKey, shieldedEncryptionPublicKey } =
     await api.getShieldedAddresses();
+  const coinPublicKey = parseCoinPublicKeyToHex(shieldedCoinPublicKey, networkId);
+  const encryptionPublicKey = parseEncPublicKeyToHex(shieldedEncryptionPublicKey, networkId);
 
   return {
-    getCoinPublicKey: () => shieldedCoinPublicKey,
-    getEncryptionPublicKey: () => shieldedEncryptionPublicKey,
-    // WalletProvider.balanceTx is (tx: UnboundTransaction, ttl?: Date) =>
-    // Promise<FinalizedTransaction>. balanceUnsealedTransaction takes/returns
-    // serialized hex strings, so serialize in and deserialize out.
-    // options is `{ payFees?: boolean }`; an empty `{}` uses the defaults.
-    balanceTx: async (tx, _ttl) => {
-      const { tx: balancedHex } = await api.balanceUnsealedTransaction(
-        toHex(tx.serialize()),
-        {},
-      );
-      return Transaction.deserialize(
-        "signature",
-        "proof",
-        "binding",
-        fromHex(balancedHex),
-      );
+    walletProvider: {
+      supportedEras: connector.walletProvider.supportedEras,
+      balanceTx: (tx, ttl) => connector.walletProvider.balanceTx(tx, ttl),
+      getCoinPublicKey: () => coinPublicKey,
+      getEncryptionPublicKey: () => encryptionPublicKey,
     },
-  };
-}
-
-function createMidnightProvider(api: ConnectedAPI): MidnightProvider {
-  return {
-    submitTx: async (tx) => {
-      // submitTransaction takes a serialized hex string and returns void;
-      // recover the tx id from the transaction's identifiers().
-      await api.submitTransaction(toHex(tx.serialize()));
-      return tx.identifiers()[0];
-    },
+    midnightProvider: connector.midnightProvider,
   };
 }
 ```
 
-For the complete browser provider assembly including `FetchZkConfigProvider` and in-memory private state, see `references/browser-providers.md`. For the full type reference of all DApp Connector interfaces, see `references/connector-api-types.md`.
+For the complete browser provider assembly including `FetchZkConfigProvider`, proving, the providers' `config` field and in-memory private state, see `references/browser-providers.md`. For the full type reference of all DApp Connector interfaces, see `references/connector-api-types.md`.
 
 ## Common Mistakes
 
@@ -419,8 +421,11 @@ For the complete browser provider assembly including `FetchZkConfigProvider` and
 | Using `instanceof` for error checking | Check `error.type === "DAppConnectorAPIError"` instead |
 | Hardcoding network endpoints | Use `getConfiguration()` to read the wallet's active endpoints |
 | Not handling `PermissionRejected` | Users can deny the connection prompt; always handle this error code |
-| Forgetting to fund the wallet | Transfer tDUST from faucet and delegate NIGHT for DUST generation before transacting |
+| Forgetting to fund the wallet | Get tNIGHT from the faucet and register it for DUST generation, then wait for DUST to accrue before transacting |
 | Using Brave without disabling shields | Brave Shields blocks extension injection; disable for the DApp origin |
+| Calling `setNetworkId()` | Gone in Midnight.js 5. Pass `config: { networkId, ttlSeconds }` in the providers, with `networkId` from `getConfiguration()` |
+| Returning the connector's Bech32m keys from `getCoinPublicKey` | Convert with `parseCoinPublicKeyToHex` / `parseEncPublicKeyToHex` from `@midnight-ntwrk/midnight-js-utils` |
+| Importing `@midnight-ntwrk/ledger-v8` | Import the ledger from `@midnight-ntwrk/midnight-js-protocol/v9` |
 
 ## Reference Files
 

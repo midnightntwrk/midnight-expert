@@ -4,7 +4,7 @@ Complete reference for the Midnight transaction lifecycle: from circuit call con
 
 ## Pipeline Overview
 
-Every contract interaction follows a five-stage pipeline:
+Every contract interaction follows a five-stage pipeline. Midnight.js 5 passes the transaction between stages as a handle tagged with its ledger era (`v9` on every network today), and checks before it starts that the proof, wallet and midnight providers all list that era in `supportedEras`:
 
 ```
 1. Build         2. Prove          3. Balance        4. Submit         5. Finalize
@@ -14,7 +14,7 @@ Every contract interaction follows a five-stage pipeline:
    CallTx()         .proveTx()        .balanceTx()      .submitTx()       (indexer confirms)
    |                |                 |                 |                 |
    v                v                 v                 v                 v
-   UnprovenTx  ->  ProvenTx     ->  BalancedTx   ->  TransactionId ->  FinalizedTxData
+   UnprovenTx  ->  UnboundTx    ->  FinalizedTx  ->  TransactionId ->  FinalizedTxRead
 ```
 
 ### Stage 1: Build (Create Unproven Transaction)
@@ -24,25 +24,27 @@ Constructs the transaction by executing the circuit logic and witness functions 
 ```typescript
 import { createUnprovenCallTx } from "@midnight-ntwrk/midnight-js-contracts";
 
-const unproven = await createUnprovenCallTx(
-  deployed,       // DeployedContract or FoundContract
-  providers,      // MidnightProviders bundle
-  "myCircuit",    // Circuit name (must match Compact export)
-  [arg1, arg2],   // Circuit arguments
-);
+const unproven = await createUnprovenCallTx(providers, {
+  compiledContract,               // the CompiledContract
+  contractAddress,
+  circuitId: "myCircuit",         // must match the Compact export
+  args: [arg1, arg2],             // omitted for a circuit with no arguments
+  privateStateId: PRIVATE_STATE_ID,
+});
 ```
 
 During this stage:
+- The current contract state and ledger parameters are read from the indexer
 - The circuit's Compact code is evaluated locally
 - Witness functions are called to supply private inputs
-- The private state is read and potentially updated
+- The private state is read through `privateStateProvider.forContract(contractAddress)` and potentially updated
 - An unproven transaction is constructed with all inputs and outputs
 
 The unproven transaction contains the full transaction structure but no ZK proof yet.
 
 ### Stage 2: Prove (Generate ZK Proof)
 
-The proof server generates a zero-knowledge proof that the circuit was executed correctly:
+The proof server (`midnightntwrk/proof-server:9.0.2` or later), or the connected wallet, generates a zero-knowledge proof that the circuit was executed correctly:
 
 ```typescript
 // Happens automatically in callTx, or manually:
@@ -65,15 +67,16 @@ The wallet adds fee inputs and change outputs to make the transaction valid:
 // Happens automatically in callTx, or manually:
 const finalized = await providers.walletProvider.balanceTx(
   unboundTx,  // the proven (unbound) transaction from proveTx
-  ttl,        // Optional: transaction time-to-live (Date)
+  ttl,        // Date; the framework passes providers.config.ttlSeconds from now
 );
 ```
 
 During this stage:
-- The wallet selects UTXOs to cover transaction fees
-- Fee inputs are added to the transaction
-- Change outputs are created for excess value
-- The transaction is signed with the wallet's keys
+- The wallet adds DUST inputs to cover the transaction fee
+- Any unshielded or shielded inputs and change outputs the transaction needs are added
+- The transaction is signed and bound
+
+In Node.js with wallet SDK 2 this is `facade.balanceUnboundTransaction(facade.adoptTransaction(tx.serialize(), "Unbound"), { ttl })`, then `facade.signRecipe(recipe, keystore.signDataAsync)` and `facade.finalizeRecipe(signed)`. In the browser it is `ConnectedAPI.balanceUnsealedTransaction`, which picks its own TTL. See `midnight-dapp-dev:midnight-sdk` for the full provider code.
 
 ### Stage 4: Submit (Send to Network)
 
@@ -92,11 +95,16 @@ The SDK watches the indexer for transaction confirmation:
 
 ```typescript
 // Happens automatically in callTx (blocks until confirmed)
-// Or watch manually via observable:
+// Or wait for one transaction yourself:
+const record = await providers.publicDataProvider.watchForTxData(txId, { maxWaitMs: 120_000 });
+record.status; // "SucceedEntirely" | "FailFallible" | "FailEntirely"
+
+// Or follow the contract's state:
 providers.publicDataProvider
   .contractStateObservable(contractAddress, { type: "latest" })
-  .subscribe((state) => {
-    // State updated after transaction finalized
+  .subscribe(({ value, blockHeight }) => {
+    // value is a ContractStateRead; decode with
+    // ledger(value.contractState.deserialize({ v9: ContractState }).data)
   });
 ```
 
@@ -109,7 +117,7 @@ The indexer monitors the blockchain and emits events when the transaction is inc
 ```typescript
 // All 5 stages in one call
 const txData = await deployed.callTx.myCircuit(arg1, arg2);
-// Returns: FinalizedCallTxData with txId, txHash, blockHeight
+// Returns: FinalizedCallTxData; txData.public has txId, txHash, blockHeight, status
 ```
 
 Advantages:
@@ -131,21 +139,27 @@ import {
   submitCallTxAsync,
 } from "@midnight-ntwrk/midnight-js-contracts";
 
-// Stage 1: Build
-const unproven = await createUnprovenCallTx(deployed, providers, "myCircuit", [arg1, arg2]);
+const options = {
+  compiledContract,
+  contractAddress,
+  circuitId: "myCircuit" as const,
+  args: [arg1, arg2],
+  privateStateId: PRIVATE_STATE_ID,
+};
 
-// Inspect unproven transaction here if needed
-console.log("Unproven tx created, circuit:", unproven.circuitId);
+// Stage 1 only: build, to inspect the result before submitting
+const unproven = await createUnprovenCallTx(providers, options);
+console.log("Next public state:", unproven.public.nextContractState);
 
-// Stages 2-5: Prove + Balance + Submit + Finalize
-const txData = await submitCallTx(providers, unproven);
+// Stages 1-5: Build + Prove + Balance + Submit + Finalize
+const txData = await submitCallTx(providers, options);
 
-// OR Stages 2-4 only: Prove + Balance + Submit (no finalization wait)
-const txId = await submitCallTxAsync(providers, unproven);
+// OR Stages 1-4: Build + Prove + Balance + Submit (no finalization wait)
+const { txId } = await submitCallTxAsync(providers, options);
 ```
 
 Advantages:
-- Inspect or modify the transaction between stages
+- Inspect the built transaction before submitting it
 - Choose whether to wait for finalization
 - Batch multiple unproven transactions before submission
 - Custom error handling per stage
@@ -157,7 +171,9 @@ Contract deployment follows a similar pipeline with a dedicated function:
 ```typescript
 import { deployContract } from "@midnight-ntwrk/midnight-js-contracts";
 
-// Performs all 5 stages for the deployment transaction
+// Performs all 5 stages for the deployment transaction.
+// compiledContract comes from CompiledContract.make(...) in
+// @midnight-ntwrk/midnight-js-protocol/v9/compact-js.
 const deployed = await deployContract(providers, {
   compiledContract,
   privateStateId: "myState",
@@ -175,7 +191,7 @@ deployed.deployTxData.public.blockHeight;
 ```
 
 The deployment transaction:
-1. Includes the contract bytecode and initial state
+1. Includes the initial contract state and the circuits' verifier keys
 2. Is proven (ZK proof that the constructor executed correctly)
 3. Is balanced (fees added)
 4. Is submitted and confirmed
@@ -185,19 +201,24 @@ The deployment transaction:
 
 | Stage | Error Type | Common Causes |
 |-------|-----------|---------------|
-| Build | Witness execution error | Private state missing, witness logic error, type mismatch |
-| Prove | Proof generation failure | Proof server not running, circuit too complex, timeout |
-| Balance | Balancing failure | Insufficient funds, no available UTXOs, wallet disconnected |
+| Build | Witness execution error, `EraMismatchError` | Private state missing, witness logic error, type mismatch; artifacts compiled with toolchain 0.31.x (ledger 8) |
+| Prove | Proof generation failure, `ProviderEraUnsupportedError` | Proof server not running or older than 9.0.2, circuit too complex, timeout; a provider that does not serve `v9` |
+| Balance | Balancing failure | Not enough DUST, wallet not synced, wallet disconnected |
 | Submit | Submission rejection | Invalid transaction, node unreachable, nonce conflict |
-| Finalize | Finalization timeout | Network congestion, transaction dropped, indexer lag |
+| Finalize | `TxFailedError`, `WatchTimeoutError` | Transaction failed on-chain; network congestion, transaction dropped, indexer lag |
 
 ```typescript
+import { EraMismatchError, TxFailedError } from "@midnight-ntwrk/midnight-js-contracts";
+
 try {
   const txData = await deployed.callTx.myCircuit(arg);
 } catch (error) {
-  if (error instanceof CallTxFailedError) {
-    // Transaction was submitted but failed on-chain
-    console.error("On-chain failure:", error.message);
+  if (error instanceof TxFailedError) {
+    // Transaction was submitted but failed on-chain; error.record has the details
+    console.error("On-chain failure:", error.record.status);
+  } else if (error instanceof EraMismatchError) {
+    // Wrong ledger era, e.g. contract compiled with toolchain 0.31.x
+    console.error("Era mismatch:", error.reason);
   } else if (error.message?.includes("proof")) {
     // Proof generation failed
     console.error("Proving error:", error.message);
@@ -233,22 +254,17 @@ Multiple transactions can be in-flight simultaneously using async variants:
 
 ```typescript
 // Submit multiple transactions without waiting for each to finalize
-const txIds = await Promise.all([
-  submitCallTxAsync(providers, unproven1),
-  submitCallTxAsync(providers, unproven2),
-  submitCallTxAsync(providers, unproven3),
+const submitted = await Promise.all([
+  submitCallTxAsync(providers, options1),
+  submitCallTxAsync(providers, options2),
+  submitCallTxAsync(providers, options3),
 ]);
 
-// Watch for all finalizations via observable
-let finalized = 0;
-providers.publicDataProvider
-  .contractStateObservable(contractAddress, { type: "latest" })
-  .subscribe((state) => {
-    finalized++;
-    if (finalized === txIds.length) {
-      console.log("All transactions finalized");
-    }
-  });
+// Wait for all of them to finalize
+const records = await Promise.all(
+  submitted.map(({ txId }) => providers.publicDataProvider.watchForTxData(txId)),
+);
+console.log("All transactions finalized:", records.map((r) => r.status));
 ```
 
-Note: concurrent transactions from the same wallet must not conflict on UTXOs. The wallet provider handles UTXO selection, but rapid concurrent submissions can cause balancing failures if available UTXOs are exhausted.
+Note: concurrent transactions from the same wallet must not conflict on inputs. The wallet provider selects DUST and token inputs, but rapid concurrent submissions can cause balancing failures if the available inputs are exhausted.
