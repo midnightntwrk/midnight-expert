@@ -1,0 +1,42 @@
+{
+  "name": "midnight-cast",
+  "version": "0.2.0",
+  "description": "Live-network diagnosis for Midnight through the read-only midnight-cast MCP server: network health and versions, error decoding, transactions, contracts, DUST, wallet readiness, and working code from Midnight's official examples, on preview, preprod and mainnet.",
+  "author": {
+    "name": "Midnight Foundation"
+  },
+  "homepage": "https://github.com/Kanasjnr/midnight-cast",
+  "repository": "https://github.com/midnightntwrk/midnight-expert.git",
+  "license": "Apache-2.0",
+  "keywords": [
+    "midnight",
+    "diagnostics",
+    "mcp",
+    "network-health",
+    "error-decoding",
+    "1010",
+    "transactions",
+    "contracts",
+    "dust",
+    "blockfrost",
+    "preflight",
+    "examples",
+    "debugging"
+  ],
+  "userConfig": {
+    "blockfrost_preprod_project_id": {
+      "type": "string",
+      "title": "Blockfrost project ID (preprod)",
+      "description": "A Midnight Preprod project ID from blockfrost.io, needed only for preprod. Leave empty for preview.",
+      "sensitive": true,
+      "default": ""
+    },
+    "blockfrost_project_id": {
+      "type": "string",
+      "title": "Blockfrost project ID (mainnet)",
+      "description": "A Midnight Mainnet project ID from blockfrost.io, needed only for mainnet. Leave empty for preview.",
+      "sensitive": true,
+      "default": ""
+    }
+  }
+}
