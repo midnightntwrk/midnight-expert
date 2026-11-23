@@ -1,5 +1,5 @@
 /**
- * Transfer NIGHT and shielded tokens between wallets (wallet SDK 2.0.0).
+ * Transfer NIGHT and shielded tokens between wallets (wallet SDK 2.0.1).
  * Assumes wallet is already constructed and synced (see basic-wallet-setup.ts).
  *
  * Demonstrates: transferTransaction, signRecipe (async signing callback),

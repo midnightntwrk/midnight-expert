@@ -2,7 +2,7 @@
 
 ## FacadeState
 
-`FacadeState` is the top-level state object emitted by a `WalletFacade`. In wallet SDK 2.0.0 it composes the three wallet states, the transaction lifecycle records, and protocol-version readings:
+`FacadeState` is the top-level state object emitted by a `WalletFacade`. In wallet SDK 2.0.1 it composes the three wallet states, the transaction lifecycle records, and protocol-version readings:
 
 ```typescript
 class FacadeState {

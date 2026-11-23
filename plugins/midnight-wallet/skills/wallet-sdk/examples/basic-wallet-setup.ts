@@ -1,5 +1,5 @@
 /**
- * Complete wallet construction from seed to synced state (wallet SDK 2.0.0).
+ * Complete wallet construction from seed to synced state (wallet SDK 2.0.1).
  * Covers: seed generation, per-wallet seed derivation, configuration,
  * WalletFacade initialization, and waiting until the wallet is synced and
  * its three sub-wallets agree on the protocol version.

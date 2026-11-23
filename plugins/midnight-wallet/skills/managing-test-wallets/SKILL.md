@@ -22,7 +22,7 @@ Every pattern here was verified against the package versions pinned in
 Network ecosystem moves quickly, and there may be breaking changes
 between SDK versions.
 
-The patterns target wallet SDK 2.0.0 (ledger 9): wallets start from
+The patterns target wallet SDK 2.0.1 (ledger 9): wallets start from
 `WalletSeeds.fromMasterSeed(...)` seeds, and transactions are built only
 once the wallet is synced and its protocol phase is `Settled`.
 
