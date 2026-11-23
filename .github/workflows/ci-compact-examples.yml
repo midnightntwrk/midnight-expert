@@ -7,6 +7,7 @@ on:
       - 'plugins/compact-examples/skills/code-examples/examples/**'
       - 'plugins/compact-examples/scripts/compile-examples.sh'
       - '.github/workflows/ci-compact-examples.yml'
+      - 'plugins/midnight-tooling/network-supported-compiler.txt'
   push:
     branches:
       - main
@@ -14,6 +15,7 @@ on:
       - 'plugins/compact-examples/skills/code-examples/examples/**'
       - 'plugins/compact-examples/scripts/compile-examples.sh'
       - '.github/workflows/ci-compact-examples.yml'
+      - 'plugins/midnight-tooling/network-supported-compiler.txt'
 
 permissions:
   contents: read
