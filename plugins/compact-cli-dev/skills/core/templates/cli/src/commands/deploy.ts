@@ -18,7 +18,7 @@ export default class Deploy extends BaseCommand {
 		}),
 	};
 
-	async run(): Promise<void> {
+	async run(): Promise<unknown> {
 		const { flags } = await this.parse(Deploy);
 		const walletData = getWallet(flags.wallet);
 
@@ -39,11 +39,11 @@ export default class Deploy extends BaseCommand {
 				this.log(`  Block:        ${result.blockHeight.toString()}`);
 			}
 
-			this.outputResult({
+			return {
 				contractAddress: result.contractAddress,
 				txId: result.txId,
 				blockHeight: result.blockHeight.toString(),
-			});
+			};
 		} finally {
 			await ctx.facade.stop();
 		}

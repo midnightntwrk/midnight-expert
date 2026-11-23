@@ -11,7 +11,7 @@ export default class DustRegister extends BaseCommand {
 		name: Args.string({ description: "Wallet name", required: true }),
 	};
 
-	async run(): Promise<void> {
+	async run(): Promise<unknown> {
 		const { args } = await this.parse(DustRegister);
 		const wallet = getWallet(args.name);
 
@@ -28,7 +28,7 @@ export default class DustRegister extends BaseCommand {
 					txId ? `  DUST registered. tx: ${txId}` : "  NIGHT already registered; DUST available.",
 				);
 			}
-			this.outputResult({ txId, registered: txId !== null });
+			return { txId, registered: txId !== null };
 		} finally {
 			await ctx.facade.stop();
 		}

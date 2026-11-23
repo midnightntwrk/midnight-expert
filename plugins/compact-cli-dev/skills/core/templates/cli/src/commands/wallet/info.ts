@@ -12,7 +12,7 @@ export default class WalletInfo extends BaseCommand {
 		}),
 	};
 
-	async run(): Promise<void> {
+	async run(): Promise<unknown> {
 		const { args } = await this.parse(WalletInfo);
 		const wallet = getWallet(args.name);
 
@@ -28,6 +28,6 @@ export default class WalletInfo extends BaseCommand {
 			this.log(`  Created:    ${wallet.createdAt}`);
 		}
 
-		this.outputResult(result);
+		return result;
 	}
 }

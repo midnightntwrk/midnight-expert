@@ -19,7 +19,7 @@ export default class Call extends BaseCommand {
 		}),
 	};
 
-	async run(): Promise<void> {
+	async run(): Promise<unknown> {
 		const { args } = await this.parse(Call);
 
 		// TODO: Replace this stub with your contract's actual circuit calls.
@@ -40,13 +40,20 @@ export default class Call extends BaseCommand {
 		//     const contract = await join(providers, deployed.address);
 		//
 		//     const txData = await contract.callTx.increment();
-		//     this.log(`Transaction: ${txData.public.txId}`);
-		//     this.log(`Block: ${txData.public.blockHeight}`);
+		//     if (!this.jsonEnabled()) {
+		//       this.log(`Transaction: ${txData.public.txId}`);
+		//       this.log(`Block: ${txData.public.blockHeight}`);
+		//     }
+		//     // With --json, oclif prints what run() returns.
+		//     return { txId: txData.public.txId, blockHeight: txData.public.blockHeight.toString() };
 		//   } finally {
 		//     await ctx.facade.stop();
 		//   }
 
-		this.log(`Circuit "${args.circuit}" is not yet implemented.`);
-		this.log("Edit src/commands/call.ts to add your contract's circuit calls.");
+		if (!this.jsonEnabled()) {
+			this.log(`Circuit "${args.circuit}" is not yet implemented.`);
+			this.log("Edit src/commands/call.ts to add your contract's circuit calls.");
+		}
+		return { circuit: args.circuit, implemented: false };
 	}
 }

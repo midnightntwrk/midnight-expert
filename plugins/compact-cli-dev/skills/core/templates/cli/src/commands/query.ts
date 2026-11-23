@@ -18,7 +18,7 @@ export default class Query extends BaseCommand {
 		}),
 	};
 
-	async run(): Promise<void> {
+	async run(): Promise<unknown> {
 		const { args } = await this.parse(Query);
 
 		// TODO: Replace this stub with your contract's actual state queries.
@@ -38,12 +38,18 @@ export default class Query extends BaseCommand {
 		//
 		//   // Midnight.js 5 returns the serialized state tagged with the ledger era
 		//   // that wrote it. A contract deployed on ledger 9 decodes with v9.
-		//   if (read) {
-		//     const ledgerState = ledger(read.contractState.deserialize({ v9: ContractState }).data);
+		//   if (!read) throw new Error(`No contract state found at ${address}.`);
+		//   const ledgerState = ledger(read.contractState.deserialize({ v9: ContractState }).data);
+		//   if (!this.jsonEnabled()) {
 		//     this.log(`Counter value: ${ledgerState.round}`);
 		//   }
+		//   // With --json, oclif prints what run() returns.
+		//   return { address, round: ledgerState.round.toString() };
 
-		this.log(`Field "${args.field}" query is not yet implemented.`);
-		this.log("Edit src/commands/query.ts to add your contract's state queries.");
+		if (!this.jsonEnabled()) {
+			this.log(`Field "${args.field}" query is not yet implemented.`);
+			this.log("Edit src/commands/query.ts to add your contract's state queries.");
+		}
+		return { field: args.field, implemented: false };
 	}
 }

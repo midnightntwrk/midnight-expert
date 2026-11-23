@@ -4,7 +4,7 @@ import { loadWallets } from "../../lib/wallet.js";
 export default class WalletList extends BaseCommand {
 	static override description = "List all saved wallets";
 
-	async run(): Promise<void> {
+	async run(): Promise<unknown> {
 		const store = loadWallets();
 		const entries = Object.entries(store);
 
@@ -12,8 +12,7 @@ export default class WalletList extends BaseCommand {
 			if (!this.jsonEnabled()) {
 				this.log("No wallets found. Run `wallet:create` to create one.");
 			}
-			this.outputResult([]);
-			return;
+			return [];
 		}
 
 		const result = entries.map(([name, w]) => ({ name, address: w.address }));
@@ -24,6 +23,6 @@ export default class WalletList extends BaseCommand {
 			}
 		}
 
-		this.outputResult(result);
+		return result;
 	}
 }
