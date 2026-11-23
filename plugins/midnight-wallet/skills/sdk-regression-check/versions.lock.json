@@ -1,19 +1,19 @@
 {
-  "verified": "2026-11-17",
+  "verified": "2026-11-23",
   "packages": {
-    "@midnightntwrk/wallet-sdk": "2.0.0",
-    "@midnightntwrk/wallet-sdk-facade": "5.0.0",
+    "@midnightntwrk/wallet-sdk": "2.0.1",
+    "@midnightntwrk/wallet-sdk-facade": "5.0.1",
     "@midnightntwrk/wallet-sdk-hd": "4.0.0",
-    "@midnightntwrk/wallet-sdk-shielded": "4.0.0",
-    "@midnightntwrk/wallet-sdk-unshielded-wallet": "4.0.0",
-    "@midnightntwrk/wallet-sdk-dust-wallet": "5.0.0",
-    "@midnightntwrk/wallet-sdk-capabilities": "4.0.0",
+    "@midnightntwrk/wallet-sdk-shielded": "4.0.1",
+    "@midnightntwrk/wallet-sdk-unshielded-wallet": "4.0.1",
+    "@midnightntwrk/wallet-sdk-dust-wallet": "5.1.0",
+    "@midnightntwrk/wallet-sdk-capabilities": "4.0.1",
     "@midnightntwrk/wallet-sdk-abstractions": "3.0.0",
-    "@midnightntwrk/wallet-sdk-address-format": "4.0.0",
-    "@midnightntwrk/wallet-sdk-runtime": "2.0.0",
-    "@midnightntwrk/wallet-sdk-utilities": "1.3.0",
-    "@midnightntwrk/wallet-sdk-indexer-client": "2.0.0",
-    "@midnightntwrk/wallet-sdk-node-client": "2.0.0",
-    "@midnightntwrk/wallet-sdk-prover-client": "2.0.0"
+    "@midnightntwrk/wallet-sdk-address-format": "4.0.1",
+    "@midnightntwrk/wallet-sdk-runtime": "2.0.1",
+    "@midnightntwrk/wallet-sdk-utilities": "1.3.1",
+    "@midnightntwrk/wallet-sdk-indexer-client": "2.0.1",
+    "@midnightntwrk/wallet-sdk-node-client": "2.0.1",
+    "@midnightntwrk/wallet-sdk-prover-client": "2.0.1"
   }
 }

@@ -5,7 +5,7 @@ import { findComposeFile } from "../../lib/devnet.js";
 export default class DevnetStart extends BaseCommand {
 	static override description = "Start the local devnet via Docker Compose";
 
-	async run(): Promise<void> {
+	async run(): Promise<unknown> {
 		const composeFile = findComposeFile();
 
 		if (!this.jsonEnabled()) {
@@ -20,6 +20,6 @@ export default class DevnetStart extends BaseCommand {
 		if (!this.jsonEnabled()) {
 			this.log("  Devnet started.");
 		}
-		this.outputResult(result);
+		return result;
 	}
 }

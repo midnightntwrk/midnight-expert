@@ -35,11 +35,11 @@ The highest version (by numeric semver comparison) is selected for each image, s
 
 The resolver caps each image to the ledger 9 line that Mainnet, Preview and Preprod run, so a new minor or major tag on Docker Hub can't silently move the devnet onto a ledger the compiler pin and midnight-js don't match. Patch releases still come through:
 
-| Image | Cap | Resolved to (2026-11-14) |
+| Image | Cap | Resolved to (2026-11-23) |
 |-------|-----|-------------------|
 | `midnight-node` | `< 2.2.0` | `2.1.101` |
 | `indexer-standalone` | `< 4.5.0` | `4.4.101` |
-| `proof-server` | `< 9.1.0` | `9.0.1` |
+| `proof-server` | `< 9.1.0` | `9.0.2` |
 
 The indexer needs a Blockfrost id since `4.3.0`; the generated compose file passes a placeholder plus the node's own URL for SPO data, so the devnet still runs key-less. Move a cap only together with the compiler pin (`plugins/midnight-tooling/network-supported-compiler.txt`), after checking the new set against midnightntwrk/midnight-examples, which runs the same images in CI.
 

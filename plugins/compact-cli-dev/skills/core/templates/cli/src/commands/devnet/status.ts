@@ -27,7 +27,7 @@ async function checkService(name: string, url: string): Promise<ServiceStatus> {
 export default class DevnetStatus extends BaseCommand {
 	static override description = "Check health of devnet services";
 
-	async run(): Promise<void> {
+	async run(): Promise<unknown> {
 		// Each service's health endpoint. A plain GET on the node's RPC port or
 		// the indexer's GraphQL path answers 405, so those can't be used.
 		const services = await Promise.all([
@@ -52,6 +52,6 @@ export default class DevnetStatus extends BaseCommand {
 			}
 		}
 
-		this.outputResult(result);
+		return result;
 	}
 }

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Command } from "@oclif/core";
+import { Command, type Interfaces } from "@oclif/core";
 import { INIT_MARKER, STATE_DIR } from "./lib/constants.js";
 import { classifyError, formatError } from "./lib/errors.js";
 import { setJsonMode } from "./lib/progress.js";
@@ -40,24 +40,21 @@ export abstract class BaseCommand extends Command {
 		fs.writeFileSync(markerPath, "");
 	}
 
-	protected outputResult(result: unknown): void {
+	// With --json, oclif prints whatever run() returns as JSON, so a command
+	// returns its result instead of logging it (this.log() is muted in JSON
+	// mode). If run() throws, even from a finally block, only the error is
+	// printed. Guard human-readable output with `if (!this.jsonEnabled())`.
+
+	override async catch(err: Interfaces.CommandError): Promise<unknown> {
 		if (this.jsonEnabled()) {
-			this.log(JSON.stringify(result, null, "\t"));
+			// oclif sets a non-zero exit code and prints toErrorJson(err).
+			return super.catch(err);
 		}
+		this.error(formatError(classifyError(err)));
 	}
 
-	override async catch(err: unknown): Promise<void> {
-		const classified = classifyError(err);
-		if (this.jsonEnabled()) {
-			this.log(
-				JSON.stringify(
-					{ error: classified.code, message: classified.message, action: classified.action },
-					null,
-					"\t",
-				),
-			);
-		} else {
-			this.error(formatError(classified));
-		}
+	protected override toErrorJson(err: unknown): unknown {
+		const { code, message, action } = classifyError(err);
+		return { error: code, message, action };
 	}
 }

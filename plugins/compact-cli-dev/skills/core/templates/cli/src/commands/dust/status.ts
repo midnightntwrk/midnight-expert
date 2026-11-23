@@ -10,7 +10,7 @@ export default class DustStatus extends BaseCommand {
 		name: Args.string({ description: "Wallet name", required: true }),
 	};
 
-	async run(): Promise<void> {
+	async run(): Promise<unknown> {
 		const { args } = await this.parse(DustStatus);
 		const wallet = getWallet(args.name);
 
@@ -36,7 +36,7 @@ export default class DustStatus extends BaseCommand {
 				this.log(`  Registered:      ${String(registered)}`);
 			}
 
-			this.outputResult(result);
+			return result;
 		} finally {
 			await ctx.facade.stop();
 		}

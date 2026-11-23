@@ -88,17 +88,18 @@ export default class MyCommand extends BaseCommand {
     verbose: Flags.boolean({ description: "Show extra output", default: false }),
   };
 
-  async run(): Promise<void> {
+  async run(): Promise<unknown> {
     const { args, flags } = await this.parse(MyCommand);
 
     // Command logic here
     const result = { name: args.name };
 
-    if (!this.jsonEnabled) {
+    if (!this.jsonEnabled()) {
       this.log(`Result: ${args.name}`);
     }
 
-    this.outputResult(result);
+    // With --json, oclif prints the returned value as JSON.
+    return result;
   }
 }
 ```

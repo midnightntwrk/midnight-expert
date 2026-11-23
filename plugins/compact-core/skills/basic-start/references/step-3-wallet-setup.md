@@ -4,7 +4,7 @@
 
 ### What this verifies
 
-Wallet creation, NIGHT funding from the genesis wallet, and DUST registration all work on the local devnet, using the Midnight SDK (midnight-js 5, wallet SDK 2.0.0, testkit).
+Wallet creation, NIGHT funding from the genesis wallet, and DUST registration all work on the local devnet, using the Midnight SDK (midnight-js 5.0.1, wallet SDK 2.0.1, testkit-js 5.0.1).
 
 ### Procedure
 
@@ -23,16 +23,16 @@ Wallet creation, NIGHT funding from the genesis wallet, and DUST registration al
      },
      "dependencies": {
        "@midnight-ntwrk/compact-runtime": "0.21.0",
-       "@midnight-ntwrk/midnight-js-contracts": "5.0.0",
-       "@midnight-ntwrk/midnight-js-http-client-proof-provider": "5.0.0",
-       "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "5.0.0",
-       "@midnight-ntwrk/midnight-js-level-private-state-provider": "5.0.0",
-       "@midnight-ntwrk/midnight-js-node-zk-config-provider": "5.0.0",
-       "@midnight-ntwrk/midnight-js-protocol": "5.0.0",
-       "@midnight-ntwrk/midnight-js-types": "5.0.0",
-       "@midnight-ntwrk/midnight-js-utils": "5.0.0",
-       "@midnight-ntwrk/testkit-js": "5.0.0",
-       "@midnightntwrk/wallet-sdk": "2.0.0",
+       "@midnight-ntwrk/midnight-js-contracts": "5.0.1",
+       "@midnight-ntwrk/midnight-js-http-client-proof-provider": "5.0.1",
+       "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "5.0.1",
+       "@midnight-ntwrk/midnight-js-level-private-state-provider": "5.0.1",
+       "@midnight-ntwrk/midnight-js-node-zk-config-provider": "5.0.1",
+       "@midnight-ntwrk/midnight-js-protocol": "5.0.1",
+       "@midnight-ntwrk/midnight-js-types": "5.0.1",
+       "@midnight-ntwrk/midnight-js-utils": "5.0.1",
+       "@midnight-ntwrk/testkit-js": "5.0.1",
+       "@midnightntwrk/wallet-sdk": "2.0.1",
        "pino": "^9.0.0",
        "rxjs": "^7.8.2",
        "ws": "^8.14.2"
@@ -163,8 +163,13 @@ Wallet creation, NIGHT funding from the genesis wallet, and DUST registration al
      );
      console.log(`DUST registration: ${await deployer.wallet.submitTransaction(await deployer.wallet.finalizeRecipe(reg))}`);
 
-     // 4. Wait for a spendable DUST coin
-     const ready = await waitFor(deployer, (s) => s.dust.availableCoins.length > 0, "DUST");
+     // 4. Wait for a spendable DUST coin. Registration replaces the NIGHT UTXOs,
+     //    and DUST can show up before the wallet sees the new ones, so wait for both.
+     const ready = await waitFor(
+       deployer,
+       (s) => s.dust.availableCoins.length > 0 && (s.unshielded.balances[NIGHT] ?? 0n) > 0n,
+       "DUST and NIGHT",
+     );
 
      console.log("============================================================");
      console.log(`Deployer seed:  ${deployerSeed}`);

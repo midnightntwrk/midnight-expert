@@ -122,21 +122,19 @@ Error [DUST_REQUIRED]: No dust available for fee payment
 
 ## How BaseCommand Uses Classification
 
-`BaseCommand.catch()` is the Oclif error handler. It classifies every error and outputs the result in the appropriate format:
+`BaseCommand` classifies every error. Without `--json`, `catch()` prints the formatted message. With `--json`, it hands the error to oclif, which sets a non-zero exit code and prints whatever `toErrorJson()` returns:
 
 ```typescript
-async catch(err: unknown): Promise<void> {
-  const classified = classifyError(err);
-  if (this.jsonEnabled) {
-    this.log(
-      JSON.stringify(
-        { error: classified.code, message: classified.message, action: classified.action },
-        null, "\t",
-      ),
-    );
-  } else {
-    this.error(formatError(classified));
+override async catch(err: Interfaces.CommandError): Promise<unknown> {
+  if (this.jsonEnabled()) {
+    return super.catch(err);
   }
+  this.error(formatError(classifyError(err)));
+}
+
+protected override toErrorJson(err: unknown): unknown {
+  const { code, message, action } = classifyError(err);
+  return { error: code, message, action };
 }
 ```
 

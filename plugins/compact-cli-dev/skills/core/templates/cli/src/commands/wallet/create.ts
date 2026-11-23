@@ -12,7 +12,7 @@ export default class WalletCreate extends BaseCommand {
 		}),
 	};
 
-	async run(): Promise<void> {
+	async run(): Promise<unknown> {
 		const { args } = await this.parse(WalletCreate);
 		const name = args.name;
 
@@ -35,6 +35,6 @@ export default class WalletCreate extends BaseCommand {
 			this.log(`  Seed:    ${seed}`);
 		}
 
-		this.outputResult({ name, address, seed });
+		return { name, address, seed };
 	}
 }

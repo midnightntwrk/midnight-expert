@@ -2,7 +2,7 @@
 
 ## Overview
 
-Constructing a Midnight wallet (wallet SDK 2.0.0, ledger 9) has four phases:
+Constructing a Midnight wallet (wallet SDK 2.0.1, ledger 9) has four phases:
 
 1. **Derive seeds** -- one master seed gives the three per-wallet seeds
 2. **Build config** -- assemble a `DefaultConfiguration` with network URLs and storage

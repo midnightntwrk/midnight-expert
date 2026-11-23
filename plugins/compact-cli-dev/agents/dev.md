@@ -102,6 +102,6 @@ Fix any errors or warnings before reporting the work as complete. Do not skip va
 - **Never read template files from the plugin.** Use the `/compact-cli-dev:init` command to scaffold from the template. The template engine handles variable substitution and file generation.
 - **Never guess at Midnight SDK patterns.** Load skill references and consult them. The Midnight SDK has specific APIs for providers, wallets, contracts, and transactions that must be used correctly.
 - **Never skip validation.** Every change must pass Biome, TypeScript, and Vitest checks before being presented as complete.
-- **Follow Oclif conventions.** Every command extends `BaseCommand`, uses `Args`/`Flags` from `@oclif/core`, supports `--json` output via `this.jsonEnabled` and `this.outputResult()`, and uses topic grouping via directory structure.
+- **Follow Oclif conventions.** Every command extends `BaseCommand`, uses `Args`/`Flags` from `@oclif/core`, supports `--json` by guarding human output with `this.jsonEnabled()` and returning its result from `run()`, and uses topic grouping via directory structure.
 - **Follow error handling patterns.** Use the `ErrorCode` enum and `formatError` utility from `src/lib/errors.ts`. Classify errors correctly (network, wallet, contract, config, etc.). Consult `references/error-handling.md` for the full pattern.
 - **Use existing lib modules.** Before writing new utility code, check if the functionality already exists in `src/lib/`. The CLI includes modules for wallets, providers, funding, contracts, config, errors, progress, and constants.
