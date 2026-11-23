@@ -48,8 +48,8 @@ All commands in this template extend `BaseCommand` instead of the raw Oclif `Com
 | `--json` flag | Enabled with `static override enableJsonFlag = true`; read it with `this.jsonEnabled()` |
 | JSON-mode spinners | Spinners are silenced when `--json` is active |
 | Welcome banner | Shown once per project (tracked via `.dapp-state/.initialized`) |
-| Error classification | `catch()` is overridden to classify errors and format output |
-| `outputResult()` | Outputs structured JSON when `--json` is enabled |
+| Error classification | `catch()` formats classified errors for humans; `toErrorJson()` shapes them for `--json` |
+| JSON output | oclif prints whatever `run()` returns as JSON when `--json` is set |
 
 ### Source
 
@@ -65,34 +65,27 @@ export abstract class BaseCommand extends Command {
     this.showWelcomeBanner();
   }
 
-  protected outputResult(result: unknown): void {
+  override async catch(err: Interfaces.CommandError): Promise<unknown> {
     if (this.jsonEnabled()) {
-      this.log(JSON.stringify(result, null, "\t"));
+      // oclif sets a non-zero exit code and prints toErrorJson(err).
+      return super.catch(err);
     }
+    this.error(formatError(classifyError(err)));
   }
 
-  override async catch(err: unknown): Promise<void> {
-    const classified = classifyError(err);
-    if (this.jsonEnabled()) {
-      this.log(
-        JSON.stringify(
-          { error: classified.code, message: classified.message, action: classified.action },
-          null, "\t",
-        ),
-      );
-    } else {
-      this.error(formatError(classified));
-    }
+  protected override toErrorJson(err: unknown): unknown {
+    const { code, message, action } = classifyError(err);
+    return { error: code, message, action };
   }
 }
 ```
 
 ### Using `--json` in Commands
 
-Always check `this.jsonEnabled()` before logging human-readable output. Call `this.outputResult(data)` to emit JSON when the flag is set:
+Guard human-readable output with `if (!this.jsonEnabled())`, then `return` the result. With `--json`, oclif prints the returned value as JSON once `run()` finishes. `this.log()` is muted in JSON mode, so don't build JSON yourself. If `run()` throws, even from a `finally` block, only the error JSON is printed and the command exits non-zero:
 
 ```typescript
-async run(): Promise<void> {
+async run(): Promise<unknown> {
   const result = { contractAddress: "0xabc...", txId: "0x123..." };
 
   if (!this.jsonEnabled()) {
@@ -100,7 +93,7 @@ async run(): Promise<void> {
     this.log(`  Address: ${result.contractAddress}`);
   }
 
-  this.outputResult(result);
+  return result;
 }
 ```
 
@@ -129,7 +122,7 @@ To add a new topic, create a directory under `src/commands/`. Each `.ts` file in
 3. Define `static description`, `static args`, and `static flags`
 4. Spread `...BaseCommand.baseFlags` into your flags to inherit `--json`
 5. Implement `run()` — use `this.parse()` to access args and flags
-6. Guard human output with `if (!this.jsonEnabled())` and call `this.outputResult()` for JSON
+6. Guard human output with `if (!this.jsonEnabled())` and `return` the result, which oclif prints as JSON under `--json`
 
 ```typescript
 import { Args, Flags } from "@oclif/core";
@@ -145,7 +138,7 @@ export default class WalletCreate extends BaseCommand {
     }),
   };
 
-  async run(): Promise<void> {
+  async run(): Promise<unknown> {
     const { args } = await this.parse(WalletCreate);
     const name = args.name;
 
@@ -156,7 +149,7 @@ export default class WalletCreate extends BaseCommand {
       this.log(`  Address: ${address}`);
     }
 
-    this.outputResult({ name, address, seed });
+    return { name, address, seed };
   }
 }
 ```
