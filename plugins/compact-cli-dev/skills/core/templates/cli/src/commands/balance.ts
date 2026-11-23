@@ -11,7 +11,7 @@ export default class Balance extends BaseCommand {
 		name: Args.string({ description: "Wallet name", required: true }),
 	};
 
-	async run(): Promise<void> {
+	async run(): Promise<unknown> {
 		const { args } = await this.parse(Balance);
 		const wallet = getWallet(args.name);
 
@@ -32,7 +32,7 @@ export default class Balance extends BaseCommand {
 				this.log(`  DUST:  ${dust.toString()}`);
 			}
 
-			this.outputResult(result);
+			return result;
 		} finally {
 			await ctx.facade.stop();
 		}

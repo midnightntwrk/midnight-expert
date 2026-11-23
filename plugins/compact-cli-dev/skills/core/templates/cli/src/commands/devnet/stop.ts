@@ -5,7 +5,7 @@ import { findComposeFile } from "../../lib/devnet.js";
 export default class DevnetStop extends BaseCommand {
 	static override description = "Stop the local devnet";
 
-	async run(): Promise<void> {
+	async run(): Promise<unknown> {
 		const composeFile = findComposeFile();
 
 		execSync(`docker compose -f "${composeFile}" down`, {
@@ -15,6 +15,6 @@ export default class DevnetStop extends BaseCommand {
 		if (!this.jsonEnabled()) {
 			this.log("  Devnet stopped.");
 		}
-		this.outputResult({ stopped: true });
+		return { stopped: true };
 	}
 }

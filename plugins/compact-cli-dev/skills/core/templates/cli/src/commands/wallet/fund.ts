@@ -30,7 +30,7 @@ export default class WalletFund extends BaseCommand {
 		}),
 	};
 
-	async run(): Promise<void> {
+	async run(): Promise<unknown> {
 		const { args, flags } = await this.parse(WalletFund);
 		const wallet = getWallet(args.name);
 		const amount = BigInt(flags.amount);
@@ -64,7 +64,7 @@ export default class WalletFund extends BaseCommand {
 				this.log(`  Wallet "${args.name}" funded and DUST registered.`);
 			}
 
-			this.outputResult({ name: args.name, txId, dustTx });
+			return { name: args.name, txId, dustTx };
 		} finally {
 			await ctx.facade.stop();
 		}

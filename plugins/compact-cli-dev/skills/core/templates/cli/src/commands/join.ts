@@ -25,7 +25,7 @@ export default class Join extends BaseCommand {
 		}),
 	};
 
-	async run(): Promise<void> {
+	async run(): Promise<unknown> {
 		const { args, flags } = await this.parse(Join);
 		const walletData = getWallet(flags.wallet);
 
@@ -45,7 +45,7 @@ export default class Join extends BaseCommand {
 				this.log(`  Joined contract at: ${args.address}`);
 			}
 
-			this.outputResult({ contractAddress: args.address });
+			return { contractAddress: args.address };
 		} finally {
 			await ctx.facade.stop();
 		}
