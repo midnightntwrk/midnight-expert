@@ -6,6 +6,25 @@ The project is scaffolded by a **vendored, deterministic generator** shipped ins
 (`scripts/new-example.mjs` + `templates/example/`). It is zero-dependency (Node built-ins only) and
 produces byte-identical output for the same inputs — no network fetch, no template download. It creates the most lightweight way possible to generate Compact and test that compact on a local devnet.
 
+> ⚠️ **The template is still on ledger 8.** It generates a project on midnight-js 4.1.1, wallet SDK
+> 1.2.0 and the ledger 8 Docker images (proof server 8.1.0, node 1.0.0). Every public network
+> (Mainnet, Preview, Preprod) and the `midnight-tooling:devnet` local network run ledger 9, so the
+> generated project can't deploy to them or run its tests against them. Its replacement is mnkit
+> in [midnightntwrk/midnight-examples](https://github.com/midnightntwrk/midnight-examples), which
+> isn't published on npm yet.
+>
+> **Before Phase 1, tell the user this and offer the ledger 9 options:**
+>
+> 1. **Start from midnight-examples.** Clone it, run `npm install` and `npm run compile` at the root,
+>    then work in an example such as `examples/hello-world`, or run `npm run new:example -- <name>`
+>    to scaffold a new example inside the repo with mnkit.
+> 2. **Follow the `compact-core:basic-start` walkthrough**, which builds a contract and DApp on the
+>    ledger 9 packages step by step.
+>
+> Only run this skill's generator if the user still wants it after hearing this, for example to see
+> the project layout, and say again that its dependencies and `compose.yml` need moving to ledger 9
+> before it can deploy.
+
 ## Phase 1 — Environment Check
 
 Run `/midnight-tooling:doctor` to verify the development environment is ready.

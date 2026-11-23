@@ -117,11 +117,12 @@ newer releases.
 | Indexer | `midnightntwrk/indexer-standalone:4.3.3` | 8088 |
 | Node | `midnightntwrk/midnight-node:1.0.0` (`CFG_PRESET=dev`) | 9944 |
 
-> Note: this local network still runs the ledger 8-era images (`midnight-node:1.0.0`,
-> `indexer-standalone:4.3.3`), one ledger behind the `midnight-tooling:devnet` resolver (node
-> `2.1.x`, indexer `4.4.x`, proof server `9.0.x`; see that skill's `version-resolution.md`). The
-> template, including these images and its midnight-js 4.1.1 packages, moves to the ledger 9 stack
-> in a follow-up to #296.
+> ⚠️ This local network runs the ledger 8 images (`midnight-node:1.0.0`, `indexer-standalone:4.3.3`,
+> `proof-server:8.1.0`), and the template's packages (midnight-js 4.1.1, wallet SDK 1.2.0) are ledger 8
+> too. Mainnet, Preview, Preprod and the `midnight-tooling:devnet` resolver (node `2.1.x`, indexer
+> `4.4.x`, proof server `9.0.x`) are all on ledger 9, so a generated project can't deploy to them.
+> The template is not being moved here: mnkit in midnightntwrk/midnight-examples replaces it once it
+> is published on npm. Until then, see the warning at the top of `new-example-workflow.md`.
 
 ## Network Endpoints
 
