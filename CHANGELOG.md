@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- compact-core's `compact-init-project` now warns that its template is still on ledger 8 (midnight-js 4.1.1, wallet SDK 1.2.0, proof server 8.1.0), so a generated project can't deploy to Mainnet, Preview, Preprod or a ledger 9 devnet. Before scaffolding, the workflow tells the user this and offers midnight-examples (an existing example, or `npm run new:example` inside the repo) or the `basic-start` walkthrough. The template isn't moved to ledger 9 here: mnkit in midnightntwrk/midnight-examples replaces it once it's published on npm. `compact-core` is bumped to 0.13.2.
 - The project is now licensed under Apache-2.0, replacing MIT (no dual licensing). The root `LICENSE` and the per-plugin `LICENSE` files in `compact-core`, `midnight-tooling`, and `midnight-verify` contain the Apache-2.0 text with the copyright line `Copyright (c) 2026 Midnight Foundation and contributors`, and `LICENSE-APACHE` is removed. Every plugin manifest and package `license` field now reads `Apache-2.0`. Vendored OpenZeppelin files and other MIT-headered example files keep their original `SPDX-License-Identifier: MIT` headers, and their MIT notices are carried in `NOTICE`.
 - Plugin manifest and package `author` is now Midnight Foundation.
 - `CONTRIBUTING.md` asks for Developer Certificate of Origin sign-off (`git commit -s`) instead of a CLA via CLA assistant; the PR template gains a DCO checklist item.
