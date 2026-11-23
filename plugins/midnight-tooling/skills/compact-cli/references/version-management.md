@@ -1,6 +1,6 @@
 # Compiler Version Management
 
-> **Last verified:** 2026-11-12 against `compact` CLI 0.5.1 / compiler 0.36.0 (latest available 0.36.1); command output below re-run on 0.36.0 and 0.36.1 — `update`/`list`/`check`/`clean` behaviour verified against the installed toolchain.
+> **Last verified:** 2026-11-23 against `compact` CLI 0.5.1 / compiler 0.36.1 (the network-supported version and the newest published); `update`/`list`/`check` output below re-run on 0.36.1.
 
 The Compact CLI supports multiple compiler versions installed side-by-side. One version is the "default" used when `compact compile` is invoked without a `+VERSION` specifier.
 
@@ -20,9 +20,9 @@ compact: aarch64-darwin -- 0.36.1 -- installed
 compact: aarch64-darwin -- 0.36.1 -- default.
 ```
 
-Running it again when that version is already installed skips the download and prints `-- 0.36.1 -- already installed` followed by the same `default.` line. Naming a version (`compact update 0.36.0`) prints the same two lines when that version is already installed.
+Running it again when that version is already installed skips the download and prints `-- 0.36.1 -- already installed` followed by the same `default.` line. Naming a version (`compact update 0.36.1`) prints the same two lines when that version is already installed. The platform part depends on your machine: `aarch64-darwin` on Apple Silicon, `x86_64-apple-darwin` on an Intel Mac.
 
-> ⚠️ **The newest *published* compiler can outpace live-network support.** `compact update` / `compact check` report the absolute latest (currently `0.36.1`), which can be ahead of what the networks accept. Pin to the **network-supported** version (currently `0.36.0`, on Mainnet, Preview and Preprod since ledger 9) for anything you intend to deploy — "latest available" is not the same as "latest supported". A later patch of the pinned version (`0.36.1` here) keeps the same language and runtime versions, so it's fine to use; a new minor version isn't until the matrix lists it.
+> ⚠️ **The newest *published* compiler can outpace live-network support.** `compact update` / `compact check` report the absolute latest (currently `0.36.1`), which can be ahead of what the networks accept. Pin to the **network-supported** version (currently `0.36.1`, on Mainnet, Preview and Preprod since ledger 9) for anything you intend to deploy — "latest available" is not the same as "latest supported". A later patch of the pinned version (`0.36.1` here) keeps the same language and runtime versions, so it's fine to use; a new minor version isn't until the matrix lists it.
 
 ### Where the network-supported version is pinned
 
@@ -60,8 +60,8 @@ Example output:
 ```
 compact: available versions
 
-  0.36.1 - x86_macos, aarch64_macos, x86_linux, aarch64_linux
-→ 0.36.0 - x86_macos, aarch64_macos, x86_linux, aarch64_linux
+→ 0.36.1 - x86_macos, aarch64_macos, x86_linux, aarch64_linux
+  0.36.0 - x86_macos, aarch64_macos, x86_linux, aarch64_linux
   0.35.0 - x86_macos, aarch64_macos, x86_linux, aarch64_linux
   0.34.0 - x86_macos, aarch64_macos, x86_linux, aarch64_linux
 ```
@@ -78,8 +78,8 @@ Example output:
 ```
 compact: installed versions
 
-  0.36.1
-→ 0.36.0
+→ 0.36.1
+  0.36.0
 ```
 
 ## Checking for Updates
@@ -90,13 +90,12 @@ compact check
 
 Queries the remote server and reports whether a newer compiler version is available. Does not download anything.
 
-Example output, on the pinned 0.36.0 with 0.36.1 published:
+Example output, on the pinned 0.36.1, which is also the newest published version:
 ```
-compact: aarch64-darwin -- Update Available -- 0.36.0
-compact: Latest version available: 0.36.1.
+compact: x86_64-apple-darwin -- Up to date -- 0.36.1
 ```
 
-On the newest version it prints `compact: aarch64-darwin -- Up to date -- 0.36.1`.
+When a newer compiler is published, it prints `-- Update Available -- <your version>` followed by `compact: Latest version available: <newer>.` A newer published version is not automatically network-supported, so check the pin before updating.
 
 ## Cleaning Up
 
@@ -132,7 +131,7 @@ compact clean --keep-current --cache
 
 ```bash
 # Install both versions
-compact update 0.36.0
+compact update 0.36.1
 compact update 0.35.0
 
 # Now 0.35.0 is default (most recently updated)
@@ -140,10 +139,10 @@ compact update 0.35.0
 compact compile src/contract.compact build/
 
 # Compile with a specific version without changing default
-compact compile +0.36.0 src/contract.compact build/
+compact compile +0.36.1 src/contract.compact build/
 
 # Switch default back
-compact update 0.36.0
+compact update 0.36.1
 ```
 
 ### Pin a Project to a Specific Version

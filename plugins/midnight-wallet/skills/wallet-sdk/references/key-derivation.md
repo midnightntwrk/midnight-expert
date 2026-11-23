@@ -1,6 +1,6 @@
 # Key Derivation
 
-How the Midnight Wallet SDK derives wallet seeds and keys from a master seed or mnemonic using BIP-32 hierarchical deterministic (HD) derivation. Applies to wallet SDK 2.0.0 (ledger 9).
+How the Midnight Wallet SDK derives wallet seeds and keys from a master seed or mnemonic using BIP-32 hierarchical deterministic (HD) derivation. Applies to wallet SDK 2.0.1 (ledger 9).
 
 **Package:** `@midnightntwrk/wallet-sdk-hd`
 
@@ -66,7 +66,7 @@ const seed: Uint8Array = mnemonicToSeedSync(phrase);
 
 ## Wallet Seeds (recommended)
 
-In wallet SDK 2.0.0 the wallets start from **seeds**, not key objects. `WalletSeeds.fromMasterSeed` derives the three per-wallet seeds in one call:
+In wallet SDK 2.0.1 the wallets start from **seeds**, not key objects. `WalletSeeds.fromMasterSeed` derives the three per-wallet seeds in one call:
 
 ```typescript
 import { WalletSeeds, generateRandomSeed } from '@midnightntwrk/wallet-sdk-hd';

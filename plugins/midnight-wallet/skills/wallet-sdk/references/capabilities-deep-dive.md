@@ -2,7 +2,7 @@
 
 ## Overview
 
-`@midnightntwrk/wallet-sdk-capabilities` (4.0.0 in wallet SDK 2.0.0) is a single package with nine sub-exports. Each is a self-contained service module that `WalletFacade.init()` wires together internally.
+`@midnightntwrk/wallet-sdk-capabilities` (4.0.1 in wallet SDK 2.0.1) is a single package with nine sub-exports. Each is a self-contained service module that `WalletFacade.init()` wires together internally.
 
 | Sub-export | What it is | Injectable in `WalletFacade.init()` |
 |---|---|---|

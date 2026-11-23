@@ -1,5 +1,5 @@
 /**
- * Register NIGHT UTXOs for passive DUST generation (wallet SDK 2.0.0).
+ * Register NIGHT UTXOs for passive DUST generation (wallet SDK 2.0.1).
  * Assumes wallet is already constructed and synced (see basic-wallet-setup.ts).
  *
  * Demonstrates: estimateRegistration, registerNightUtxosForDustGeneration,

@@ -1,5 +1,5 @@
 /**
- * Subscribe to wallet state and monitor balances (wallet SDK 2.0.0).
+ * Subscribe to wallet state and monitor balances (wallet SDK 2.0.1).
  * Assumes wallet is already constructed and started (see basic-wallet-setup.ts).
  *
  * Demonstrates: a one-shot wait for a synced, settled state,
