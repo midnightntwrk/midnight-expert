@@ -163,8 +163,13 @@ Wallet creation, NIGHT funding from the genesis wallet, and DUST registration al
      );
      console.log(`DUST registration: ${await deployer.wallet.submitTransaction(await deployer.wallet.finalizeRecipe(reg))}`);
 
-     // 4. Wait for a spendable DUST coin
-     const ready = await waitFor(deployer, (s) => s.dust.availableCoins.length > 0, "DUST");
+     // 4. Wait for a spendable DUST coin. Registration replaces the NIGHT UTXOs,
+     //    and DUST can show up before the wallet sees the new ones, so wait for both.
+     const ready = await waitFor(
+       deployer,
+       (s) => s.dust.availableCoins.length > 0 && (s.unshielded.balances[NIGHT] ?? 0n) > 0n,
+       "DUST and NIGHT",
+     );
 
      console.log("============================================================");
      console.log(`Deployer seed:  ${deployerSeed}`);
