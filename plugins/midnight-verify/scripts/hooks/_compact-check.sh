@@ -16,6 +16,25 @@
 #     tree as clean this time rather than flagging from an empty baseline.
 #     No-op if the file already exists.
 #
+#   compact_is_midnight_project <project_root>
+#     Returns 0 (true) when project_root looks like Midnight work: a *.compact
+#     file within eight directory levels, a package.json within five levels
+#     that names an @midnight-ntwrk/* package, or a git remote naming
+#     "midnight" (docs and tooling repos). Hidden directories,
+#     node_modules and common build/vendor directories are skipped and the
+#     search stops at the first hit, so it stays cheap in large non-Midnight
+#     trees. Empty or missing project_root, /, or the user's home
+#     directory -> 1 (false). The session-wide
+#     hooks use it to stay silent outside Midnight projects.
+#
+#   compact_baseline_resolve <state_file> <project_root>
+#     SessionStart outside a Midnight project writes compact_files: null (a
+#     deferred baseline) instead of scanning the tree. The first time a check
+#     runs, this fills it in: every non-excluded *.compact file last modified
+#     before the session's created_at, so contracts that were already there
+#     are never flagged and contracts the session writes are. No-op when the
+#     baseline is already set or the state file is missing.
+#
 #   compact_snapshot_files <project_root>
 #     Prints the {absolute_path: sha256} JSON object for every non-excluded
 #     *.compact file under project_root.
@@ -102,7 +121,91 @@ compact_snapshot_files() {
           )
         '
   )
-  printf '%s\n' "${snapshot_json:-{\}}"
+  # Not "${snapshot_json:-{\}}": bash 3.2 (macOS /bin/bash) keeps the backslash.
+  [ -n "$snapshot_json" ] || snapshot_json='{}'
+  printf '%s\n' "$snapshot_json"
+}
+
+compact_is_midnight_project() {
+  local root="$1" hit f user_home
+  [ -n "$root" ] && [ -d "$root" ] || return 1
+
+  # A home directory or / is never a project, even when Midnight projects sit
+  # somewhere under it: treating it as one means scanning the whole tree on
+  # every Stop. The home directory comes from the user database, not $HOME
+  # (the hook tests point $HOME at their temp project).
+  local user
+  user=$(id -un 2>/dev/null || true)
+  if [ -n "$user" ] && command -v getent >/dev/null 2>&1; then
+    user_home=$(getent passwd "$user" 2>/dev/null | cut -d: -f6 || true)
+  elif [ -n "$user" ] && command -v dscl >/dev/null 2>&1; then
+    user_home=$(dscl . -read "/Users/$user" NFSHomeDirectory 2>/dev/null \
+      | awk '{print $2}' || true)
+  fi
+  case "${root%/}" in
+    "") return 1 ;;
+  esac
+  if [ -n "$user_home" ] && [ "${root%/}" = "${user_home%/}" ]; then
+    return 1
+  fi
+
+  hit=$(find "$root" -mindepth 1 -maxdepth 8 \
+      \( -type d \( -name '.*' -o -name node_modules -o -name target -o -name dist \
+          -o -name build -o -name vendor -o -name Library \) -prune \) \
+      -o \( -type f -name '*.compact' -print -quit \) 2>/dev/null || true)
+  [ -n "$hit" ] && return 0
+
+  while IFS= read -r -d '' f; do
+    grep -q '"@midnight-ntwrk/' "$f" 2>/dev/null && return 0
+  done < <(find "$root" -mindepth 1 -maxdepth 5 \
+      \( -type d \( -name '.*' -o -name node_modules \) -prune \) \
+      -o \( -type f -name package.json -print0 \) 2>/dev/null || true)
+
+  if [ -f "$root/.git/config" ] && grep -qi 'url = .*midnight' "$root/.git/config" 2>/dev/null; then
+    return 0
+  fi
+
+  return 1
+}
+
+compact_baseline_resolve() {
+  local state_file="$1"
+  local project_root="$2"
+  local created created_epoch path mtime ts
+
+  [ -f "$state_file" ] || return 0
+  [ "$(jq -r '.compact_files == null' "$state_file" 2>/dev/null)" = "true" ] || return 0
+
+  created=$(jq -r '.created_at // empty' "$state_file")
+  ts="${created%Z}"; ts="${ts%%.*}"
+  created_epoch=$(date -u -d "${ts}Z" "+%s" 2>/dev/null \
+               || date -juf "%Y-%m-%dT%H:%M:%S" "$ts" "+%s" 2>/dev/null \
+               || echo 0)
+
+  local tmp
+  tmp=$(mktemp)
+  find "$project_root" -type f -name '*.compact' -print0 2>/dev/null \
+    | tr '\0' '\n' \
+    | compact_filter_excluded "$project_root" \
+    | while IFS= read -r path; do
+        mtime=$(stat -c "%Y" "$path" 2>/dev/null || stat -f "%m" "$path" 2>/dev/null || echo 0)
+        if [ "$mtime" -lt "$created_epoch" ]; then
+          printf '%s\0' "$path"
+        fi
+      done \
+    | xargs -0 -r sha256sum 2>/dev/null \
+    | jq -Rn '
+        reduce inputs as $line (
+          {};
+          ($line | capture("^(?<hash>[a-f0-9]+)\\s+(?<path>.*)$")) as $m
+          | . + {($m.path): $m.hash}
+        )
+      ' > "$tmp" || printf '{}' > "$tmp"
+  [ -s "$tmp" ] || printf '{}' > "$tmp"
+
+  jq --slurpfile cf "$tmp" '.compact_files = $cf[0]' "$state_file" > "$state_file.tmp" \
+    && mv "$state_file.tmp" "$state_file"
+  rm -f "$tmp"
 }
 
 compact_state_init() {
@@ -120,17 +223,18 @@ compact_state_init() {
   compact_files_json=$(compact_snapshot_files "$project_root")
   created_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-  jq -n \
+  # The snapshot goes in on stdin, not as --argjson: one argument is capped
+  # at 128 KiB on Linux, and a tree with many contracts goes past that.
+  printf '%s' "$compact_files_json" | jq \
     --arg root "$project_root" \
     --arg sid "$session_id" \
     --arg created "$created_at" \
-    --argjson cf "$compact_files_json" \
     '{
       schema_version: 1,
       project_root: $root,
       session_id: $sid,
       created_at: $created,
-      compact_files: $cf,
+      compact_files: .,
       triggers_since_last_block: 0,
       last_block_timestamp: null,
       flag_events: [],
@@ -164,7 +268,12 @@ compact_is_excluded() {
       ;;
   esac
 
-  local entry
+  # A here-string, not < <(compact_exclusions ...): callers run this once per
+  # file, and a process substitution per call drops results under bash 3.2
+  # (macOS /bin/bash) after about 250 calls.
+  local entry exclusions
+  exclusions=$(compact_exclusions "$project_root")
+  [ -n "$exclusions" ] || return 1
   while IFS= read -r entry; do
     [ -z "$entry" ] && continue
     if [ "$entry" = "$rel" ]; then
@@ -177,20 +286,41 @@ compact_is_excluded() {
         esac
         ;;
     esac
-  done < <(compact_exclusions "$project_root")
+  done <<< "$exclusions"
 
   return 1
 }
 
 compact_filter_excluded() {
   local project_root="$1"
-  local path
+  local root="${project_root%/}"
+  local path rel entry excluded
+  local -a entries=()
+
+  # Read the exclusions once. Calling compact_is_excluded per path opens a
+  # process substitution per path, and under bash 3.2 (macOS /bin/bash) that
+  # intermittently drops paths after about 250 of them.
+  while IFS= read -r entry; do
+    [ -n "$entry" ] && entries+=("$entry")
+  done < <(compact_exclusions "$project_root")
 
   while IFS= read -r path; do
     [ -z "$path" ] && continue
-    if ! compact_is_excluded "$project_root" "$path"; then
-      printf '%s\n' "$path"
-    fi
+    excluded=false
+    case "$path" in
+      "$root"/*)
+        rel="${path#"$root"/}"
+        for entry in "${entries[@]+"${entries[@]}"}"; do
+          if [ "$entry" = "$rel" ]; then
+            excluded=true; break
+          fi
+          case "$entry" in
+            */) case "$rel" in "$entry"*) excluded=true; break ;; esac ;;
+          esac
+        done
+        ;;
+    esac
+    [ "$excluded" = true ] || printf '%s\n' "$path"
   done
 }
 
@@ -243,6 +373,8 @@ compact_unchecked_files() {
   if [ ! -f "$state_file" ]; then
     return 0
   fi
+
+  compact_baseline_resolve "$state_file" "$project_root"
 
   local file current_hash stored_hash filename file_mtime latest_compile_ts compile_epoch ts
 

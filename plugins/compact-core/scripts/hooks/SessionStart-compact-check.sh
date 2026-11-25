@@ -135,22 +135,31 @@ done
 #     and re-baseline compact_files so a file modified-but-uncompiled before
 #     the re-fire would never be flagged again. Steps 2-5 above stay
 #     unconditional -- GC and handoff collection/consumption are idempotent
-#     and must still run on every fire. ---
+#     and must still run on every fire.
+#     Outside a Midnight project the tree is not scanned (it can be a home
+#     directory or a huge monorepo) and compact_files is null, a deferred
+#     baseline. The first check that runs later fills it with the contracts
+#     modified before this session started (compact_baseline_resolve), so
+#     those are never flagged and a contract this session writes is. ---
 if [ ! -f "$STATE_FILE" ]; then
-  COMPACT_FILES_JSON=$(compact_snapshot_files "$PROJECT_ROOT")
+  if compact_is_midnight_project "$PROJECT_ROOT"; then
+    COMPACT_FILES_JSON=$(compact_snapshot_files "$PROJECT_ROOT")
+  else
+    COMPACT_FILES_JSON='null'
+  fi
   CREATED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-  jq -n \
+  # Snapshot on stdin, not --argjson (one argument is capped at 128 KiB on Linux).
+  printf '%s' "$COMPACT_FILES_JSON" | jq \
     --arg root "$PROJECT_ROOT" \
     --arg sid "$SESSION_ID" \
     --arg created "$CREATED_AT" \
-    --argjson cf "$COMPACT_FILES_JSON" \
     '{
       schema_version: 1,
       project_root: $root,
       session_id: $sid,
       created_at: $created,
-      compact_files: $cf,
+      compact_files: .,
       triggers_since_last_block: 0,
       last_block_timestamp: null,
       flag_events: [],

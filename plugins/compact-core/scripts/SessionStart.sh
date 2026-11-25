@@ -50,6 +50,24 @@ emit_json() {
     }'
 }
 
+# --- Gate: outside a Midnight project, say one line and skip the checks ---
+# Every session runs this hook, Midnight or not. Outside a Midnight project
+# the full context and the `compact check` network call are just cost, so
+# leave a one-line pointer instead. If the helper can't be loaded, fall
+# through to the full checks (the old behavior).
+HOOK_INPUT=""
+if [ ! -t 0 ]; then
+  HOOK_INPUT="$(cat 2>/dev/null || true)"
+fi
+HOOK_CWD="$(printf '%s' "$HOOK_INPUT" | jq -r '.cwd // empty' 2>/dev/null || true)"
+GATE_ROOT="${CLAUDE_PROJECT_DIR:-${HOOK_CWD:-$(pwd)}}"
+GATE_HELPER="$(dirname "${BASH_SOURCE[0]}")/hooks/_compact-check.sh"
+if [ -r "$GATE_HELPER" ] && source "$GATE_HELPER" 2>/dev/null \
+   && ! compact_is_midnight_project "$GATE_ROOT"; then
+  emit_json "Midnight Expert is installed, but this directory doesn't look like a Midnight project, so its session checks were skipped. If Midnight or Compact work starts here, use the midnight-expert skills and check versions with \`compact check\` and \`npm view\`, never from memory."
+  exit 0
+fi
+
 # --- Check 1: Is the compact CLI installed? ---
 if ! command -v compact >/dev/null 2>&1; then
   msg="Could not find the compact developer tools. Use the \`/midnight-tooling:install-cli\` command to install them.

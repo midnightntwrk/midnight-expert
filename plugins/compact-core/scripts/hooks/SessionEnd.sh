@@ -30,6 +30,11 @@ fi
 # shellcheck source=_compact-check.sh
 source "$(dirname "$0")/_compact-check.sh"
 
+# --- 0. Outside a Midnight project there is nothing to hand off. ---
+if ! compact_is_midnight_project "$PROJECT_ROOT"; then
+  exit 0
+fi
+
 # --- 1. Resolve state file; missing -> nothing tracked, no-op ---
 STATE_FILE=$(compact_state_file "$PROJECT_ROOT" "$SESSION_ID")
 if [ -z "$STATE_FILE" ] || [ ! -f "$STATE_FILE" ]; then
@@ -51,8 +56,12 @@ if [ -n "$UNCHECKED" ]; then
   )
 fi
 
-jq --argjson u "$UNCHECKED_JSON" '.unchecked_from_previous_session = $u' \
+# --slurpfile, not --argjson: one argument is capped at 128 KiB on Linux.
+UNCHECKED_TMP=$(mktemp)
+printf '%s' "$UNCHECKED_JSON" > "$UNCHECKED_TMP"
+jq --slurpfile u "$UNCHECKED_TMP" '.unchecked_from_previous_session = $u[0]' \
   "$STATE_FILE" > "$STATE_FILE.tmp" 2>/dev/null \
   && mv "$STATE_FILE.tmp" "$STATE_FILE" || true
+rm -f "$UNCHECKED_TMP"
 
 exit 0

@@ -7,6 +7,21 @@ set -euo pipefail
 # logic that used to live alongside this script has moved to the compact-core
 # plugin (plugins/compact-core/scripts/hooks/).
 
+# Outside a Midnight project, stay silent. Every session runs this hook, and
+# the warning is noise on unrelated work. If the helper can't be loaded,
+# fall through and warn as before.
+HOOK_INPUT=""
+if [ ! -t 0 ]; then
+  HOOK_INPUT="$(cat 2>/dev/null || true)"
+fi
+HOOK_CWD="$(printf '%s' "$HOOK_INPUT" | jq -r '.cwd // empty' 2>/dev/null || true)"
+GATE_ROOT="${CLAUDE_PROJECT_DIR:-${HOOK_CWD:-$(pwd)}}"
+GATE_HELPER="$(dirname "${BASH_SOURCE[0]}")/_compact-check.sh"
+if [ -r "$GATE_HELPER" ] && source "$GATE_HELPER" 2>/dev/null \
+   && ! compact_is_midnight_project "$GATE_ROOT"; then
+  exit 0
+fi
+
 ADDITIONAL_CONTEXT="WARNING: Your training data about Midnight, Compact, and the Midnight SDK is UNRELIABLE. It contains known errors and is likely outdated.
 
 Do NOT trust your recalled knowledge about:
