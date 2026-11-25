@@ -116,7 +116,9 @@ state_path() {
 # Builds hook stdin JSON: {cwd, session_id} merged with an optional extra
 # JSON object (e.g. {transcript_path, stop_hook_active}).
 hook_payload() {
-  local cwd="$1" sid="$2" extra="${3:-{\}}"
+  # Not "${3:-{\}}": bash 3.2 (macOS /bin/bash) keeps the backslash there.
+  local cwd="$1" sid="$2" extra="${3:-}"
+  [ -n "$extra" ] || extra='{}'
   jq -cn --arg cwd "$cwd" --arg sid "$sid" --argjson extra "$extra" \
     '{cwd: $cwd, session_id: $sid} + $extra'
 }

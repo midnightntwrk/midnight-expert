@@ -22,6 +22,8 @@ run_step() {
 
 run_step "test-sessionstart-snapshots-hashes.sh" \
   bash "$TESTS_DIR/test-sessionstart-snapshots-hashes.sh"
+run_step "test-gate-non-midnight-project.sh" \
+  bash "$TESTS_DIR/test-gate-non-midnight-project.sh"
 run_step "test-stop-blocks-on-modified.sh" \
   bash "$TESTS_DIR/test-stop-blocks-on-modified.sh"
 run_step "test-stop-passes-with-compile.sh" \

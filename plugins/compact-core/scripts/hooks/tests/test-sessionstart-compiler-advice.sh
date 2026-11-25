@@ -65,7 +65,11 @@ INSTALLED_ROOT="$TMP/cache2/mkt2/compact-core/0.12.0"
 run_session_start() {
   local root="$1" current="$2" latest="$3" lang="$4" home="${5:-$TMP/home}"
   mkdir -p "$home"
-  local -a env_args=(PATH="$TMP/bin:$PATH" HOME="$home"
+  # A project with a contract, so the hook doesn't take its
+  # not-a-Midnight-project shortcut (test-gate-non-midnight-project.sh).
+  mkdir -p "$TMP/proj"
+  printf 'contract c' > "$TMP/proj/c.compact"
+  local -a env_args=(PATH="$TMP/bin:$PATH" HOME="$home" CLAUDE_PROJECT_DIR="$TMP/proj"
     FAKE_CURRENT="$current" FAKE_LATEST="$latest" FAKE_LANG="$lang")
   if [ -n "$root" ]; then
     env_args+=(CLAUDE_PLUGIN_ROOT="$root")
