@@ -84,13 +84,17 @@ fi
 COMPACT_FILES_JSON=$(compact_snapshot_files "$PROJECT_ROOT")
 COUNT=$(printf '%s' "$COMPACT_FILES_JSON" | jq 'length')
 
-jq --argjson cf "$COMPACT_FILES_JSON" '
-  .compact_files = $cf
+# --slurpfile, not --argjson: one argument is capped at 128 KiB on Linux.
+CF_TMP=$(mktemp)
+printf '%s' "$COMPACT_FILES_JSON" > "$CF_TMP"
+jq --slurpfile cf "$CF_TMP" '
+  .compact_files = $cf[0]
   | .triggers_since_last_block = 0
   | .last_block_timestamp = null
   | .flag_events = []
   | .on_next_user_prompt = []
   | .unchecked_from_previous_session = []
 ' "$STATE_FILE" > "$STATE_FILE.tmp" && mv "$STATE_FILE.tmp" "$STATE_FILE"
+rm -f "$CF_TMP"
 
 echo "Reset $STATE_FILE: baselined $COUNT contract(s)."

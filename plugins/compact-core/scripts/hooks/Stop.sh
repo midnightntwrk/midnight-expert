@@ -48,7 +48,15 @@ source "$(dirname "$0")/_compact-check.sh"
 
 # --- 0. Outside a Midnight project there is nothing to check. Exit before
 #     anything scans the tree (it can be a home directory or a huge repo). ---
+#     A reminder queued earlier (say, before the session deleted its only
+#     contract) is dropped so it isn't shown for a file that's gone.
 if ! compact_is_midnight_project "$PROJECT_ROOT"; then
+  GATE_STATE=$(compact_state_file "$PROJECT_ROOT" "$SESSION_ID")
+  if [ -n "$GATE_STATE" ] && [ -f "$GATE_STATE" ]; then
+    jq '.on_next_user_prompt = [(.on_next_user_prompt // [])[] | select(.type? != "compact-not-compiled")]' \
+      "$GATE_STATE" > "$GATE_STATE.tmp" 2>/dev/null \
+      && mv "$GATE_STATE.tmp" "$GATE_STATE"
+  fi
   exit 0
 fi
 
@@ -164,10 +172,13 @@ fi
 # entry as an optional `escalation` field so UserPromptSubmit can surface it
 # on the next turn. Below threshold, the field is omitted entirely (never
 # written as null/empty) so older/forward-compat consumers see no change. ---
-FILES_JSON=$(printf '%s\n' "$UNCHECKED" | jq -R . | jq -s 'map(select(. != ""))')
+FILES_TMP=$(mktemp)
+printf '%s\n' "$UNCHECKED" | jq -R . | jq -s 'map(select(. != ""))' > "$FILES_TMP"
 
-jq --argjson files "$FILES_JSON" --arg escalation "$ESCALATION_TEXT" '
-  ($escalation | length > 0) as $has_escalation
+# --slurpfile, not --argjson: one argument is capped at 128 KiB on Linux.
+jq --slurpfile filesv "$FILES_TMP" --arg escalation "$ESCALATION_TEXT" '
+  $filesv[0] as $files
+  | ($escalation | length > 0) as $has_escalation
   | .on_next_user_prompt = (
       [(.on_next_user_prompt // [])[] | select(.type? != "compact-not-compiled")]
       + [
@@ -177,5 +188,6 @@ jq --argjson files "$FILES_JSON" --arg escalation "$ESCALATION_TEXT" '
     )
 ' "$STATE_FILE" > "$STATE_FILE.tmp" \
   && mv "$STATE_FILE.tmp" "$STATE_FILE"
+rm -f "$FILES_TMP"
 
 exit 0

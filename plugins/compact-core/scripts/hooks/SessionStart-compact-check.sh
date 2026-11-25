@@ -136,15 +136,16 @@ done
 #     the re-fire would never be flagged again. Steps 2-5 above stay
 #     unconditional -- GC and handoff collection/consumption are idempotent
 #     and must still run on every fire.
-#     Outside a Midnight project the baseline is empty and the tree is not
-#     scanned (it can be a home directory or a huge monorepo). If the session
-#     then writes its first contract, Stop sees the project as Midnight and
-#     flags that contract against this empty baseline. ---
+#     Outside a Midnight project the tree is not scanned (it can be a home
+#     directory or a huge monorepo) and compact_files is null, a deferred
+#     baseline. The first check that runs later fills it with the contracts
+#     modified before this session started (compact_baseline_resolve), so
+#     those are never flagged and a contract this session writes is. ---
 if [ ! -f "$STATE_FILE" ]; then
   if compact_is_midnight_project "$PROJECT_ROOT"; then
     COMPACT_FILES_JSON=$(compact_snapshot_files "$PROJECT_ROOT")
   else
-    COMPACT_FILES_JSON='{}'
+    COMPACT_FILES_JSON='null'
   fi
   CREATED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
