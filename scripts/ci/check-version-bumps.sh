@@ -7,8 +7,9 @@
 #
 # Usage: check-version-bumps.sh <base-ref>
 #   Compares HEAD against the merge base with <base-ref>. Every plugin under
-#   plugins/ with a changed file must have a plugin.json version greater than
-#   the one at the merge base. New and deleted plugins are skipped.
+#   plugins/ with a changed file (a file moved between plugins counts for
+#   both) must have a plugin.json version greater than the one at the merge
+#   base. New and deleted plugins are skipped.
 
 set -euo pipefail
 
@@ -28,24 +29,55 @@ fi
 BASE_REF="$1"
 MERGE_BASE=$(git merge-base "$BASE_REF" HEAD)
 
-# Returns 0 when $1 is a greater x.y.z version than $2.
-# Pre-release suffixes (-beta.1) are ignored for the comparison.
+# Returns 0 when pre-release $1 is greater than pre-release $2 (semver rules:
+# dot-separated identifiers, numeric ones compared as numbers and below
+# alphanumeric ones, and a longer list wins when one is a prefix of the other).
+prerelease_gt() {
+    local -a a b
+    IFS=. read -ra a <<<"$1"
+    IFS=. read -ra b <<<"$2"
+    local i x y
+    for ((i = 0; i < ${#a[@]} && i < ${#b[@]}; i++)); do
+        x="${a[i]}" y="${b[i]}"
+        [[ "$x" == "$y" ]] && continue
+        if [[ "$x" =~ ^[0-9]+$ && "$y" =~ ^[0-9]+$ ]]; then
+            ((10#$x > 10#$y))
+            return
+        fi
+        [[ "$x" =~ ^[0-9]+$ ]] && return 1
+        [[ "$y" =~ ^[0-9]+$ ]] && return 0
+        [[ "$x" > "$y" ]]
+        return
+    done
+    ((${#a[@]} > ${#b[@]}))
+}
+
+# Returns 0 when $1 is a greater semver version than $2, 1 when it isn't,
+# and 2 when either isn't x.y.z or x.y.z-pre.release. Build metadata (+...)
+# is ignored, as semver says.
 version_gt() {
-    local a="${1%%-*}" b="${2%%-*}"
+    local va="${1%%+*}" vb="${2%%+*}"
+    local a="${va%%-*}" b="${vb%%-*}" pa="" pb=""
+    [[ "$va" == *-* ]] && pa="${va#*-}"
+    [[ "$vb" == *-* ]] && pb="${vb#*-}"
+    local re='^[0-9]+\.[0-9]+\.[0-9]+$'
+    [[ "$a" =~ $re && "$b" =~ $re ]] || return 2
     local a1 a2 a3 b1 b2 b3
     IFS=. read -r a1 a2 a3 <<<"$a"
     IFS=. read -r b1 b2 b3 <<<"$b"
-    for n in "$a1" "$a2" "$a3" "$b1" "$b2" "$b3"; do
-        [[ "$n" =~ ^[0-9]+$ ]] || return 2
-    done
-    ((a1 != b1)) && { ((a1 > b1)); return; }
-    ((a2 != b2)) && { ((a2 > b2)); return; }
-    ((a3 > b3))
+    ((10#$a1 != 10#$b1)) && { ((10#$a1 > 10#$b1)); return; }
+    ((10#$a2 != 10#$b2)) && { ((10#$a2 > 10#$b2)); return; }
+    ((10#$a3 != 10#$b3)) && { ((10#$a3 > 10#$b3)); return; }
+    # Same x.y.z: a release is greater than any of its pre-releases.
+    [[ -z "$pa" && -z "$pb" ]] && return 1
+    [[ -z "$pa" ]] && return 0
+    [[ -z "$pb" ]] && return 1
+    prerelease_gt "$pa" "$pb"
 }
 
 print_section "Checking plugin version bumps against ${BASE_REF} (${MERGE_BASE:0:8})"
 
-CHANGED_PLUGINS=$(git diff --name-only "$MERGE_BASE" HEAD -- plugins/ \
+CHANGED_PLUGINS=$(git diff --name-only --no-renames "$MERGE_BASE" HEAD -- plugins/ \
     | awk -F/ 'NF > 2 { print $2 }' | sort -u)
 
 if [[ -z "$CHANGED_PLUGINS" ]]; then
@@ -76,16 +108,21 @@ while IFS= read -r plugin; do
         continue
     fi
 
+    if [[ -z "$old" ]]; then
+        print_success "$plugin: version added ($new)"
+        continue
+    fi
+
     rc=0
     version_gt "$new" "$old" || rc=$?
     case $rc in
         0) print_success "$plugin: $old -> $new" ;;
         1)
-            print_error "$plugin changed but its version is $new (was $old). Bump the version in $plugin_json and add a CHANGELOG entry."
+            print_error "$plugin changed but its version is $new (was $old). Bump the version in $plugin_json."
             HAS_ERRORS=true
             ;;
         *)
-            print_error "$plugin: can't compare versions '$new' and '$old', use x.y.z"
+            print_error "$plugin: can't compare versions '$new' and '$old', use x.y.z or x.y.z-pre.release"
             HAS_ERRORS=true
             ;;
     esac
