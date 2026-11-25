@@ -12,6 +12,12 @@ former `create-mn-app` tool: the generator is zero-dependency (Node built-ins on
 and produces byte-identical output for the same inputs. Follow the workflow in
 `references/new-example-workflow.md` step by step.
 
+> ⚠️ **The template is still on ledger 8** (midnight-js 4.1.1, wallet SDK 1.2.0, proof server 8.1.0),
+> so a generated project can't deploy to Mainnet, Preview, Preprod or a ledger 9 devnet. Until its
+> replacement, mnkit in midnightntwrk/midnight-examples, is published, point users to midnight-examples
+> or the `compact-core:basic-start` walkthrough first. `references/new-example-workflow.md` has the
+> wording; it runs before Phase 1.
+
 > Note: `create-mn-app` is being sunset. If a user asks for it by name, route them here — this skill's
 > generator is its replacement.
 
