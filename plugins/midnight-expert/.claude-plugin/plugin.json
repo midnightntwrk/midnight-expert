@@ -1,6 +1,6 @@
 {
   "name": "midnight-expert",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Meta-plugin for the midnight-expert marketplace. Provides comprehensive diagnostics and health reporting for the entire midnight-expert ecosystem — plugin installation, MCP server connectivity, external CLI tools, cross-plugin references, and NPM registry access.",
   "author": {
     "name": "Midnight Foundation"
