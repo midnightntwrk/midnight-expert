@@ -1,0 +1,33 @@
+name: Version Bump
+
+# Claude Code only offers a plugin update when plugin.json's version changes,
+# so every PR that changes a plugin must bump it. Bot PRs are skipped (their
+# changes ship with the next bump), and the skip-version-bump label skips it
+# for anything else that shouldn't bump.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    if: >-
+      github.event.pull_request.user.type != 'Bot' &&
+      !contains(github.event.pull_request.labels.*.name, 'skip-version-bump')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check plugin version bumps
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: bash scripts/ci/check-version-bumps.sh "origin/$BASE_REF"

@@ -56,6 +56,13 @@ Ensure the title is a clear summary of the requirement and provides enough conte
 * **Code Review:** All pull requests undergo code review by project maintainers.
   Be prepared to address feedback from reviewers.
 
+### Plugin versions
+
+Claude Code only offers an update when a plugin's version changes, so every PR that changes files under
+`plugins/<name>/` must bump `version` in `plugins/<name>/.claude-plugin/plugin.json` and add a `CHANGELOG.md`
+entry. The **Version Bump** check enforces the version bump (not the CHANGELOG entry). It skips PRs opened by
+bots, and maintainers can add the `skip-version-bump` label to skip it on any other PR that shouldn't bump.
+
 ## Requirements for Acceptable Contributions:
 
 * **Coding Standards:** Code must adhere to the coding style guides defined in our documentation
