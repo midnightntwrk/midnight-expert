@@ -46,6 +46,12 @@ fi
 # shellcheck source=_compact-check.sh
 source "$(dirname "$0")/_compact-check.sh"
 
+# --- 0. Outside a Midnight project there is nothing to check. Exit before
+#     anything scans the tree (it can be a home directory or a huge repo). ---
+if ! compact_is_midnight_project "$PROJECT_ROOT"; then
+  exit 0
+fi
+
 # --- 1. Resolve state file; quiet-on-doubt init if missing ---
 STATE_FILE=$(compact_state_file "$PROJECT_ROOT" "$SESSION_ID")
 if [ -z "$STATE_FILE" ]; then

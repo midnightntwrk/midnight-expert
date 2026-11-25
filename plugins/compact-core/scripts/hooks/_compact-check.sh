@@ -16,6 +16,16 @@
 #     tree as clean this time rather than flagging from an empty baseline.
 #     No-op if the file already exists.
 #
+#   compact_is_midnight_project <project_root>
+#     Returns 0 (true) when project_root looks like Midnight work: a *.compact
+#     file within six directory levels, or a package.json within three levels
+#     that names an @midnight-ntwrk/* package. Hidden directories,
+#     node_modules and common build/vendor directories are skipped and the
+#     search stops at the first hit, so it stays cheap in large non-Midnight
+#     trees. Empty or missing project_root, /, or the user's home
+#     directory -> 1 (false). The session-wide
+#     hooks use it to stay silent outside Midnight projects.
+#
 #   compact_snapshot_files <project_root>
 #     Prints the {absolute_path: sha256} JSON object for every non-excluded
 #     *.compact file under project_root.
@@ -102,7 +112,37 @@ compact_snapshot_files() {
           )
         '
   )
-  printf '%s\n' "${snapshot_json:-{\}}"
+  # Not "${snapshot_json:-{\}}": bash 3.2 (macOS /bin/bash) keeps the backslash.
+  [ -n "$snapshot_json" ] || snapshot_json='{}'
+  printf '%s\n' "$snapshot_json"
+}
+
+compact_is_midnight_project() {
+  local root="$1" hit f user_home
+  [ -n "$root" ] && [ -d "$root" ] || return 1
+
+  # A home directory or / is never a project, even when Midnight projects sit
+  # somewhere under it: treating it as one means scanning the whole tree on
+  # every Stop. The home directory comes from the user database, not $HOME
+  # (the hook tests point $HOME at their temp project).
+  user_home=$(eval "printf '%s' ~$(id -un 2>/dev/null)" 2>/dev/null || true)
+  case "${root%/}" in
+    ""|"${user_home%/}") return 1 ;;
+  esac
+
+  hit=$(find "$root" -mindepth 1 -maxdepth 6 \
+      \( -type d \( -name '.*' -o -name node_modules -o -name target -o -name dist \
+          -o -name build -o -name vendor -o -name Library \) -prune \) \
+      -o \( -type f -name '*.compact' -print -quit \) 2>/dev/null || true)
+  [ -n "$hit" ] && return 0
+
+  while IFS= read -r -d '' f; do
+    grep -q '"@midnight-ntwrk/' "$f" 2>/dev/null && return 0
+  done < <(find "$root" -mindepth 1 -maxdepth 3 \
+      \( -type d \( -name '.*' -o -name node_modules \) -prune \) \
+      -o \( -type f -name package.json -print0 \) 2>/dev/null || true)
+
+  return 1
 }
 
 compact_state_init() {
@@ -120,17 +160,18 @@ compact_state_init() {
   compact_files_json=$(compact_snapshot_files "$project_root")
   created_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-  jq -n \
+  # The snapshot goes in on stdin, not as --argjson: one argument is capped
+  # at 128 KiB on Linux, and a tree with many contracts goes past that.
+  printf '%s' "$compact_files_json" | jq \
     --arg root "$project_root" \
     --arg sid "$session_id" \
     --arg created "$created_at" \
-    --argjson cf "$compact_files_json" \
     '{
       schema_version: 1,
       project_root: $root,
       session_id: $sid,
       created_at: $created,
-      compact_files: $cf,
+      compact_files: .,
       triggers_since_last_block: 0,
       last_block_timestamp: null,
       flag_events: [],
@@ -184,13 +225,34 @@ compact_is_excluded() {
 
 compact_filter_excluded() {
   local project_root="$1"
-  local path
+  local root="${project_root%/}"
+  local path rel entry excluded
+  local -a entries=()
+
+  # Read the exclusions once. Calling compact_is_excluded per path opens a
+  # process substitution per path, and under bash 3.2 (macOS /bin/bash) that
+  # intermittently drops paths after about 250 of them.
+  while IFS= read -r entry; do
+    [ -n "$entry" ] && entries+=("$entry")
+  done < <(compact_exclusions "$project_root")
 
   while IFS= read -r path; do
     [ -z "$path" ] && continue
-    if ! compact_is_excluded "$project_root" "$path"; then
-      printf '%s\n' "$path"
-    fi
+    excluded=false
+    case "$path" in
+      "$root"/*)
+        rel="${path#"$root"/}"
+        for entry in "${entries[@]+"${entries[@]}"}"; do
+          if [ "$entry" = "$rel" ]; then
+            excluded=true; break
+          fi
+          case "$entry" in
+            */) case "$rel" in "$entry"*) excluded=true; break ;; esac ;;
+          esac
+        done
+        ;;
+    esac
+    [ "$excluded" = true ] || printf '%s\n' "$path"
   done
 }
 

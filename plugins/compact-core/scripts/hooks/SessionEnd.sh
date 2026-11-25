@@ -30,6 +30,11 @@ fi
 # shellcheck source=_compact-check.sh
 source "$(dirname "$0")/_compact-check.sh"
 
+# --- 0. Outside a Midnight project there is nothing to hand off. ---
+if ! compact_is_midnight_project "$PROJECT_ROOT"; then
+  exit 0
+fi
+
 # --- 1. Resolve state file; missing -> nothing tracked, no-op ---
 STATE_FILE=$(compact_state_file "$PROJECT_ROOT" "$SESSION_ID")
 if [ -z "$STATE_FILE" ] || [ ! -f "$STATE_FILE" ]; then
